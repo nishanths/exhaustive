@@ -1,6 +1,4 @@
-# exhaustive
-
-`exhaustive` can be used to ensure that _enum_ `switch` statements in Go code are
+The `exhaustive` command can be used to ensure that _enum_ `switch` statements in Go code are
 exhaustive. Optionally, it can also ensure that map keys in map literals of an
 enum key type are exhaustive.
 
@@ -10,7 +8,7 @@ values for a named type.
 ```go
 package foo
 
-// The Environment enum has three members: Prod, Staging, Dev.
+// Environment is an enum type with three members: Prod, Staging, Dev.
 type Environment string
 
 const (
