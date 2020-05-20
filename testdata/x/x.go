@@ -34,9 +34,10 @@ var (
 	something map[string]int
 
 	p, q = map[bar.Phylum]string{
-		bar.Chordata:      "c",
-		bar.Echinodermata: "e",
+		bar.Chordata: "c",
+		bar.Mollusca: "m",
 	}, map[Dir]string{
 		N: "n",
+		S: "s",
 	}
 )

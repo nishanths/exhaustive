@@ -4,7 +4,8 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
-	"log"
+	"sort"
+	"strings"
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/ast/inspector"
@@ -21,8 +22,8 @@ func checkMapLiterals(pass *analysis.Pass, inspect *inspector.Inspector, comment
 				continue // map literals have to be declared as "var"
 			}
 			for _, s := range gen.Specs {
-				v := s.(*ast.ValueSpec)
-				for idx, name := range v.Names {
+				valueSpec := s.(*ast.ValueSpec)
+				for idx, name := range valueSpec.Names {
 					obj := pass.TypesInfo.Defs[name]
 					if obj == nil {
 						continue
@@ -57,8 +58,8 @@ func checkMapLiterals(pass *analysis.Pass, inspect *inspector.Inspector, comment
 						continue
 					}
 
-					if (v.Doc != nil && containsIgnoreDirective(v.Doc.List)) ||
-						(v.Comment != nil && containsIgnoreDirective(v.Comment.List)) {
+					if (valueSpec.Doc != nil && containsIgnoreDirective(valueSpec.Doc.List)) ||
+						(valueSpec.Comment != nil && containsIgnoreDirective(valueSpec.Comment.List)) {
 						continue
 					}
 
@@ -72,10 +73,49 @@ func checkMapLiterals(pass *analysis.Pass, inspect *inspector.Inspector, comment
 						}
 					}
 
-					log.Println(idx, v.Values, mapType, hitlist)
-					// TODO look through map literal keys and compare against hitlist
+					if !(len(valueSpec.Values) > idx) {
+						continue // no value for name
+					}
+					comp, ok := valueSpec.Values[idx].(*ast.CompositeLit)
+					if !ok {
+						continue
+					}
+					for _, el := range comp.Elts {
+						kvExpr, ok := el.(*ast.KeyValueExpr)
+						if !ok {
+							continue
+						}
+						e := removeParens(kvExpr.Key)
+						if samePkg {
+							ident, ok := e.(*ast.Ident)
+							if !ok {
+								continue
+							}
+							delete(hitlist, ident.Name)
+						} else {
+							selExpr, ok := e.(*ast.SelectorExpr)
+							if !ok {
+								continue
+							}
+							delete(hitlist, selExpr.Sel.Name)
+						}
+					}
+
+					reportMapLiteral(pass, valueSpec, samePkg, keyType, hitlist)
 				}
 			}
 		}
 	}
+}
+
+func reportMapLiteral(pass *analysis.Pass, v *ast.ValueSpec, samePkg bool, enumType *types.Named, missingMembers map[string]struct{}) {
+	enumTypeName := enumTypeName(enumType, samePkg)
+
+	missing := make([]string, 0, len(missingMembers))
+	for m := range missingMembers {
+		missing = append(missing, m)
+	}
+	sort.Strings(missing)
+
+	pass.ReportRangef(v, "missing keys in map literal of key type %s: %s", enumTypeName, strings.Join(missing, ", "))
 }
