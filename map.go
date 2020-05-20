@@ -117,5 +117,5 @@ func reportMapLiteral(pass *analysis.Pass, v *ast.ValueSpec, samePkg bool, enumT
 	}
 	sort.Strings(missing)
 
-	pass.ReportRangef(v, "missing keys in map literal of key type %s: %s", enumTypeName, strings.Join(missing, ", "))
+	pass.ReportRangef(v, "missing keys in map of key type %s: %s", enumTypeName, strings.Join(missing, ", "))
 }
