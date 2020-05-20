@@ -85,6 +85,9 @@ func findEnums(pass *analysis.Pass) enums {
 		}
 
 		// Delete member-less enum types.
+		// We can't call these enums, since we can't be sure without
+		// the existence of members. (The type may just be a named type,
+		// for instance.)
 		for k, v := range pkgEnums {
 			if len(v) == 0 {
 				delete(pkgEnums, k)

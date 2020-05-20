@@ -1,7 +1,6 @@
 package exhaustive
 
 import (
-	"fmt"
 	"go/ast"
 	"strings"
 
@@ -60,14 +59,4 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	}
 
 	return nil, nil
-}
-
-func assert(cond bool, format string, args ...interface{}) {
-	if !cond {
-		panicf(format, args...)
-	}
-}
-
-func panicf(format string, args ...interface{}) {
-	panic(fmt.Sprintf(format, args...))
 }
