@@ -48,7 +48,7 @@ var _ analysis.Fact = (*enumsFact)(nil)
 func (e *enumsFact) AFact() {}
 
 func run(pass *analysis.Pass) (interface{}, error) {
-	e := gatherEnums(pass)
+	e := findEnums(pass)
 	pass.ExportPackageFact(&enumsFact{entries: e})
 
 	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)

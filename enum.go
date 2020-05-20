@@ -10,7 +10,7 @@ import (
 
 type enums map[*types.Named][]types.Object // enum type -> enum members
 
-func gatherEnums(pass *analysis.Pass) enums {
+func findEnums(pass *analysis.Pass) enums {
 	pkgEnums := make(enums)
 
 	// Gather enum types.
@@ -81,6 +81,13 @@ func gatherEnums(pass *analysis.Pass) enums {
 					members = append(members, obj)
 					pkgEnums[named] = members
 				}
+			}
+		}
+
+		// Delete member-less enum types.
+		for k, v := range pkgEnums {
+			if len(v) == 0 {
+				delete(pkgEnums, k)
 			}
 		}
 	}
