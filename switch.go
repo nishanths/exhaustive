@@ -87,8 +87,11 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, co
 
 		for _, stmt := range sw.Body.List {
 			caseCl := stmt.(*ast.CaseClause)
-			if isDefaultCase(caseCl) && fDefaultSuffices {
-				return false
+			if isDefaultCase(caseCl) {
+				if fDefaultSuffices {
+					return false
+				}
+				continue
 			}
 			for _, e := range caseCl.List {
 				e = removeParens(e)

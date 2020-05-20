@@ -4,18 +4,18 @@ import (
 	bar "github.com/nishanths/exhaustive/testdata/y"
 )
 
-type Dir int
+type Direction int
 
 var (
-	N          Dir = 1
-	E          Dir = 2
-	S          Dir = 3
-	W          Dir = 4
-	invalidDir Dir = 5
+	N          Direction = 1
+	E          Direction = 2
+	S          Direction = 3
+	W          Direction = 4
+	invalidDir Direction = 5
 )
 
 func _foo() {
-	var d Dir
+	var d Direction
 	switch d {
 	case N:
 	}
@@ -36,7 +36,7 @@ var (
 	p, q = map[bar.Phylum]string{
 		bar.Chordata: "c",
 		bar.Mollusca: "m",
-	}, map[Dir]string{
+	}, map[Direction]string{
 		N: "n",
 		S: "s",
 	}
