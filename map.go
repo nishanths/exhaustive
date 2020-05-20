@@ -8,4 +8,5 @@ import (
 )
 
 func checkMapLiterals(pass *analysis.Pass, inspect *inspector.Inspector, comments map[*ast.File]ast.CommentMap) {
+	// TODO
 }

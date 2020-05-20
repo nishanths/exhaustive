@@ -11,7 +11,7 @@ import (
 )
 
 func isDefaultCase(c *ast.CaseClause) bool {
-	return c.List == nil
+	return c.List == nil // see doc comment on field
 }
 
 func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, comments map[*ast.File]ast.CommentMap) {
@@ -31,26 +31,21 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, co
 
 		tagPkg := named.Obj().Pkg()
 		if tagPkg == nil {
-			// doc comment: nil for labels and objects in the Universe scope
-			//
-			// happens for the `error` type.
-			// continuing would mean that ImportPackageFact panics.
-			return false
-		}
-
-		if sw.Body == nil {
+			// Doc comment: nil for labels and objects in the Universe scope.
+			// This happens for the `error` type, for example.
+			// Continuing would mean that ImportPackageFact panics.
 			return false
 		}
 
 		var enums enumsFact
 		if !pass.ImportPackageFact(tagPkg, &enums) {
-			// can't do anything further
+			// Can't do anything further.
 			return false
 		}
 
 		enumMembers, isEnum := enums.entries[named]
 		if !isEnum {
-			// tag's type is not a known enum
+			// Tag's type is not a known enum.
 			return false
 		}
 
@@ -79,6 +74,14 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, co
 			if m.Exported() || checkUnexported {
 				hitlist[m.Name()] = struct{}{}
 			}
+		}
+
+		if sw.Body == nil {
+			// TODO: Is this even syntactically valid?
+			// Either way, nothing is deleted from hitlist in this case (all
+			// members are reported as missing).
+			reportSwitch(pass, sw, samePkg, named, hitlist)
+			return false
 		}
 
 		for _, stmt := range sw.Body.List {
@@ -124,4 +127,15 @@ func reportSwitch(pass *analysis.Pass, rng analysis.Range, samePkg bool, enumTyp
 	sort.Strings(missing)
 
 	pass.ReportRangef(rng, "missing cases in switch of type %s: %s", enumTypeName, strings.Join(missing, ", "))
+}
+
+func removeParens(e ast.Expr) ast.Expr {
+	for {
+		parenExpr, ok := e.(*ast.ParenExpr)
+		if !ok {
+			break
+		}
+		e = parenExpr.X
+	}
+	return e
 }

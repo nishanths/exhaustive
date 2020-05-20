@@ -10,6 +10,16 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
+var (
+	fCheckMaps       bool
+	fDefaultSuffices bool
+)
+
+func init() {
+	Analyzer.Flags.BoolVar(&fCheckMaps, "maps", false, "check map literals of enum key type, in addition to switch statements")
+	Analyzer.Flags.BoolVar(&fDefaultSuffices, "default-is-exhaustive", false, "switch statements are considered exhaustive as long as 'default' case exists")
+}
+
 const IgnoreDirective = "//exhaustive:ignore"
 
 func containsIgnoreDirective(comments []*ast.Comment) bool {
@@ -25,16 +35,6 @@ var Analyzer = &analysis.Analyzer{
 	Run:       run,
 	Requires:  []*analysis.Analyzer{inspect.Analyzer},
 	FactTypes: []analysis.Fact{&enumsFact{}},
-}
-
-var (
-	fCheckMaps       bool
-	fDefaultSuffices bool
-)
-
-func init() {
-	Analyzer.Flags.BoolVar(&fCheckMaps, "maps", false, "check map literals of enum key type, in addition to switch statements")
-	Analyzer.Flags.BoolVar(&fDefaultSuffices, "default-is-exhaustive", false, "switch statements are considered exhaustive as long as 'default' case exists")
 }
 
 type enumsFact struct {
@@ -54,7 +54,6 @@ func run(pass *analysis.Pass) (interface{}, error) {
 
 	checkSwitchStatements(pass, inspect, comments)
 	checkMapLiterals(pass, inspect, comments)
-
 	return nil, nil
 }
 
@@ -66,15 +65,4 @@ func assert(cond bool, format string, args ...interface{}) {
 
 func panicf(format string, args ...interface{}) {
 	panic(fmt.Sprintf(format, args...))
-}
-
-func removeParens(e ast.Expr) ast.Expr {
-	for {
-		parenExpr, ok := e.(*ast.ParenExpr)
-		if !ok {
-			break
-		}
-		e = parenExpr.X
-	}
-	return e
 }

@@ -27,12 +27,8 @@ func gatherEnums(pass *analysis.Pass) enums {
 				continue
 			}
 			for _, s := range gen.Specs {
-				// must be a TypeSpec since we've filtered on token.TYPE,
-				// but be defensive anyway.
+				// Must be TypeSpec since we've filtered on token.TYPE.
 				t, ok := s.(*ast.TypeSpec)
-				if !ok {
-					continue
-				}
 				obj := pass.TypesInfo.Defs[t.Name]
 				if obj == nil {
 					continue
@@ -69,10 +65,8 @@ func gatherEnums(pass *analysis.Pass) enums {
 				continue
 			}
 			for _, s := range gen.Specs {
-				v, ok := s.(*ast.ValueSpec)
-				if !ok {
-					continue
-				}
+				// Must be ValueSpec since we've filtered on token.CONST, token.VAR.
+				v := s.(*ast.ValueSpec)
 				for _, name := range v.Names {
 					obj := pass.TypesInfo.Defs[name]
 					if obj == nil {
