@@ -8,10 +8,7 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-type enums map[enumType][]enumMember
-
-type enumType *types.Named
-type enumMember types.Object
+type enums map[*types.Named][]types.Object // enum type -> enum members
 
 func gatherEnums(pass *analysis.Pass) enums {
 	pkgEnums := make(enums)

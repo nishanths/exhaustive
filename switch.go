@@ -24,12 +24,12 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, co
 		if !t.IsValue() {
 			return false
 		}
-		named, ok := t.Type.(*types.Named)
+		tagType, ok := t.Type.(*types.Named)
 		if !ok {
 			return false
 		}
 
-		tagPkg := named.Obj().Pkg()
+		tagPkg := tagType.Obj().Pkg()
 		if tagPkg == nil {
 			// Doc comment: nil for labels and objects in the Universe scope.
 			// This happens for the `error` type, for example.
@@ -43,7 +43,7 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, co
 			return false
 		}
 
-		enumMembers, isEnum := enums.entries[named]
+		enumMembers, isEnum := enums.entries[tagType]
 		if !isEnum {
 			// Tag's type is not a known enum.
 			return false
@@ -51,12 +51,12 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, co
 
 		// Get comment map.
 		file := stack[0].(*ast.File)
-
 		var allComments ast.CommentMap
 		if cm, ok := comments[file]; ok {
 			allComments = cm
 		} else {
 			allComments = ast.NewCommentMap(pass.Fset, file, file.Comments)
+			comments[file] = allComments
 		}
 
 		specificComments := allComments.Filter(sw)
@@ -78,9 +78,10 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, co
 
 		if sw.Body == nil {
 			// TODO: Is this even syntactically valid?
+			//
 			// Either way, nothing is deleted from hitlist in this case (all
 			// members are reported as missing).
-			reportSwitch(pass, sw, samePkg, named, hitlist)
+			reportSwitch(pass, sw, samePkg, tagType, hitlist)
 			return false
 		}
 
@@ -107,7 +108,7 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, co
 			}
 		}
 
-		reportSwitch(pass, sw, samePkg, named, hitlist)
+		reportSwitch(pass, sw, samePkg, tagType, hitlist)
 		return false
 	})
 }

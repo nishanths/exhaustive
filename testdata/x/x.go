@@ -7,10 +7,11 @@ import (
 type Dir int
 
 var (
-	N Dir = 1
-	E Dir = 2
-	S Dir = 3
-	W Dir = 4
+	N          Dir = 1
+	E          Dir = 2
+	S          Dir = 3
+	W          Dir = 4
+	invalidDir Dir = 5
 )
 
 func _foo() {
@@ -28,3 +29,18 @@ func _bar() {
 	case bar.Echinodermata:
 	}
 }
+
+// Is this doc comment?
+var (
+	something map[string]int
+
+	// Is this doc comment?
+	//
+	//exhaustive:ignore
+	p, q = map[bar.Phylum]string{
+		bar.Chordata:      "c",
+		bar.Echinodermata: "e",
+	}, map[Dir]string{
+		N: "n",
+	} // line
+)

@@ -17,14 +17,16 @@ var (
 
 func init() {
 	Analyzer.Flags.BoolVar(&fCheckMaps, "maps", false, "check map literals of enum key type, in addition to switch statements")
-	Analyzer.Flags.BoolVar(&fDefaultSuffices, "default-is-exhaustive", false, "switch statements are considered exhaustive as long as 'default' case exists")
+	Analyzer.Flags.BoolVar(&fDefaultSuffices, "default-means-exhaustive", false, "switch statements are considered exhaustive if 'default' case is present")
 }
 
 const IgnoreDirective = "//exhaustive:ignore"
 
 func containsIgnoreDirective(comments []*ast.Comment) bool {
 	for _, c := range comments {
-		return strings.HasPrefix(c.Text, IgnoreDirective)
+		if strings.HasPrefix(c.Text, IgnoreDirective) {
+			return true
+		}
 	}
 	return false
 }

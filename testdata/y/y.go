@@ -6,5 +6,5 @@ const (
 	Chordata Phylum = iota
 	Echinodermata
 	Mollusca
-	Platyhelminthes
+	platyhelminthes
 )
