@@ -55,7 +55,10 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	comments := make(map[*ast.File]ast.CommentMap) // CommentMap per package file, lazily populated
 
 	checkSwitchStatements(pass, inspect, comments)
-	checkMapLiterals(pass, inspect, comments)
+	if fCheckMaps {
+		checkMapLiterals(pass, inspect, comments)
+	}
+
 	return nil, nil
 }
 

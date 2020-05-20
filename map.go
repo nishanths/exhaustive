@@ -73,7 +73,7 @@ func checkMapLiterals(pass *analysis.Pass, inspect *inspector.Inspector, comment
 					}
 
 					log.Println(idx, v.Values, mapType, hitlist)
-
+					// TODO look through map literal keys and compare against hitlist
 				}
 			}
 		}
