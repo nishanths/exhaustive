@@ -57,20 +57,25 @@ func checkMapLiterals(pass *analysis.Pass, inspect *inspector.Inspector, comment
 						continue
 					}
 
-					if containsIgnoreDirective(v.Doc.List) || containsIgnoreDirective(v.Comment.List) {
+					if (v.Doc != nil && containsIgnoreDirective(v.Doc.List)) ||
+						(v.Comment != nil && containsIgnoreDirective(v.Comment.List)) {
 						continue
 					}
 
 					samePkg := keyPkg == pass.Pkg
 					checkUnexported := samePkg
 
-					log.Println(idx, v.Values, mapType)
-					_ = enumMembers
-					_ = checkUnexported
+					hitlist := make(map[string]struct{})
+					for _, m := range enumMembers {
+						if m.Exported() || checkUnexported {
+							hitlist[m.Name()] = struct{}{}
+						}
+					}
+
+					log.Println(idx, v.Values, mapType, hitlist)
+
 				}
-
 			}
-
 		}
 	}
 }

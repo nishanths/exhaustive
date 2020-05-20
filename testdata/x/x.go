@@ -30,17 +30,13 @@ func _bar() {
 	}
 }
 
-// Is this doc comment?
 var (
 	something map[string]int
 
-	// Is this doc comment?
-	//
-	//exhaustive:ignore
 	p, q = map[bar.Phylum]string{
 		bar.Chordata:      "c",
 		bar.Echinodermata: "e",
 	}, map[Dir]string{
 		N: "n",
-	} // line
+	}
 )
