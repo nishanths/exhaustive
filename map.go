@@ -109,13 +109,12 @@ func checkMapLiterals(pass *analysis.Pass, inspect *inspector.Inspector, comment
 }
 
 func reportMapLiteral(pass *analysis.Pass, v *ast.ValueSpec, mapVarIdent *ast.Ident, samePkg bool, enumType *types.Named, missingMembers map[string]struct{}) {
-	enumTypeName := enumTypeName(enumType, samePkg)
-
 	missing := make([]string, 0, len(missingMembers))
 	for m := range missingMembers {
 		missing = append(missing, m)
 	}
 	sort.Strings(missing)
 
-	pass.ReportRangef(v, "missing keys in map %s of key type %s: %s", mapVarIdent.Name, enumTypeName, strings.Join(missing, ", "))
+	pass.ReportRangef(v, "missing keys in map %s of key type %s: %s",
+		mapVarIdent.Name, enumTypeName(enumType, samePkg), strings.Join(missing, ", "))
 }

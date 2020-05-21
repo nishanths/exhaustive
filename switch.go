@@ -117,22 +117,14 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, co
 }
 
 func reportSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, samePkg bool, enumType *types.Named, missingMembers map[string]struct{}) {
-	enumTypeName := enumTypeName(enumType, samePkg)
-
 	missing := make([]string, 0, len(missingMembers))
 	for m := range missingMembers {
 		missing = append(missing, m)
 	}
 	sort.Strings(missing)
 
-	pass.ReportRangef(sw, "missing cases in switch of type %s: %s", enumTypeName, strings.Join(missing, ", "))
-}
-
-func enumTypeName(e *types.Named, samePkg bool) string {
-	if samePkg {
-		return e.Obj().Name()
-	}
-	return e.Obj().Pkg().Name() + "." + e.Obj().Name()
+	pass.ReportRangef(sw, "missing cases in switch of type %s: %s",
+		enumTypeName(enumType, samePkg), strings.Join(missing, ", "))
 }
 
 func removeParens(e ast.Expr) ast.Expr {
