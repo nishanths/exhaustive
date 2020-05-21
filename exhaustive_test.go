@@ -7,9 +7,13 @@ import (
 )
 
 func TestEnum(t *testing.T) {
-	analysistest.Run(t, analysistest.TestData(), Analyzer, "enumvariants/...")
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "enumvariant/...")
 }
 
 func TestSwitch(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), Analyzer, "switch/...")
+}
+
+func TestMap(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "map/...")
 }
