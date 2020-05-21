@@ -73,6 +73,12 @@ func checkMapLiterals(pass *analysis.Pass, inspect *inspector.Inspector, comment
 						}
 					}
 
+					if len(hitlist) == 0 {
+						// can happen if external package and enum consists only of
+						// unexported members
+						continue
+					}
+
 					if !(len(valueSpec.Values) > idx) {
 						continue // no value for name
 					}
@@ -101,7 +107,9 @@ func checkMapLiterals(pass *analysis.Pass, inspect *inspector.Inspector, comment
 						}
 					}
 
-					reportMapLiteral(pass, valueSpec, name, samePkg, keyType, hitlist)
+					if len(hitlist) > 0 {
+						reportMapLiteral(pass, valueSpec, name, samePkg, keyType, hitlist)
+					}
 				}
 			}
 		}

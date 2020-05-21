@@ -4,6 +4,8 @@ package x
 
 func _h() {
 	// Same as _a(), but with ignore directive -- so there should be no reporting.
+	// (Verified manually, by removing directive, that the diagnostic is reported
+	// when the directive does not exist.)
 
 	var d Direction
 	//exhaustive:ignore
@@ -17,6 +19,8 @@ func _h() {
 
 func _i() {
 	// Same as _a(), but with ignore directive -- so there should be no reporting.
+	// (Verified manually, by removing directive, that the diagnostic is reported
+	// when the directive does not exist.)
 
 	var d Direction
 	switch d { //exhaustive:ignore

@@ -76,6 +76,12 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, co
 			}
 		}
 
+		if len(hitlist) == 0 {
+			// can happen if external package and enum consists only of
+			// unexported members
+			return false
+		}
+
 		if sw.Body == nil {
 			// TODO: Is this even syntactically valid?
 			//
@@ -111,7 +117,9 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, co
 			}
 		}
 
-		reportSwitch(pass, sw, samePkg, tagType, hitlist)
+		if len(hitlist) > 0 {
+			reportSwitch(pass, sw, samePkg, tagType, hitlist)
+		}
 		return false
 	})
 }
