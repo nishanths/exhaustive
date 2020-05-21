@@ -18,7 +18,7 @@ var (
 
 func init() {
 	Analyzer.Flags.BoolVar(&fCheckMaps, "maps", false, "check key exhaustiveness of map literals of enum key type, in addition to checking switch statements")
-	Analyzer.Flags.BoolVar(&fDefaultSuffices, "default-means-exhaustive", false, "switch statements are considered exhaustive if a 'default' case is present")
+	Analyzer.Flags.BoolVar(&fDefaultSuffices, "default-indicates-exhaustive", false, "switch statements are considered exhaustive if a 'default' case is present")
 }
 
 var Analyzer = &analysis.Analyzer{
