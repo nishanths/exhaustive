@@ -17,8 +17,16 @@ var (
 )
 
 func init() {
-	Analyzer.Flags.BoolVar(&fCheckMaps, "maps", false, "check map literals of enum key type, in addition to checking switch statements")
+	Analyzer.Flags.BoolVar(&fCheckMaps, "maps", false, "check key exhaustiveness of map literals of enum key type, in addition to checking switch statements")
 	Analyzer.Flags.BoolVar(&fDefaultSuffices, "default-means-exhaustive", false, "switch statements are considered exhaustive if a 'default' case is present")
+}
+
+var Analyzer = &analysis.Analyzer{
+	Name:      "exhaustive",
+	Doc:       "check for any non-exhaustive enum switch statements",
+	Run:       run,
+	Requires:  []*analysis.Analyzer{inspect.Analyzer},
+	FactTypes: []analysis.Fact{&enumsFact{}},
 }
 
 const IgnoreDirective = "//exhaustive:ignore"
@@ -32,14 +40,6 @@ func containsIgnoreDirective(comments []*ast.Comment) bool {
 	return false
 }
 
-var Analyzer = &analysis.Analyzer{
-	Name:      "exhaustive",
-	Doc:       "check for non-exhaustive enum switch statements",
-	Run:       run,
-	Requires:  []*analysis.Analyzer{inspect.Analyzer},
-	FactTypes: []analysis.Fact{&enumsFact{}},
-}
-
 type enumsFact struct {
 	entries enums
 }
@@ -50,22 +50,24 @@ func (e *enumsFact) AFact() {}
 
 func (e *enumsFact) String() string {
 	// sort for stability (required for testing)
-	var sortedKeys []string
+	var sortedKeys []*types.Named
 	for k := range e.entries {
-		sortedKeys = append(enumTypeName(e, true))
+		sortedKeys = append(sortedKeys, k)
 	}
-	sort.Strings(sortedKeys)
+	sort.Slice(sortedKeys, func(i, j int) bool {
+		return sortedKeys[i].Obj().Name() < sortedKeys[j].Obj().Name()
+	})
 
 	var buf strings.Builder
 	for i, k := range sortedKeys {
 		v := e.entries[k]
-		buf.WriteString(k)
-		buf.WriteString(": ")
+		buf.WriteString(k.Obj().Name())
+		buf.WriteString(":")
 		for j, vv := range v {
 			buf.WriteString(vv.Name())
 			// add comma separator between each enum member in an enum type
 			if j != len(v)-1 {
-				buf.WriteString(", ")
+				buf.WriteString(",")
 			}
 		}
 		// add semicolon separator between each enum type

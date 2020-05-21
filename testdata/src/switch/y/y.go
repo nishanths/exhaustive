@@ -1,4 +1,6 @@
-package foo
+// want package:"Phylum:Chordata,Echinodermata,Mollusca,platyhelminthes"
+
+package bar
 
 type Phylum int
 
