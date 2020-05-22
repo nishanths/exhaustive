@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"golang.org/x/tools/go/analysis"
+	"golang.org/x/tools/go/ast/astutil"
 	"golang.org/x/tools/go/ast/inspector"
 )
 
@@ -96,7 +97,7 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, co
 				continue // nothing more to do if it's the default case
 			}
 			for _, e := range caseCl.List {
-				e = removeParens(e)
+				e = astutil.Unparen(e)
 				if samePkg {
 					ident, ok := e.(*ast.Ident)
 					if !ok {
@@ -182,8 +183,11 @@ func computeFix(pass *analysis.Pass, f *ast.File, sw *ast.SwitchStmt, enumType *
 				// we were able to determine package identifier
 				missing = append(missing, pkgIdent.Name+"."+m)
 			} else {
-				// TODO may need to add import
-				// TODO use the package name (may not be correct always)
+				// use the package name (may not be correct always)
+				//
+				// TODO: May need to also add import if the package isn't imported
+				// elsewhere. This (ie, a switch with zero case clauses) should
+				// happen rarely, so don't implement this for now.
 				missing = append(missing, enumType.Obj().Pkg().Name()+"."+m)
 			}
 		} else {
@@ -196,6 +200,10 @@ func computeFix(pass *analysis.Pass, f *ast.File, sw *ast.SwitchStmt, enumType *
 	panic(fmt.Sprintf("unhandled value: %v",` + tag.String() + `))`
 
 	// TODO may need to add "fmt" import
+
+	if astutil.AddImport(pass.Fset, f, "fmt") {
+		astutil.Imports
+	}
 
 	pos := sw.Body.Lbrace + 1
 	if len(sw.Body.List) != 0 {
@@ -211,15 +219,4 @@ func computeFix(pass *analysis.Pass, f *ast.File, sw *ast.SwitchStmt, enumType *
 		Message:   fmt.Sprintf("add case clause for: %s?", strings.Join(missing, ", ")),
 		TextEdits: []analysis.TextEdit{textEdit},
 	}, true
-}
-
-func removeParens(e ast.Expr) ast.Expr {
-	for {
-		parenExpr, ok := e.(*ast.ParenExpr)
-		if !ok {
-			break
-		}
-		e = parenExpr.X
-	}
-	return e
 }

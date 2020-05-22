@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"golang.org/x/tools/go/analysis"
+	"golang.org/x/tools/go/ast/astutil"
 	"golang.org/x/tools/go/ast/inspector"
 )
 
@@ -114,7 +115,7 @@ func checkMapLiterals(pass *analysis.Pass, inspect *inspector.Inspector, comment
 						if !ok {
 							continue
 						}
-						e := removeParens(kvExpr.Key)
+						e := astutil.Unparen(kvExpr.Key)
 						if samePkg {
 							ident, ok := e.(*ast.Ident)
 							if !ok {
