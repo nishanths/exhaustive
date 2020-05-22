@@ -1,9 +1,9 @@
 package x
 
-// import (
-// bar "github.com/nishanths/exhaustive/testdata/y"
-// barpkg "github.com/nishanths/exhaustive/testdata/y"
-// )
+import (
+	bar "github.com/nishanths/exhaustive/testdata/y"
+	barpkg "github.com/nishanths/exhaustive/testdata/y"
+)
 
 type Direction int
 
@@ -26,7 +26,6 @@ func _a() {
 	}
 }
 
-/*
 func _b() {
 	// Basic external package.
 
@@ -40,13 +39,20 @@ func _b() {
 func _j() {
 	// Named import.
 
-	var p bar.Phylum
+	var p barpkg.Phylum
 	switch p {
 	case barpkg.Chordata:
 	case barpkg.Echinodermata:
 	}
 }
 
+func _h() {
+	var p bar.Phylum
+	switch p {
+	}
+}
+
+/*
 func _f() {
 	// Multiple values in single case.
 

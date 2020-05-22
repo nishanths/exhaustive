@@ -154,28 +154,53 @@ func computeFix(pass *analysis.Pass, f *ast.File, sw *ast.SwitchStmt, enumType *
 		return analysis.SuggestedFix{}, false
 	}
 
-	// Construct the case clause and its body.
+	// Construct insertion text for case clause and its body.
 	var tag bytes.Buffer
 	printer.Fprint(&tag, pass.Fset, sw.Tag)
 
+	var x *ast.Ident // the package reference
+	if !samePkg {
+		if len(sw.Body.List) > 0 {
+			caseCl := sw.Body.List[0].(*ast.CaseClause)
+			if sel, ok := caseCl.List[0].(*ast.SelectorExpr); ok {
+				x = sel.X.(*ast.Ident)
+			}
+		}
+	}
+
 	missing := make([]string, 0, len(missingMembers))
 	for m := range missingMembers {
-		missing = append(missing, m) // TODO package name
+		if !samePkg {
+			if x != nil {
+				missing = append(missing, x.Name+"."+m)
+			} else {
+				// TODO may need to add import
+				// TODO use the package name (may not be correct always)
+				missing = append(missing, enumType.Obj().Pkg().Name()+"."+m)
+			}
+		} else {
+			missing = append(missing, m)
+		}
 	}
 	sort.Strings(missing)
 
 	insert := `case ` + strings.Join(missing, ", ") + `:
 	panic(fmt.Sprintf("unhandled value: %v",` + tag.String() + `))`
 
-	lastCase := sw.Body.List[len(sw.Body.List)-1]
+	// TODO may need to add "fmt" import
+
+	pos := sw.Body.Lbrace + 1
+	if len(sw.Body.List) != 0 {
+		pos = sw.Body.List[len(sw.Body.List)-1].End()
+	}
 	textEdit := analysis.TextEdit{
-		Pos:     lastCase.End(),
-		End:     lastCase.End(),
+		Pos:     pos,
+		End:     pos,
 		NewText: []byte(insert),
 	}
 
 	return analysis.SuggestedFix{
-		Message:   fmt.Sprintf("add case clause for %s", strings.Join(missing)),
+		Message:   fmt.Sprintf("add case clause for: %s?", strings.Join(missing, ", ")),
 		TextEdits: []analysis.TextEdit{textEdit},
 	}, true
 }
