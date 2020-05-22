@@ -162,6 +162,10 @@ func computeFix(pass *analysis.Pass, f *ast.File, sw *ast.SwitchStmt, enumType *
 	var pkgIdent *ast.Ident
 	if !samePkg && len(sw.Body.List) > 0 {
 		caseCl := sw.Body.List[0].(*ast.CaseClause)
+		// At least one expression must exist in List at this point.
+		// List cannot be nil because we only arrive here if the "default" clause
+		// does not exist. Additionally, a syntactically valid case clause must
+		// have at least one expression.
 		if sel, ok := caseCl.List[0].(*ast.SelectorExpr); ok {
 			pkgIdent = sel.X.(*ast.Ident)
 		}
