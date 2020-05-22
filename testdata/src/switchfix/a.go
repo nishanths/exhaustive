@@ -1,6 +1,6 @@
 // want package:"Direction:N,E,S,W,directionInvalid"
 
-// a.go is a stable first package file for fact testing.
+// a.go is a stable first package file for package fact testing.
 
 package switchfix
 
