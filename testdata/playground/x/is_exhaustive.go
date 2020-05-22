@@ -1,6 +1,6 @@
 package x
 
-// import bar "github.com/nishanths/exhaustive/testdata/y"
+// import bar "github.com/nishanths/exhaustive/testdata/playground/y"
 
 // These switches are exhaustive, expect no diagnostics.
 
