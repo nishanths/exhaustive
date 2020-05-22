@@ -1,6 +1,6 @@
 # exhaustive
 
-[![Godoc](https://godoc.org/github.com/nishanths/exhaustive?status.svg)](http://godoc.org/github.com/nishanths/exhaustive)
+[![Godoc](https://godoc.org/github.com/nishanths/exhaustive?status.svg)](https://godoc.org/github.com/nishanths/exhaustive)
 
 The `exhaustive` package and command line program can be used to find
 enum switch statements that are not exhaustive.
