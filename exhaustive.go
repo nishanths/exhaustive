@@ -1,21 +1,14 @@
-// Package exhaustive provides an analyzer that checks for enum switch statements
-// that are not exhaustive. The analyzer can suggest fixes to make offending switch
-// statements exhaustive.
+// Package exhaustive provides an analyzer that helps ensure enum switch statements
+// are exhaustive. The analyzer also provides fixes to make the offending switch
+// statements exhaustive (see 'Fixes' section).
 //
-// Exhaustiveness
-//
-// An enum switch statment is exhaustive if it has cases for each of the enum's members.
-// For an enum type defined in the same package as the switch statement, both
-// exported and unexported enum members must be present in order to consider
-// the switch exhaustive. On the other hand, for an enum type defined
-// in an external package it is sufficient for just the exported enum members
-// to be present in order to consider the switch exhaustive.
+// See the related command line program at: https://godoc.org/github.com/nishanths/exhaustive/cmd/exhaustive.
 //
 // Definition of enum
 //
 // For the purpose of this program, an enum type is a package-level named integer, float, or
-// string type. Such a type qualifies as an enum type only if it there exist one
-// or more  package-level variables of this named type in the package. These variables
+// string type. An enum type must have associated with it one or more
+// package-level variables in the package of the named type. These variables
 // constitute the enum's members.
 //
 // In the code sample below, Biome is an enum type with 3 members.
@@ -28,21 +21,15 @@
 //       Desert
 //   )
 //
-// Fixes
+// Switch statement exhaustiveness
 //
-// The analyzer can suggest fixes for a switch statement if it is not exhaustive,
-// and if it does not have a 'default' case. The suggested fix always adds a single
-// case clause for the missing enum members. The body of the case clause consists
-// of a single statement:
+// An enum switch statment is exhaustive if it has cases for each of the enum's members.
 //
-//   panic(fmt.Sprintf("unhandled value: %v", v))
-//
-// where v is the expression in the switch statement's tag (in other words, the
-// value being switched upon). If the switch statement's tag is a function or a
-// method call the analyzer does not reuse the expression in the
-// panic call because such calls could be mutative.
-//
-// Imports will be adjusted automatically to account for the package fmt dependency.
+// For an enum type defined in the same package as the switch statement, both
+// exported and unexported enum members must be present in order to consider
+// the switch exhaustive. On the other hand, for an enum type defined
+// in an external package it is sufficient for just exported enum members
+// to be present in order to consider the switch exhaustive.
 //
 // Flags
 //
@@ -53,12 +40,29 @@
 //
 // Skip checking of specific switch statements
 //
-// The presence of the directive comment:
+// If the following directive comment:
 //
 //   //exhaustive:ignore
 //
-// next to a switch statement indicates to the analyzer that it should skip
-// checking of the switch statement. No diagnostics are reported.
+// is associated with a switch statement, the analyzer skips
+// checking of the switch statement, and no diagnostics are reported.
+//
+// Fixes
+//
+// The analyzer suggests fixes for a switch statement if it is not exhaustive
+// anddoes not have a 'default' case. The suggested fix always adds a single
+// case clause for the missing enum members. The body of the case clause consists
+// of the statement:
+//
+//   panic(fmt.Sprintf("unhandled value: %v", v))
+//
+// where v is the expression in the switch statement's tag (in other words, the
+// value being switched upon). If the switch statement's tag is a function or a
+// method call the analyzer does not suggest a fix, as reusing the call expression
+// in the panic/fmt.Sprintf call could be mutative.
+//
+// Imports will be adjusted automatically to account for the package fmt dependency.
+//
 package exhaustive
 
 import (

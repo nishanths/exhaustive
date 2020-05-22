@@ -2,12 +2,9 @@ The `exhaustive` package and command line program can be used to detect
 enum switch statements in Go code that are not exhaustive.
 
 An enum switch statment is exhaustive if it has cases for each of the enum's members.
-Exhaustive switches are useful for ensuring at compile time that all enum cases are
-properly handled. They can be useful, for instance, to draw attention to switch
-statements that need to be updated when a new member is added to an existing enum.
 
 For the purpose of this program, an enum type is a package-level named integer, float, or
-string type. An enum type has associated with one or more enum members that are variables
+string type. An enum type must have associated with one or more enum members that are variables
 of the enum type.
 
 ## Install
