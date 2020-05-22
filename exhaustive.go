@@ -6,9 +6,12 @@
 //
 // Definition of enum
 //
-// For the purpose of this program, an enum type is a package-level named integer, float, or
+// The Go programming language does not have a specification for enums.
+// This program uses the following reasonable specification instead.
+//
+// An enum type is a package-level named integer, float, or
 // string type. An enum type must have associated with it one or more
-// package-level variables in the package of the named type. These variables
+// package-level variables of the named type in the package. These variables
 // constitute the enum's members.
 //
 // In the code sample below, Biome is an enum type with 3 members.
@@ -45,12 +48,12 @@
 //   //exhaustive:ignore
 //
 // is associated with a switch statement, the analyzer skips
-// checking of the switch statement, and no diagnostics are reported.
+// checking of the switch statement and no diagnostics are reported.
 //
 // Fixes
 //
 // The analyzer suggests fixes for a switch statement if it is not exhaustive
-// anddoes not have a 'default' case. The suggested fix always adds a single
+// and does not have a 'default' case. The suggested fix always adds a single
 // case clause for the missing enum members. The body of the case clause consists
 // of the statement:
 //
@@ -62,8 +65,8 @@
 // in the panic/fmt.Sprintf call could be mutative.
 //
 // The rationale for the fix is that it might be better to panic loudly on
-// existing unhandled cases than to let them slip by quietly unnoticed. An even
-// better fix would, of course, be to manually inspect the sites reported
+// existing unhandled or impossible cases than to let them slip by quietly unnoticed.
+// An even better fix would, of course, be to manually inspect the sites reported
 // by the package and handle the missing cases if necessary.
 //
 // Imports will be adjusted automatically to account for the package fmt dependency.
