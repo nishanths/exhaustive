@@ -85,4 +85,11 @@ func _g() {
 		case (W):
 		}
 	}
+
+	switch d { // want "missing cases in switch of type Direction: E, S, W, directionInvalid"
+	case N:
+		switch d { // want "missing cases in switch of type Direction: N, S, W"
+		case E, directionInvalid:
+		}
+	}
 }

@@ -1,9 +1,9 @@
 package x
 
-import (
-	bar "github.com/nishanths/exhaustive/testdata/y"
-	barpkg "github.com/nishanths/exhaustive/testdata/y"
-)
+// import (
+// bar "github.com/nishanths/exhaustive/testdata/y"
+// barpkg "github.com/nishanths/exhaustive/testdata/y"
+// )
 
 type Direction int
 
@@ -23,10 +23,10 @@ func _a() {
 	case N:
 	case S:
 	case W:
-	default:
 	}
 }
 
+/*
 func _b() {
 	// Basic external package.
 
@@ -70,3 +70,4 @@ func _g() {
 		}
 	}
 }
+*/

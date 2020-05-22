@@ -16,18 +16,21 @@ func isDefaultCase(c *ast.CaseClause) bool {
 }
 
 func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, comments map[*ast.File]ast.CommentMap) {
-	inspect.WithStack([]ast.Node{&ast.SwitchStmt{}}, func(n ast.Node, _ bool, stack []ast.Node) bool {
+	inspect.WithStack([]ast.Node{&ast.SwitchStmt{}}, func(n ast.Node, push bool, stack []ast.Node) bool {
+		if !push {
+			return true
+		}
 		sw := n.(*ast.SwitchStmt)
 		if sw.Tag == nil {
-			return false
+			return true
 		}
 		t := pass.TypesInfo.Types[sw.Tag]
 		if !t.IsValue() {
-			return false
+			return true
 		}
 		tagType, ok := t.Type.(*types.Named)
 		if !ok {
-			return false
+			return true
 		}
 
 		tagPkg := tagType.Obj().Pkg()
@@ -35,19 +38,19 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, co
 			// Doc comment: nil for labels and objects in the Universe scope.
 			// This happens for the `error` type, for example.
 			// Continuing would mean that ImportPackageFact panics.
-			return false
+			return true
 		}
 
 		var enums enumsFact
 		if !pass.ImportPackageFact(tagPkg, &enums) {
 			// Can't do anything further.
-			return false
+			return true
 		}
 
 		enumMembers, isEnum := enums.entries[tagType]
 		if !isEnum {
 			// Tag's type is not a known enum.
-			return false
+			return true
 		}
 
 		// Get comment map.
@@ -63,7 +66,7 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, co
 		specificComments := allComments.Filter(sw)
 		for _, group := range specificComments.Comments() {
 			if containsIgnoreDirective(group.List) {
-				return false // skip checking due to ignore directive
+				return true // skip checking due to ignore directive
 			}
 		}
 
@@ -80,16 +83,7 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, co
 		if len(hitlist) == 0 {
 			// can happen if external package and enum consists only of
 			// unexported members
-			return false
-		}
-
-		if sw.Body == nil {
-			// TODO: Is this even syntactically valid?
-			//
-			// Either way, nothing is deleted from hitlist in this case (all
-			// members are reported as missing).
-			reportSwitch(pass, sw, samePkg, tagType, hitlist, false, file)
-			return false
+			return true
 		}
 
 		defaultCaseExists := false
@@ -123,7 +117,7 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, co
 		if shouldReport {
 			reportSwitch(pass, sw, samePkg, tagType, hitlist, defaultCaseExists, file)
 		}
-		return false
+		return true
 	})
 }
 
@@ -136,7 +130,9 @@ func reportSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, samePkg bool, enumTyp
 
 	var fixes []analysis.SuggestedFix
 	if !defaultCaseExists {
-		fixes = computeFixes(pass, f, sw, enumType, samePkg, missingMembers)
+		fixes = []analysis.SuggestedFix{
+			computeFix(pass, f, sw, enumType, samePkg, missingMembers),
+		}
 	}
 
 	pass.Report(analysis.Diagnostic{
@@ -147,8 +143,26 @@ func reportSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, samePkg bool, enumTyp
 	})
 }
 
-func computeFixes(pass *analysis.Pass, f *ast.File, sw *ast.SwitchStmt, enumType *types.Named, samePkg bool, missingMembers map[string]struct{}) []analysis.SuggestedFix {
-	return nil
+func computeFix(pass *analysis.Pass, f *ast.File, sw *ast.SwitchStmt, enumType *types.Named, samePkg bool, missingMembers map[string]struct{}) analysis.SuggestedFix {
+	lastIdx := len(sw.Body.List) - 1
+	lastCase := sw.Body.List[lastIdx]
+	// log.Println(lastCase.End())
+	// log.Println(sw.Body.Rbrace)
+
+	missing := make([]string, 0, len(missingMembers))
+	for m := range missingMembers {
+		missing = append(missing, m) // TODO package name
+	}
+	sort.Strings(missing)
+
+	textEdit := analysis.TextEdit{
+		Pos:     lastCase.End(),
+		NewText: []byte(`case ` + strings.Join(missing, ", ") + ":"),
+	}
+	return analysis.SuggestedFix{
+		Message:   "apply?",
+		TextEdits: []analysis.TextEdit{textEdit},
+	}
 }
 
 func removeParens(e ast.Expr) ast.Expr {
