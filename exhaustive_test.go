@@ -15,4 +15,6 @@ func TestSwitch(t *testing.T) {
 }
 
 func TestMap(t *testing.T) {
+	fCheckMaps = true
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "map/...")
 }

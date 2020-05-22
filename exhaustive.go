@@ -80,10 +80,12 @@ func (e *enumsFact) String() string {
 
 func run(pass *analysis.Pass) (interface{}, error) {
 	e := findEnums(pass)
-	pass.ExportPackageFact(&enumsFact{entries: e})
+	if len(e) != 0 {
+		pass.ExportPackageFact(&enumsFact{entries: e})
+	}
 
 	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
-	comments := make(map[*ast.File]ast.CommentMap) // CommentMap per package file, lazily populated
+	comments := make(map[*ast.File]ast.CommentMap) // CommentMap per package file, lazily populated by reference
 
 	checkSwitchStatements(pass, inspect, comments)
 	if fCheckMaps {

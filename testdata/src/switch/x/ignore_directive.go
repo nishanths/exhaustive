@@ -8,7 +8,9 @@ func _h() {
 	// when the directive does not exist.)
 
 	var d Direction
+	// some other comment
 	//exhaustive:ignore
+	// some other comment
 	switch d {
 	case N:
 	case S:

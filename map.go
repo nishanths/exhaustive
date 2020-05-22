@@ -58,6 +58,28 @@ func checkMapLiterals(pass *analysis.Pass, inspect *inspector.Inspector, comment
 						continue
 					}
 
+					// Check comments for the ignore directive.
+
+					var allComments ast.CommentMap
+					if cm, ok := comments[f]; ok {
+						allComments = cm
+					} else {
+						allComments = ast.NewCommentMap(pass.Fset, f, f.Comments)
+						comments[f] = allComments
+					}
+
+					genDeclComments := allComments.Filter(gen)
+					genDeclIgnore := false
+					for _, group := range genDeclComments.Comments() {
+						if containsIgnoreDirective(group.List) && gen.Lparen == token.NoPos && len(gen.Specs) == 1 {
+							genDeclIgnore = true
+							break
+						}
+					}
+					if genDeclIgnore {
+						continue
+					}
+
 					if (valueSpec.Doc != nil && containsIgnoreDirective(valueSpec.Doc.List)) ||
 						(valueSpec.Comment != nil && containsIgnoreDirective(valueSpec.Comment.List)) {
 						continue
