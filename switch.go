@@ -309,13 +309,9 @@ func missingCasesTextEdit(fset *token.FileSet, f *ast.File, samePkg bool, sw *as
 
 	// ... Create the text edit ...
 
-	pos := sw.Body.Lbrace + 1
-	if len(sw.Body.List) != 0 {
-		pos = sw.Body.List[len(sw.Body.List)-1].End()
-	}
 	return analysis.TextEdit{
-		Pos:     pos,
-		End:     pos,
+		Pos:     sw.Body.Rbrace - 1,
+		End:     sw.Body.Rbrace - 1,
 		NewText: []byte(insert),
 	}
 }
