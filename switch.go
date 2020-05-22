@@ -149,25 +149,29 @@ func computeFix(pass *analysis.Pass, f *ast.File, sw *ast.SwitchStmt, enumType *
 	// Calls may be mutative, so we don't want to reuse the call expression in the
 	// about-to-be-inserted case clause body.
 	//
-	// So we don't fix these situations.
+	// So we just don't suggest a fix in such situations.
 	if _, ok := sw.Tag.(*ast.CallExpr); ok {
 		return analysis.SuggestedFix{}, false
 	}
 
 	// Construct insertion text for case clause and its body.
+
 	var tag bytes.Buffer
 	printer.Fprint(&tag, pass.Fset, sw.Tag)
 
 	// If possible, determine the package identifier based on the AST of other case clauses.
 	var pkgIdent *ast.Ident
-	if !samePkg && len(sw.Body.List) > 0 {
-		caseCl := sw.Body.List[0].(*ast.CaseClause)
-		// At least one expression must exist in List at this point.
-		// List cannot be nil because we only arrive here if the "default" clause
-		// does not exist. Additionally, a syntactically valid case clause must
-		// have at least one expression.
-		if sel, ok := caseCl.List[0].(*ast.SelectorExpr); ok {
-			pkgIdent = sel.X.(*ast.Ident)
+	if !samePkg {
+		for _, caseCl := range sw.Body.List {
+			caseCl = caseCl.(*ast.CaseClause)
+			// At least one expression must exist in List at this point.
+			// List cannot be nil because we only arrive here if the "default" clause
+			// does not exist. Additionally, a syntactically valid case clause must
+			// have at least one expression.
+			if sel, ok := caseCl.List[0].(*ast.SelectorExpr); ok {
+				pkgIdent = sel.X.(*ast.Ident)
+				break
+			}
 		}
 	}
 
