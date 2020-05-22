@@ -226,7 +226,7 @@ func fmtImportTextEdit(fset *token.FileSet, f *ast.File) analysis.TextEdit {
 		}
 	}
 
-	// copy firstImport because we'll be mutating its Specs field
+	// copy because we'll be mutating its Specs field
 	firstDeclCopy := copyGenDecl(firstDecl)
 
 	// find insertion index for "fmt" import spec
