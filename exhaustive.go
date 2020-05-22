@@ -1,8 +1,8 @@
 // Package exhaustive provides an analyzer that helps ensure enum switch statements
 // are exhaustive. The analyzer also provides fixes to make the offending switch
-// statements exhaustive (see 'Fixes' section).
+// statements exhaustive (see "Fixes" section).
 //
-// See the related command line program at: https://godoc.org/github.com/nishanths/exhaustive/cmd/exhaustive.
+// See "cmd/exhaustive" for the related command line program.
 //
 // Definition of enum
 //
@@ -33,7 +33,7 @@
 //
 // Flags
 //
-// The analyzer accepts a boolean flag: --default-signifies-exhaustive.
+// The analyzer accepts a boolean flag: -default-signifies-exhaustive.
 // The flag, if set, indicates to the analyzer that switch statements
 // are to be considered exhaustive as long as a 'default' case is present, even
 // if all enum members aren't listed in the switch statements cases.
@@ -94,6 +94,9 @@ var Analyzer = &analysis.Analyzer{
 	FactTypes: []analysis.Fact{&enumsFact{}},
 }
 
+// IgnoreDirectivePrefix is used to exclude checking of specific switch statements.
+// See https://godoc.org/github.com/nishanths/exhaustive#hdr-Skip_checking_of_specific_switch_statements
+// for details.
 const IgnoreDirectivePrefix = "//exhaustive:ignore"
 
 func containsIgnoreDirective(comments []*ast.Comment) bool {

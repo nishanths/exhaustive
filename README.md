@@ -1,11 +1,11 @@
-The `exhaustive` package and command line program can be used to detect
-enum switch statements in Go code that are not exhaustive.
+# exhaustive
 
-An enum switch statment is exhaustive if it has cases for each of the enum's members.
+[![Godoc](https://godoc.org/github.com/nishanths/exhaustive?status.svg)](http://godoc.org/github.com/nishanths/exhaustive)
 
-For the purpose of this program, an enum type is a package-level named integer, float, or
-string type. An enum type must have associated with one or more enum members that are variables
-of the enum type.
+The `exhaustive` package and command line program can be used to find
+enum switch statements that are not exhaustive.
+
+(An enum switch statment is exhaustive if it has cases for each of the enum's members.)
 
 ## Install
 
@@ -15,7 +15,7 @@ go get github.com/nishanths/exhaustive/...
 
 ## Docs
 
-See Godoc: https://godoc.org/github.com/nishanths/exhaustive.
+See Godoc: https://godoc.org/github.com/nishanths/exhaustive
 
 The `exhaustive` package provides a valid "pass", similar to the passes defined in the [`go/analysis`](http://godoc.org/golang.org/x/tools/go/analysis) package. This makes it easy to integrate the package into an existing analysis driver program.
 
@@ -39,12 +39,12 @@ const (
 ```go
 package foo
 
-func BiomeDescription(b environment.Biome) {
+func BiomeDescription(b environment.Biome) string {
 	switch b {
 	case Tundra:
-		println("The tundra is extremely cold")
+		return "the tundra is extremely cold"
 	case Desert:
-		println("Deserts are arid")
+		return "deserts are arid"
 	}
 }
 ```
@@ -58,14 +58,15 @@ missing cases in switch of type environment.Biome: Savanna
 ## Usage
 
 ```
-exhaustive [-flags] [packages...]
+Usage: exhaustive [-flags] [packages...]
+
+Flags:
+  -default-signifies-exhaustive
+    	switch statements are considered exhaustive if a 'default' case is present
+  -fix
+    	apply all suggested fixes
 ```
 
-The relevant flags are:
+## License
 
-```
--default-signifies-exhaustive
-    switch statements are considered exhaustive if a 'default' case is present
--fix
-    apply all suggested fixes
-```
+BSD 2-Clause
