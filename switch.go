@@ -200,6 +200,15 @@ func computeFix(pass *analysis.Pass, f *ast.File, sw *ast.SwitchStmt, enumType *
 	panic(fmt.Sprintf("unhandled value: %v",` + tag.String() + `))`
 
 	// TODO may need to add "fmt" import
+	//
+	// if fmt exists in any one of import GenDecl nothing to do.
+	//
+	// else: get the first import GenDecl.
+	// determine if it has parens.
+	// print it out.
+	// if it has no parens, convert the printed form to have parens.
+	// find the insertion position and insert "fmt".
+	// done.
 
 	pos := sw.Body.Lbrace + 1
 	if len(sw.Body.List) != 0 {
