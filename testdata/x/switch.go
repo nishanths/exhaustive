@@ -1,10 +1,5 @@
 package x
 
-import (
-	bar "github.com/nishanths/exhaustive/testdata/y"
-	barpkg "github.com/nishanths/exhaustive/testdata/y"
-)
-
 type Direction int
 
 var (
@@ -26,6 +21,7 @@ func _a() {
 	}
 }
 
+/*
 func _b() {
 	// Basic external package.
 
@@ -52,7 +48,7 @@ func _h() {
 	}
 }
 
-/*
+
 func _f() {
 	// Multiple values in single case.
 

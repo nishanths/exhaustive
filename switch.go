@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"go/ast"
 	"go/printer"
+	"go/token"
 	"go/types"
 	"sort"
+	"strconv"
 	"strings"
 
 	"golang.org/x/tools/go/analysis"
@@ -133,7 +135,7 @@ func reportSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, samePkg bool, enumTyp
 
 	var fixes []analysis.SuggestedFix
 	if !defaultCaseExists {
-		if fix, ok := computeFix(pass, f, sw, enumType, samePkg, missingMembers); ok {
+		if fix, ok := computeFix(pass.Fset, f, sw, enumType, samePkg, missingMembers); ok {
 			fixes = append(fixes, fix)
 		}
 	}
@@ -146,21 +148,127 @@ func reportSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, samePkg bool, enumTyp
 	})
 }
 
-func computeFix(pass *analysis.Pass, f *ast.File, sw *ast.SwitchStmt, enumType *types.Named, samePkg bool, missingMembers map[string]struct{}) (analysis.SuggestedFix, bool) {
+func computeFix(fset *token.FileSet, f *ast.File, sw *ast.SwitchStmt, enumType *types.Named, samePkg bool, missingMembers map[string]struct{}) (analysis.SuggestedFix, bool) {
 	// Calls may be mutative, so we don't want to reuse the call expression in the
 	// about-to-be-inserted case clause body.
-	//
 	// So we just don't suggest a fix in such situations.
 	if _, ok := sw.Tag.(*ast.CallExpr); ok {
 		return analysis.SuggestedFix{}, false
 	}
 
-	// Construct insertion text for case clause and its body.
+	textEdits := []analysis.TextEdit{
+		missingCasesTextEdit(fset, f, samePkg, sw, enumType, missingMembers),
+	}
+
+	// need to add "fmt" import if "fmt" import doesn't already exist
+	if !hasImportWithPath(fset, f, `"fmt"`) {
+		textEdits = append(textEdits, fmtImportTextEdit(fset, f))
+	}
+
+	missing := make([]string, 0, len(missingMembers))
+	for m := range missingMembers {
+		missing = append(missing, m)
+	}
+	sort.Strings(missing)
+
+	return analysis.SuggestedFix{
+		Message:   fmt.Sprintf("add case clause for: %s?", strings.Join(missing, ", ")),
+		TextEdits: textEdits,
+	}, true
+}
+
+func firstImportDecl(fset *token.FileSet, f *ast.File) *ast.GenDecl {
+	for _, decl := range f.Decls {
+		genDecl, ok := decl.(*ast.GenDecl)
+		if ok && genDecl.Tok == token.IMPORT {
+			// first IMPORT GenDecl
+			return genDecl
+		}
+	}
+	return nil
+}
+
+// copies an GenDecl in a manner such that appending to the returned GenDecl's Specs field
+// doesn't mutate the original GenDecl
+func copyGenDecl(im *ast.GenDecl) *ast.GenDecl {
+	imCopy := *im
+	imCopy.Specs = make([]ast.Spec, len(im.Specs))
+	for i := range im.Specs {
+		imCopy.Specs[i] = im.Specs[i]
+	}
+	return &imCopy
+}
+
+func hasImportWithPath(fset *token.FileSet, f *ast.File, pathLiteral string) bool {
+	igroups := astutil.Imports(fset, f)
+	for _, igroup := range igroups {
+		for _, importSpec := range igroup {
+			if importSpec.Path.Value == pathLiteral {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func fmtImportTextEdit(fset *token.FileSet, f *ast.File) analysis.TextEdit {
+	firstDecl := firstImportDecl(fset, f)
+
+	if firstDecl == nil {
+		// file has no import declarations
+		// insert "fmt" import spec after package statement
+		return analysis.TextEdit{
+			Pos: f.Name.End() + 1, // end of package name + 1
+			End: f.Name.End() + 1,
+			NewText: []byte(`import (
+				"fmt"
+			)`),
+		}
+	}
+
+	// copy firstImport because we'll be mutating its Specs field
+	firstDeclCopy := copyGenDecl(firstDecl)
+
+	// find insertion index for "fmt" import spec
+	var i int
+	for ; i < len(firstDeclCopy.Specs); i++ {
+		im := firstDeclCopy.Specs[i].(*ast.ImportSpec)
+		if v, _ := strconv.Unquote(im.Path.Value); v > "fmt" {
+			break
+		}
+	}
+
+	// insert "fmt" import spec at the index
+	fmtSpec := &ast.ImportSpec{
+		Path: &ast.BasicLit{
+			// NOTE: Pos field doesn't seem to be required for our
+			// purposes here.
+			Kind:  token.STRING,
+			Value: `"fmt"`,
+		},
+	}
+	s := firstDeclCopy.Specs // local var for easier comprehension of next line
+	s = append(s[:i], append([]ast.Spec{fmtSpec}, s[i:]...)...)
+	firstDeclCopy.Specs = s
+
+	// create the text edit
+	var buf bytes.Buffer
+	printer.Fprint(&buf, fset, firstDeclCopy)
+
+	return analysis.TextEdit{
+		Pos:     firstDecl.Pos(),
+		End:     firstDecl.End(),
+		NewText: buf.Bytes(),
+	}
+}
+
+func missingCasesTextEdit(fset *token.FileSet, f *ast.File, samePkg bool, sw *ast.SwitchStmt, enumType *types.Named, missingMembers map[string]struct{}) analysis.TextEdit {
+	// ... Construct insertion text for case clause and its body ...
 
 	var tag bytes.Buffer
-	printer.Fprint(&tag, pass.Fset, sw.Tag)
+	printer.Fprint(&tag, fset, sw.Tag)
 
-	// If possible, determine the package identifier based on the AST of other case clauses.
+	// If possible and if necessary, determine the package identifier based on the AST of other `case` clauses.
 	var pkgIdent *ast.Ident
 	if !samePkg {
 		for _, stmt := range sw.Body.List {
@@ -199,29 +307,15 @@ func computeFix(pass *analysis.Pass, f *ast.File, sw *ast.SwitchStmt, enumType *
 	insert := `case ` + strings.Join(missing, ", ") + `:
 	panic(fmt.Sprintf("unhandled value: %v",` + tag.String() + `))`
 
-	// TODO may need to add "fmt" import
-	//
-	// if fmt exists in any one of import GenDecl nothing to do.
-	//
-	// else: get the first import GenDecl.
-	// determine if it has parens.
-	// print it out.
-	// if it has no parens, convert the printed form to have parens.
-	// find the insertion position and insert "fmt".
-	// done.
+	// ... Create the text edit ...
 
 	pos := sw.Body.Lbrace + 1
 	if len(sw.Body.List) != 0 {
 		pos = sw.Body.List[len(sw.Body.List)-1].End()
 	}
-	textEdit := analysis.TextEdit{
+	return analysis.TextEdit{
 		Pos:     pos,
 		End:     pos,
 		NewText: []byte(insert),
 	}
-
-	return analysis.SuggestedFix{
-		Message:   fmt.Sprintf("add case clause for: %s?", strings.Join(missing, ", ")),
-		TextEdits: []analysis.TextEdit{textEdit},
-	}, true
 }
