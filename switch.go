@@ -146,8 +146,10 @@ func reportSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, samePkg bool, enumTyp
 }
 
 func computeFix(pass *analysis.Pass, f *ast.File, sw *ast.SwitchStmt, enumType *types.Named, samePkg bool, missingMembers map[string]struct{}) (analysis.SuggestedFix, bool) {
-	// calls may be mutative, so don't want to reuse the expression in the
-	// newly added case.
+	// Calls may be mutative, so we don't want to reuse the call expression in the
+	// about-to-be-inserted case clause body.
+	//
+	// So we don't fix these situations.
 	if _, ok := sw.Tag.(*ast.CallExpr); ok {
 		return analysis.SuggestedFix{}, false
 	}
@@ -173,7 +175,7 @@ func computeFix(pass *analysis.Pass, f *ast.File, sw *ast.SwitchStmt, enumType *
 	}
 
 	return analysis.SuggestedFix{
-		Message:   "apply?",
+		Message:   fmt.Sprintf("add case clause for %s", strings.Join(missing)),
 		TextEdits: []analysis.TextEdit{textEdit},
 	}, true
 }
