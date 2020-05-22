@@ -163,8 +163,8 @@ func computeFix(pass *analysis.Pass, f *ast.File, sw *ast.SwitchStmt, enumType *
 	// If possible, determine the package identifier based on the AST of other case clauses.
 	var pkgIdent *ast.Ident
 	if !samePkg {
-		for _, caseCl := range sw.Body.List {
-			caseCl = caseCl.(*ast.CaseClause)
+		for _, stmt := range sw.Body.List {
+			caseCl := stmt.(*ast.CaseClause)
 			// At least one expression must exist in List at this point.
 			// List cannot be nil because we only arrive here if the "default" clause
 			// does not exist. Additionally, a syntactically valid case clause must
