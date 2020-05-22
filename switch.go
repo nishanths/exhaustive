@@ -1,6 +1,7 @@
 package exhaustive
 
 import (
+	"fmt"
 	"go/ast"
 	"go/types"
 	"sort"
@@ -87,16 +88,15 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, co
 			//
 			// Either way, nothing is deleted from hitlist in this case (all
 			// members are reported as missing).
-			reportSwitch(pass, sw, samePkg, tagType, hitlist)
+			reportSwitch(pass, sw, samePkg, tagType, hitlist, false, file)
 			return false
 		}
 
+		defaultCaseExists := false
 		for _, stmt := range sw.Body.List {
 			caseCl := stmt.(*ast.CaseClause)
 			if isDefaultCase(caseCl) {
-				if fDefaultSuffices {
-					return false
-				}
+				defaultCaseExists = true
 				continue // nothing more to do if it's the default case
 			}
 			for _, e := range caseCl.List {
@@ -117,22 +117,38 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, co
 			}
 		}
 
-		if len(hitlist) > 0 {
-			reportSwitch(pass, sw, samePkg, tagType, hitlist)
+		defaultSuffices := fDefaultSuffices && defaultCaseExists
+		shouldReport := len(hitlist) > 0 && !defaultSuffices
+
+		if shouldReport {
+			reportSwitch(pass, sw, samePkg, tagType, hitlist, defaultCaseExists, file)
 		}
 		return false
 	})
 }
 
-func reportSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, samePkg bool, enumType *types.Named, missingMembers map[string]struct{}) {
+func reportSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, samePkg bool, enumType *types.Named, missingMembers map[string]struct{}, defaultCaseExists bool, f *ast.File) {
 	missing := make([]string, 0, len(missingMembers))
 	for m := range missingMembers {
 		missing = append(missing, m)
 	}
 	sort.Strings(missing)
 
-	pass.ReportRangef(sw, "missing cases in switch of type %s: %s",
-		enumTypeName(enumType, samePkg), strings.Join(missing, ", "))
+	var fixes []analysis.SuggestedFix
+	if !defaultCaseExists {
+		fixes = computeFixes(pass, f, sw, enumType, samePkg, missingMembers)
+	}
+
+	pass.Report(analysis.Diagnostic{
+		Pos:            sw.Pos(),
+		End:            sw.End(),
+		Message:        fmt.Sprintf("missing cases in switch of type %s: %s", enumTypeName(enumType, samePkg), strings.Join(missing, ", ")),
+		SuggestedFixes: fixes,
+	})
+}
+
+func computeFixes(pass *analysis.Pass, f *ast.File, sw *ast.SwitchStmt, enumType *types.Named, samePkg bool, missingMembers map[string]struct{}) []analysis.SuggestedFix {
+	return nil
 }
 
 func removeParens(e ast.Expr) ast.Expr {

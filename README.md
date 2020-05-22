@@ -1,4 +1,4 @@
-The `exhaustive` command can be used to ensure that _enum_ `switch` statements in Go code are
+The `exhaustive` command can be used to ensure that enum `switch` statements in Go code are
 exhaustive. Optionally, it can also ensure that the keys listed in map literals having an
 enum key type are exhaustive.
 

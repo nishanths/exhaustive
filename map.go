@@ -1,6 +1,7 @@
 package exhaustive
 
 import (
+	"fmt"
 	"go/ast"
 	"go/token"
 	"go/types"
@@ -145,6 +146,8 @@ func reportMapLiteral(pass *analysis.Pass, mapVarIdent *ast.Ident, samePkg bool,
 	}
 	sort.Strings(missing)
 
-	pass.ReportRangef(mapVarIdent, "missing keys in map %s of key type %s: %s",
-		mapVarIdent.Name, enumTypeName(enumType, samePkg), strings.Join(missing, ", "))
+	pass.Report(analysis.Diagnostic{
+		Pos:     mapVarIdent.Pos(),
+		Message: fmt.Sprintf("missing keys in map %s of key type %s: %s", mapVarIdent.Name, enumTypeName(enumType, samePkg), strings.Join(missing, ", ")),
+	})
 }
