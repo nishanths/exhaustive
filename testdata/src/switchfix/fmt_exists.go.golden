@@ -1,0 +1,18 @@
+package switchfix
+
+import (
+	"fmt"
+)
+
+func _fmt_exists() {
+	var d Direction
+	switch d { // want "missing cases in switch of type Direction: E, directionInvalid"
+	case N:
+	case S:
+	case W:
+	case E, directionInvalid:
+		panic(fmt.Sprintf("unhandled value: %v", d))
+	}
+}
+
+var _ = fmt.Printf

@@ -21,5 +21,5 @@ func TestMap(t *testing.T) {
 
 func TestSwitchFix(t *testing.T) {
 	fCheckMaps = false
-	analysistest.Run(t, analysistest.TestData(), Analyzer, "switchfix/...")
+	analysistest.RunWithSuggestedFixes(t, analysistest.TestData(), Analyzer, "switchfix/...")
 }

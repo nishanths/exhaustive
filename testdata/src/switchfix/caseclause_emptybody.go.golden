@@ -1,0 +1,14 @@
+package switchfix
+
+import (
+	"fmt"
+	bar "switch/y"
+)
+
+func _caseclause_emptybody() {
+	var phy bar.Phylum
+	switch phy { // want "missing cases in switch of type bar.Phylum: Chordata, Echinodermata, Mollusca"
+	case bar.Chordata, bar.Echinodermata, bar.Mollusca:
+		panic(fmt.Sprintf("unhandled value: %v", phy))
+	}
+}
