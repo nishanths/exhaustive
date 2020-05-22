@@ -29,11 +29,11 @@ var Analyzer = &analysis.Analyzer{
 	FactTypes: []analysis.Fact{&enumsFact{}},
 }
 
-const IgnoreDirective = "//exhaustive:ignore"
+const IgnoreDirectivePrefix = "//exhaustive:ignore"
 
 func containsIgnoreDirective(comments []*ast.Comment) bool {
 	for _, c := range comments {
-		if strings.HasPrefix(c.Text, IgnoreDirective) {
+		if strings.HasPrefix(c.Text, IgnoreDirectivePrefix) {
 			return true
 		}
 	}
