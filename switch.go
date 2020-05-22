@@ -201,10 +201,6 @@ func computeFix(pass *analysis.Pass, f *ast.File, sw *ast.SwitchStmt, enumType *
 
 	// TODO may need to add "fmt" import
 
-	if astutil.AddImport(pass.Fset, f, "fmt") {
-		astutil.Imports
-	}
-
 	pos := sw.Body.Lbrace + 1
 	if len(sw.Body.List) != 0 {
 		pos = sw.Body.List[len(sw.Body.List)-1].End()
