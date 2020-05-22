@@ -158,21 +158,21 @@ func computeFix(pass *analysis.Pass, f *ast.File, sw *ast.SwitchStmt, enumType *
 	var tag bytes.Buffer
 	printer.Fprint(&tag, pass.Fset, sw.Tag)
 
-	var x *ast.Ident // the package reference
-	if !samePkg {
-		if len(sw.Body.List) > 0 {
-			caseCl := sw.Body.List[0].(*ast.CaseClause)
-			if sel, ok := caseCl.List[0].(*ast.SelectorExpr); ok {
-				x = sel.X.(*ast.Ident)
-			}
+	// If possible, determine the package identifier based on the AST of other case clauses.
+	var pkgIdent *ast.Ident
+	if !samePkg && len(sw.Body.List) > 0 {
+		caseCl := sw.Body.List[0].(*ast.CaseClause)
+		if sel, ok := caseCl.List[0].(*ast.SelectorExpr); ok {
+			pkgIdent = sel.X.(*ast.Ident)
 		}
 	}
 
 	missing := make([]string, 0, len(missingMembers))
 	for m := range missingMembers {
 		if !samePkg {
-			if x != nil {
-				missing = append(missing, x.Name+"."+m)
+			if pkgIdent != nil {
+				// we were able to determine package identifier
+				missing = append(missing, pkgIdent.Name+"."+m)
 			} else {
 				// TODO may need to add import
 				// TODO use the package name (may not be correct always)
