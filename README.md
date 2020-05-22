@@ -5,7 +5,7 @@
 The `exhaustive` package and command line program can be used to find
 enum switch statements that are not exhaustive.
 
-(An enum switch statment is exhaustive if it has cases for each of the enum's members.)
+An enum switch statment is exhaustive if it has cases for each of the enum's members.
 
 ## Install
 
@@ -24,7 +24,7 @@ The `exhaustive` package provides a valid "pass", similar to the passes defined 
 Running the `exhaustive` command on the following code:
 
 ```go
-package environment
+package ecosystem
 
 // Biome is an enum type with 3 members.
 type Biome int
@@ -35,11 +35,10 @@ const (
 	Desert
 )
 ```
-
 ```go
-package foo
+package pkg
 
-func BiomeDescription(b environment.Biome) string {
+func BiomeDescription(b ecosystem.Biome) string {
 	switch b {
 	case Tundra:
 		return "the tundra is extremely cold"
@@ -52,7 +51,7 @@ func BiomeDescription(b environment.Biome) string {
 would print:
 
 ```
-missing cases in switch of type environment.Biome: Savanna
+missing cases in switch of type ecosystem.Biome: Savanna
 ```
 
 ## Usage

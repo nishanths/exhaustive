@@ -61,6 +61,11 @@
 // method call the analyzer does not suggest a fix, as reusing the call expression
 // in the panic/fmt.Sprintf call could be mutative.
 //
+// The rationale for the fix is that it might be better to panic loudly on
+// existing unhandled cases than to let them slip by quietly unnoticed. An even
+// better fix would, of course, be to manually inspect the sites reported
+// by the package and handle the missing cases if necessary.
+//
 // Imports will be adjusted automatically to account for the package fmt dependency.
 //
 package exhaustive
