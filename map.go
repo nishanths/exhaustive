@@ -130,7 +130,7 @@ func checkMapLiterals(pass *analysis.Pass, inspect *inspector.Inspector, comment
 					}
 
 					if len(hitlist) > 0 {
-						reportMapLiteral(pass, valueSpec, name, samePkg, keyType, hitlist)
+						reportMapLiteral(pass, name, samePkg, keyType, hitlist)
 					}
 				}
 			}
@@ -138,13 +138,13 @@ func checkMapLiterals(pass *analysis.Pass, inspect *inspector.Inspector, comment
 	}
 }
 
-func reportMapLiteral(pass *analysis.Pass, v *ast.ValueSpec, mapVarIdent *ast.Ident, samePkg bool, enumType *types.Named, missingMembers map[string]struct{}) {
+func reportMapLiteral(pass *analysis.Pass, mapVarIdent *ast.Ident, samePkg bool, enumType *types.Named, missingMembers map[string]struct{}) {
 	missing := make([]string, 0, len(missingMembers))
 	for m := range missingMembers {
 		missing = append(missing, m)
 	}
 	sort.Strings(missing)
 
-	pass.ReportRangef(v, "missing keys in map %s of key type %s: %s",
+	pass.ReportRangef(mapVarIdent, "missing keys in map %s of key type %s: %s",
 		mapVarIdent.Name, enumTypeName(enumType, samePkg), strings.Join(missing, ", "))
 }
