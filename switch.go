@@ -1,8 +1,10 @@
 package exhaustive
 
 import (
+	"bytes"
 	"fmt"
 	"go/ast"
+	"go/printer"
 	"go/types"
 	"sort"
 	"strings"
@@ -130,8 +132,8 @@ func reportSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, samePkg bool, enumTyp
 
 	var fixes []analysis.SuggestedFix
 	if !defaultCaseExists {
-		fixes = []analysis.SuggestedFix{
-			computeFix(pass, f, sw, enumType, samePkg, missingMembers),
+		if fix, ok := computeFix(pass, f, sw, enumType, samePkg, missingMembers); ok {
+			fixes = append(fixes, fix)
 		}
 	}
 
@@ -143,11 +145,16 @@ func reportSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, samePkg bool, enumTyp
 	})
 }
 
-func computeFix(pass *analysis.Pass, f *ast.File, sw *ast.SwitchStmt, enumType *types.Named, samePkg bool, missingMembers map[string]struct{}) analysis.SuggestedFix {
-	lastIdx := len(sw.Body.List) - 1
-	lastCase := sw.Body.List[lastIdx]
-	// log.Println(lastCase.End())
-	// log.Println(sw.Body.Rbrace)
+func computeFix(pass *analysis.Pass, f *ast.File, sw *ast.SwitchStmt, enumType *types.Named, samePkg bool, missingMembers map[string]struct{}) (analysis.SuggestedFix, bool) {
+	// calls may be mutative, so don't want to reuse the expression in the
+	// newly added case.
+	if _, ok := sw.Tag.(*ast.CallExpr); ok {
+		return analysis.SuggestedFix{}, false
+	}
+
+	// Construct the case clause and its body.
+	var tag bytes.Buffer
+	printer.Fprint(&tag, pass.Fset, sw.Tag)
 
 	missing := make([]string, 0, len(missingMembers))
 	for m := range missingMembers {
@@ -155,14 +162,20 @@ func computeFix(pass *analysis.Pass, f *ast.File, sw *ast.SwitchStmt, enumType *
 	}
 	sort.Strings(missing)
 
+	insert := `case ` + strings.Join(missing, ", ") + `:
+	panic(fmt.Sprintf("unhandled value: %v",` + tag.String() + `))`
+
+	lastCase := sw.Body.List[len(sw.Body.List)-1]
 	textEdit := analysis.TextEdit{
 		Pos:     lastCase.End(),
-		NewText: []byte(`case ` + strings.Join(missing, ", ") + ":"),
+		End:     lastCase.End(),
+		NewText: []byte(insert),
 	}
+
 	return analysis.SuggestedFix{
 		Message:   "apply?",
 		TextEdits: []analysis.TextEdit{textEdit},
-	}
+	}, true
 }
 
 func removeParens(e ast.Expr) ast.Expr {
