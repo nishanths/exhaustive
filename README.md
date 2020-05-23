@@ -23,19 +23,18 @@ The `exhaustive` package provides a valid "pass", similar to the passes defined 
 
 Running the `exhaustive` command on the following code:
 
-```go
+```diff
 package ecosystem
 
-// Biome is an enum type with 3 members.
 type Biome int
 
 const (
 	Tundra Biome = iota
-	Savanna
 	Desert
++	Savanna
 )
 ```
-```go
+```
 package pkg
 
 func BiomeDescription(b ecosystem.Biome) string {
@@ -55,6 +54,8 @@ missing cases in switch of type ecosystem.Biome: Savanna
 ```
 
 ## Usage
+
+The command line usage is:
 
 ```
 Usage: exhaustive [-flags] [packages...]
