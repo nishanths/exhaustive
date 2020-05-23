@@ -58,7 +58,7 @@ func processToken(t token.Token) {
 will print:
 
 ```
-missing cases in switch of type token.Token: Quotient, Remainder
+calc.go:6:2: missing cases in switch of type token.Token: Quotient, Remainder
 ```
 
 ## Usage
