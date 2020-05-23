@@ -26,7 +26,7 @@
 //
 // Switch statement exhaustiveness
 //
-// An enum switch statment is exhaustive if it has cases for each of the enum's members.
+// An enum switch statement is exhaustive if it has cases for each of the enum's members.
 //
 // For an enum type defined in the same package as the switch statement, both
 // exported and unexported enum members must be present in order to consider
