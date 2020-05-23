@@ -2,15 +2,15 @@
 // are exhaustive. The analyzer also provides fixes to make the offending switch
 // statements exhaustive (see "Fixes" section).
 //
-// See "cmd/exhaustive" for the related command line program.
+// See "cmd/exhaustive" subpackage for the related command line program.
 //
 // Definition of enum
 //
 // The Go programming language does not have a specification for enums.
 // This program uses the following reasonable specification instead.
 //
-// An enum type is a package-level named integer, float, or
-// string type. An enum type must have associated with it one or more
+// An enum type is a package-level named type whose underlying type is an integer, a float, or
+// a string type. An enum type must have associated with it one or more
 // package-level variables of the named type in the package. These variables
 // constitute the enum's members.
 //
@@ -41,7 +41,30 @@
 // are to be considered exhaustive as long as a 'default' case is present, even
 // if all enum members aren't listed in the switch statements cases.
 //
-// Skip checking of specific switch statements
+// The other relevant flag is the -fix flag.
+//
+// Fixes
+//
+// The analyzer suggests fixes for a switch statement if it is not exhaustive
+// and does not have a 'default' case. The suggested fix always adds a single
+// case clause for the missing enum members.
+//
+//   case missingA, missingB, missingC:
+//       panic(fmt.Sprintf("unhandled value: %v", v))
+//
+// where v is the expression in the switch statement's tag (in other words, the
+// value being switched upon). If the switch statement's tag is a function or a
+// method call the analyzer does not suggest a fix, as reusing the call expression
+// in the panic/fmt.Sprintf call could be mutative.
+//
+// The rationale for the fix using panic is that it might be better to fail loudly on
+// existing unhandled or impossible cases than to let them slip by quietly unnoticed.
+// An even better fix may, of course, be to manually inspect the sites reported
+// by the package and handle the missing cases if necessary.
+//
+// Imports will be adjusted automatically to account for the "fmt" dependency.
+//
+// Skip analysis of specific switch statements
 //
 // If the following directive comment:
 //
@@ -49,28 +72,6 @@
 //
 // is associated with a switch statement, the analyzer skips
 // checking of the switch statement and no diagnostics are reported.
-//
-// Fixes
-//
-// The analyzer suggests fixes for a switch statement if it is not exhaustive
-// and does not have a 'default' case. The suggested fix always adds a single
-// case clause for the missing enum members. The body of the case clause consists
-// of the statement:
-//
-//   panic(fmt.Sprintf("unhandled value: %v", v))
-//
-// where v is the expression in the switch statement's tag (in other words, the
-// value being switched upon). If the switch statement's tag is a function or a
-// method call the analyzer does not suggest a fix, as reusing the call expression
-// in the panic/fmt.Sprintf call could be mutative.
-//
-// The rationale for the fix is that it might be better to panic loudly on
-// existing unhandled or impossible cases than to let them slip by quietly unnoticed.
-// An even better fix would, of course, be to manually inspect the sites reported
-// by the package and handle the missing cases if necessary.
-//
-// Imports will be adjusted automatically to account for the package fmt dependency.
-//
 package exhaustive
 
 import (
@@ -91,7 +92,7 @@ var (
 
 func init() {
 	Analyzer.Flags.BoolVar(&fCheckMaps, "maps", false, "check key exhaustiveness of map literals of enum key type, in addition to checking switch statements")
-	Analyzer.Flags.BoolVar(&fDefaultSuffices, "default-signifies-exhaustive", false, "switch statements are considered exhaustive if a 'default' case is present")
+	Analyzer.Flags.BoolVar(&fDefaultSuffices, "default-signifies-exhaustive", false, "switch statements are considered exhaustive if a 'default' case is present, even if all enum members aren't listed in the switch")
 }
 
 var Analyzer = &analysis.Analyzer{
@@ -103,7 +104,7 @@ var Analyzer = &analysis.Analyzer{
 }
 
 // IgnoreDirectivePrefix is used to exclude checking of specific switch statements.
-// See https://godoc.org/github.com/nishanths/exhaustive#hdr-Skip_checking_of_specific_switch_statements
+// See https://godoc.org/github.com/nishanths/exhaustive#hdr-Skip_analysis_of_specific_switch_statements
 // for details.
 const IgnoreDirectivePrefix = "//exhaustive:ignore"
 
