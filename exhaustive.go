@@ -6,15 +6,14 @@
 //
 // Definition of enum
 //
-// The Go programming language does not have a specification for enums.
-// This program uses the following reasonable specification instead.
-//
-// An enum type is a package-level named type whose underlying type is an integer, a float, or
+// The language spec does not provide an explicit definition for enums.
+// For the purpose of this program, an enum type is a package-level named type
+// whose underlying type is an integer, a float, or
 // a string type. An enum type must have associated with it one or more
 // package-level variables of the named type in the package. These variables
 // constitute the enum's members.
 //
-// In the code sample below, Biome is an enum type with 3 members.
+// In the code snippet below, Biome is an enum type with 3 members.
 //
 //   type Biome int
 //
