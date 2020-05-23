@@ -21,9 +21,28 @@ go get github.com/nishanths/exhaustive/...
 
 https://godoc.org/github.com/nishanths/exhaustive
 
+## Usage
+
+The command line usage is:
+
+```
+Usage: exhaustive [-flags] [packages...]
+
+Flags:
+  -default-signifies-exhaustive
+    	switch statements are considered exhaustive if a 'default' case is present, even if
+    	all enum members aren't listed in the switch (default false)
+  -fix
+    	apply all suggested fixes (default false)
+
+Examples:
+  exhaustive code.org/proj/...
+  exhaustive -fix example.org/foo/pkg example.org/foo/bar
+```
+
 ## Example
 
-Running the `exhaustive` command on the following code:
+Given the code:
 
 ```diff
 package token
@@ -55,29 +74,10 @@ func processToken(t token.Token) {
 }
 ```
 
-will print:
+Running the `exhaustive` command will print:
 
 ```
 calc.go:6:2: missing cases in switch of type token.Token: Quotient, Remainder
-```
-
-## Usage
-
-The command line usage is:
-
-```
-Usage: exhaustive [-flags] [packages...]
-
-Flags:
-  -default-signifies-exhaustive
-    	switch statements are considered exhaustive if a 'default' case is present, even if
-    	all enum members aren't listed in the switch (default false)
-  -fix
-    	apply all suggested fixes (default false)
-
-Examples:
-  exhaustive code.org/proj/...
-  exhaustive -fix example.org/foo/pkg example.org/foo/bar
 ```
 
 ## License
