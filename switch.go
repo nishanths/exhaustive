@@ -52,7 +52,7 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, co
 			return true
 		}
 
-		enumMembers, isEnum := enums.entries[tagType]
+		enumMembers, isEnum := enums.Entries[tagType]
 		if !isEnum {
 			// Tag's type is not a known enum.
 			return true

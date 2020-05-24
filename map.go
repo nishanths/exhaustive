@@ -54,7 +54,7 @@ func checkMapLiterals(pass *analysis.Pass, inspect *inspector.Inspector, comment
 						continue
 					}
 
-					enumMembers, ok := enums.entries[keyType]
+					enumMembers, ok := enums.Entries[keyType]
 					if !ok {
 						// Key type is not a known enum.
 						continue
