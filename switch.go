@@ -52,7 +52,7 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, co
 			return true
 		}
 
-		enumMembers, isEnum := enums.Entries[tagType]
+		enumMembers, isEnum := enums.Entries[tagType.Obj().Name()]
 		if !isEnum {
 			// Tag's type is not a known enum.
 			return true
@@ -80,8 +80,8 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, co
 
 		hitlist := make(map[string]struct{})
 		for _, m := range enumMembers {
-			if m.Exported() || checkUnexported {
-				hitlist[m.Name()] = struct{}{}
+			if ast.IsExported(m) || checkUnexported {
+				hitlist[m] = struct{}{}
 			}
 		}
 

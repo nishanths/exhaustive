@@ -54,7 +54,7 @@ func checkMapLiterals(pass *analysis.Pass, inspect *inspector.Inspector, comment
 						continue
 					}
 
-					enumMembers, ok := enums.Entries[keyType]
+					enumMembers, ok := enums.Entries[keyType.Obj().Name()]
 					if !ok {
 						// Key type is not a known enum.
 						continue
@@ -92,8 +92,8 @@ func checkMapLiterals(pass *analysis.Pass, inspect *inspector.Inspector, comment
 
 					hitlist := make(map[string]struct{})
 					for _, m := range enumMembers {
-						if m.Exported() || checkUnexported {
-							hitlist[m.Name()] = struct{}{}
+						if ast.IsExported(m) || checkUnexported {
+							hitlist[m] = struct{}{}
 						}
 					}
 

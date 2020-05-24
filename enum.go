@@ -8,7 +8,7 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-type enums map[*types.Named][]types.Object // enum type -> enum members
+type enums map[string][]string // enum type name -> enum member names
 
 func findEnums(pass *analysis.Pass) enums {
 	pkgEnums := make(enums)
@@ -41,11 +41,11 @@ func findEnums(pass *analysis.Pass) enums {
 				}
 				switch i := basic.Info(); {
 				case i&types.IsInteger != 0:
-					pkgEnums[named] = nil
+					pkgEnums[named.Obj().Name()] = nil
 				case i&types.IsFloat != 0:
-					pkgEnums[named] = nil
+					pkgEnums[named.Obj().Name()] = nil
 				case i&types.IsString != 0:
-					pkgEnums[named] = nil
+					pkgEnums[named.Obj().Name()] = nil
 				}
 			}
 		}
@@ -74,12 +74,12 @@ func findEnums(pass *analysis.Pass) enums {
 						continue
 					}
 
-					members, ok := pkgEnums[named]
+					members, ok := pkgEnums[named.Obj().Name()]
 					if !ok {
 						continue
 					}
-					members = append(members, obj)
-					pkgEnums[named] = members
+					members = append(members, obj.Name())
+					pkgEnums[named.Obj().Name()] = members
 				}
 			}
 		}

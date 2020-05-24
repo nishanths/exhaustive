@@ -126,21 +126,19 @@ func (e *enumsFact) AFact() {}
 
 func (e *enumsFact) String() string {
 	// sort for stability (required for testing)
-	var sortedKeys []*types.Named
+	var sortedKeys []string
 	for k := range e.Entries {
 		sortedKeys = append(sortedKeys, k)
 	}
-	sort.Slice(sortedKeys, func(i, j int) bool {
-		return sortedKeys[i].Obj().Name() < sortedKeys[j].Obj().Name()
-	})
+	sort.Strings(sortedKeys)
 
 	var buf strings.Builder
 	for i, k := range sortedKeys {
 		v := e.Entries[k]
-		buf.WriteString(k.Obj().Name())
+		buf.WriteString(k)
 		buf.WriteString(":")
 		for j, vv := range v {
-			buf.WriteString(vv.Name())
+			buf.WriteString(vv)
 			// add comma separator between each enum member in an enum type
 			if j != len(v)-1 {
 				buf.WriteString(",")
