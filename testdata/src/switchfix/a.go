@@ -13,3 +13,7 @@ var (
 	W                Direction = 4
 	directionInvalid Direction = 5
 )
+
+func ProducesDirection() Direction {
+	return N
+}

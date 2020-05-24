@@ -135,7 +135,7 @@ func reportSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, samePkg bool, enumTyp
 
 	var fixes []analysis.SuggestedFix
 	if !defaultCaseExists {
-		if fix, ok := computeFix(pass.Fset, f, sw, enumType, samePkg, missingMembers); ok {
+		if fix, ok := computeFix(pass, pass.Fset, f, sw, enumType, samePkg, missingMembers); ok {
 			fixes = append(fixes, fix)
 		}
 	}
@@ -148,11 +148,17 @@ func reportSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, samePkg bool, enumTyp
 	})
 }
 
-func computeFix(fset *token.FileSet, f *ast.File, sw *ast.SwitchStmt, enumType *types.Named, samePkg bool, missingMembers map[string]struct{}) (analysis.SuggestedFix, bool) {
-	// Calls may be mutative, so we don't want to reuse the call expression in the
-	// about-to-be-inserted case clause body.
-	// So we just don't suggest a fix in such situations.
-	if _, ok := sw.Tag.(*ast.CallExpr); ok {
+func computeFix(pass *analysis.Pass, fset *token.FileSet, f *ast.File, sw *ast.SwitchStmt, enumType *types.Named, samePkg bool, missingMembers map[string]struct{}) (analysis.SuggestedFix, bool) {
+	// Function and method calls may be mutative, so we don't want to reuse the
+	// call expression in the about-to-be-inserted case clause body. So we just
+	// don't suggest a fix in such situations.
+	//
+	// However, we need to make an exception for type conversions, which are
+	// also call expressions in the AST.
+	//
+	// We'll need to lookup type information for this, and can't rely solely
+	// on the AST.
+	if containsFuncCall(pass, sw.Tag) {
 		return analysis.SuggestedFix{}, false
 	}
 
@@ -175,6 +181,23 @@ func computeFix(fset *token.FileSet, f *ast.File, sw *ast.SwitchStmt, enumType *
 		Message:   fmt.Sprintf("add case clause for: %s?", strings.Join(missing, ", ")),
 		TextEdits: textEdits,
 	}, true
+}
+
+func containsFuncCall(pass *analysis.Pass, e ast.Expr) bool {
+	e = astutil.Unparen(e)
+	c, ok := e.(*ast.CallExpr)
+	if !ok {
+		return false
+	}
+	if _, isFunc := pass.TypesInfo.TypeOf(c.Fun).Underlying().(*types.Signature); isFunc {
+		return true
+	}
+	for _, a := range c.Args {
+		if containsFuncCall(pass, a) {
+			return true
+		}
+	}
+	return false
 }
 
 func firstImportDecl(fset *token.FileSet, f *ast.File) *ast.GenDecl {

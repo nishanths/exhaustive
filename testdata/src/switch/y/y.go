@@ -10,3 +10,5 @@ const (
 	Mollusca
 	platyhelminthes
 )
+
+type IntWrapper int
