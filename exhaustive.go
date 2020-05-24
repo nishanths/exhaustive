@@ -117,7 +117,7 @@ func containsIgnoreDirective(comments []*ast.Comment) bool {
 }
 
 type enumsFact struct {
-	entries enums
+	Entries enums
 }
 
 var _ analysis.Fact = (*enumsFact)(nil)
@@ -127,7 +127,7 @@ func (e *enumsFact) AFact() {}
 func (e *enumsFact) String() string {
 	// sort for stability (required for testing)
 	var sortedKeys []*types.Named
-	for k := range e.entries {
+	for k := range e.Entries {
 		sortedKeys = append(sortedKeys, k)
 	}
 	sort.Slice(sortedKeys, func(i, j int) bool {
@@ -136,7 +136,7 @@ func (e *enumsFact) String() string {
 
 	var buf strings.Builder
 	for i, k := range sortedKeys {
-		v := e.entries[k]
+		v := e.Entries[k]
 		buf.WriteString(k.Obj().Name())
 		buf.WriteString(":")
 		for j, vv := range v {
@@ -157,7 +157,7 @@ func (e *enumsFact) String() string {
 func run(pass *analysis.Pass) (interface{}, error) {
 	e := findEnums(pass)
 	if len(e) != 0 {
-		pass.ExportPackageFact(&enumsFact{entries: e})
+		pass.ExportPackageFact(&enumsFact{Entries: e})
 	}
 
 	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
