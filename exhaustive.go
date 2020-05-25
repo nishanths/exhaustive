@@ -102,7 +102,7 @@ func init() {
 
 var Analyzer = &analysis.Analyzer{
 	Name:      "exhaustive",
-	Doc:       "check for any non-exhaustive enum switch statements",
+	Doc:       "check exhaustiveness of enum switch statements",
 	Run:       run,
 	Requires:  []*analysis.Analyzer{inspect.Analyzer},
 	FactTypes: []analysis.Fact{&enumsFact{}},
