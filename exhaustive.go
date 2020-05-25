@@ -8,7 +8,7 @@
 //
 // The language spec does not provide an explicit definition for enums.
 // For the purpose of this program, an enum type is a package-level named type
-// whose underlying type is an integer, a float, or
+// whose underlying type is an integer (includes byte and rune), a float, or
 // a string type. An enum type must have associated with it one or more
 // package-level variables of the named type in the package. These variables
 // constitute the enum's members.
@@ -96,7 +96,7 @@ var (
 )
 
 func init() {
-	Analyzer.Flags.BoolVar(&fCheckMaps, "maps", false, "check key exhaustiveness of map literals of enum key type, in addition to checking switch statements")
+	Analyzer.Flags.BoolVar(&fCheckMaps, "maps", false, "check key exhaustiveness for map literals of enum key type, in addition to checking switch statements")
 	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, "indicates that switch statements are to be considered exhaustive if a 'default' case is present, even if all enum members aren't listed in the switch")
 }
 
