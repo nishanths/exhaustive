@@ -116,7 +116,7 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, co
 			}
 		}
 
-		defaultSuffices := fDefaultSuffices && defaultCaseExists
+		defaultSuffices := fDefaultSignifiesExhaustive && defaultCaseExists
 		shouldReport := len(hitlist) > 0 && !defaultSuffices
 
 		if shouldReport {

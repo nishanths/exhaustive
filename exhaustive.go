@@ -84,14 +84,20 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
+const (
+	// DefaultSignifiesExhaustiveFlag is a flag name used by the analyzer. It
+	// is exported for use by analyzer driver programs.
+	DefaultSignifiesExhaustiveFlag = "default-signifies-exhaustive"
+)
+
 var (
-	fCheckMaps       bool
-	fDefaultSuffices bool
+	fCheckMaps                  bool
+	fDefaultSignifiesExhaustive bool
 )
 
 func init() {
 	Analyzer.Flags.BoolVar(&fCheckMaps, "maps", false, "check key exhaustiveness of map literals of enum key type, in addition to checking switch statements")
-	Analyzer.Flags.BoolVar(&fDefaultSuffices, "default-signifies-exhaustive", false, "switch statements are considered exhaustive if a 'default' case is present, even if all enum members aren't listed in the switch")
+	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, "switch statements are considered exhaustive if a 'default' case is present, even if all enum members aren't listed in the switch")
 }
 
 var Analyzer = &analysis.Analyzer{

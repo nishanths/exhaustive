@@ -30,8 +30,8 @@ Usage: exhaustive [-flags] [packages...]
 
 Flags:
   -default-signifies-exhaustive
-    	switch statements are considered exhaustive if a 'default' case is present, even if
-    	all enum members aren't listed in the switch (default false)
+    	indicates that switch statements are to be considered exhaustive if a 'default' case
+    	is present, even if all enum members aren't listed in the switch (default false)
   -fix
     	apply all suggested fixes (default false)
 
