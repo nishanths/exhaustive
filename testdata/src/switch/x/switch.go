@@ -93,3 +93,19 @@ func _g() {
 		}
 	}
 }
+
+type SortDirection int
+
+const (
+	_ SortDirection = iota
+	Asc
+	Desc
+)
+
+func _n() {
+	var d SortDirection
+	switch d {
+	case Asc:
+	case Desc:
+	}
+}
