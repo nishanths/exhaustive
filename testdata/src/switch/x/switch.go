@@ -109,3 +109,20 @@ func _n() {
 	case Desc:
 	}
 }
+
+func _o() {
+	// Selector isn't of the form "enumPkg.enumMember"
+
+	type holdsMollusca struct {
+		Mollusca bar.Phylum // can hold any Phylum value
+	}
+
+	var p bar.Phylum
+	var h holdsMollusca
+
+	switch p { // want "missing cases in switch of type bar.Phylum: Mollusca"
+	case bar.Chordata:
+	case bar.Echinodermata:
+	case h.Mollusca:
+	}
+}

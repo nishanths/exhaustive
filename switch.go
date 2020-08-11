@@ -105,6 +105,16 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, co
 					if !ok {
 						continue
 					}
+
+					// ensure X is package identifier
+					ident, ok := selExpr.X.(*ast.Ident)
+					if !ok {
+						continue
+					}
+					if !isPackageNameIdentifier(pass, ident) {
+						continue
+					}
+
 					delete(hitlist, selExpr.Sel.Name)
 				}
 			}
@@ -118,6 +128,15 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, co
 		}
 		return true
 	})
+}
+
+func isPackageNameIdentifier(pass *analysis.Pass, ident *ast.Ident) bool {
+	obj := pass.TypesInfo.ObjectOf(ident)
+	if obj == nil {
+		return false
+	}
+	_, ok := obj.(*types.PkgName)
+	return ok
 }
 
 func hitlistFromEnumMembers(enumMembers []string, checkUnexported bool) map[string]struct{} {

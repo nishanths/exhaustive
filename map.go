@@ -121,6 +121,16 @@ func checkMapLiterals(pass *analysis.Pass, inspect *inspector.Inspector, comment
 							if !ok {
 								continue
 							}
+
+							// ensure X is package identifier
+							ident, ok := selExpr.X.(*ast.Ident)
+							if !ok {
+								continue
+							}
+							if !isPackageNameIdentifier(pass, ident) {
+								continue
+							}
+
 							delete(hitlist, selExpr.Sel.Name)
 						}
 					}
