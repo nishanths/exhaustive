@@ -30,7 +30,7 @@ Usage: exhaustive [-flags] [packages...]
 
 Flags:
   -check-generated
-    	include generated files in checks
+    	check switch statements in generated files also
   -default-signifies-exhaustive
     	indicates that switch statements are to be considered exhaustive if a 'default' case
     	is present, even if all enum members aren't listed in the switch (default false)
@@ -82,7 +82,7 @@ Running the `exhaustive` command will print:
 calc.go:6:2: missing cases in switch of type token.Token: Quotient, Remainder
 ```
 
-(Enums may also be defined using explicit constant values instead of `iota`.)
+Enums can also be defined using explicit constant values instead of `iota`.
 
 ## License
 

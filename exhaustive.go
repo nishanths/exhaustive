@@ -42,7 +42,7 @@
 // if all enum members aren't listed in the switch statements cases.
 //
 // The -check-generated boolean flag, disabled by default, indicates whether
-// to check generated Go source files.
+// to check switch statements in generated Go source files.
 //
 // The other relevant flag is the -fix flag; its behavior is described
 // in the next section.
@@ -77,9 +77,9 @@
 // is associated with a switch statement, the analyzer skips
 // checking of the switch statement and no diagnostics are reported.
 //
-// Additionally, no diagnostics are reported for generated files (see
-// https://golang.org/s/generatedcode for definition of generated file),
-// unless the -check-generated flag is enabled.
+// Additionally, no diagnostics are reported for switch statements in
+// generated files (see https://golang.org/s/generatedcode for definition of
+// generated file), unless the -check-generated flag is enabled.
 package exhaustive
 
 import (
@@ -108,7 +108,7 @@ var (
 
 func init() {
 	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, "indicates that switch statements are to be considered exhaustive if a 'default' case is present, even if all enum members aren't listed in the switch")
-	Analyzer.Flags.BoolVar(&fCheckGeneratedFiles, CheckGeneratedFilesFlag, false, "include generated files in checks")
+	Analyzer.Flags.BoolVar(&fCheckGeneratedFiles, CheckGeneratedFilesFlag, false, "check switch statements in generated files also")
 
 	gob.Register(enumMembers{})
 }
