@@ -37,11 +37,15 @@
 // Flags
 //
 // The analyzer accepts a boolean flag: -default-signifies-exhaustive.
-// The flag, if set, indicates to the analyzer that switch statements
+// The flag, if enabled, indicates to the analyzer that switch statements
 // are to be considered exhaustive as long as a 'default' case is present, even
 // if all enum members aren't listed in the switch statements cases.
 //
-// The other relevant flag is the -fix flag.
+// The -check-generated boolean flag, disabled by default, indicates whether
+// to check generated Go source files.
+//
+// The other relevant flag is the -fix flag; its behavior is described
+// in the next section.
 //
 // Fixes
 //
@@ -64,7 +68,7 @@
 //
 // Imports will be adjusted automatically to account for the "fmt" dependency.
 //
-// Skip analysis of specific switch statements
+// Skipping analysis
 //
 // If the following directive comment:
 //
@@ -72,6 +76,10 @@
 //
 // is associated with a switch statement, the analyzer skips
 // checking of the switch statement and no diagnostics are reported.
+//
+// Additionally, no diagnostics are reported for generated files (see
+// https://golang.org/s/generatedcode for definition of generated file),
+// unless the -check-generated flag is enabled.
 package exhaustive
 
 import (
@@ -86,14 +94,21 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
-// DefaultSignifiesExhaustiveFlag is a flag name used by the analyzer. It
-// is exported for use by analyzer driver programs.
-const DefaultSignifiesExhaustiveFlag = "default-signifies-exhaustive"
+// Flag names used by the analyzer. They are are exported for use by analyzer
+// driver programs.
+const (
+	DefaultSignifiesExhaustiveFlag = "default-signifies-exhaustive"
+	CheckGeneratedFilesFlag        = "check-generated"
+)
 
-var fDefaultSignifiesExhaustive bool
+var (
+	fDefaultSignifiesExhaustive bool
+	fCheckGeneratedFiles        bool
+)
 
 func init() {
 	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, "indicates that switch statements are to be considered exhaustive if a 'default' case is present, even if all enum members aren't listed in the switch")
+	Analyzer.Flags.BoolVar(&fCheckGeneratedFiles, CheckGeneratedFilesFlag, false, "include generated files in checks")
 
 	gob.Register(enumMembers{})
 }
@@ -165,8 +180,9 @@ func run(pass *analysis.Pass) (interface{}, error) {
 
 	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 	comments := make(map[*ast.File]ast.CommentMap) // CommentMap per package file, lazily populated by reference
+	generated := make(map[*ast.File]bool)
 
-	checkSwitchStatements(pass, inspect, comments)
+	checkSwitchStatements(pass, inspect, comments, generated)
 	return nil, nil
 }
 
