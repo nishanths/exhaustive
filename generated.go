@@ -40,7 +40,7 @@ func containsGeneratedComment(s string) bool {
 		strings.HasSuffix(s, genCommentSuffix)
 }
 
-var (
+const (
 	genCommentPrefix = "// Code generated "
 	genCommentSuffix = " DO NOT EDIT."
 )
