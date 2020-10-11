@@ -39,7 +39,7 @@ Flags:
 
 Examples:
   exhaustive github.com/foo/bar/...
-  exhaustive github.com/a/b github.com/a/b
+  exhaustive github.com/a/b github.com/x/y
 ```
 
 ## Example
