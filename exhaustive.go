@@ -94,9 +94,12 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
-// DefaultSignifiesExhaustiveFlag is a flag name used by the analyzer. It
-// is exported for use by analyzer driver programs.
-const DefaultSignifiesExhaustiveFlag = "default-signifies-exhaustive"
+// Flag names used by the analyzer. They are are exported for use by analyzer
+// driver programs.
+const (
+	DefaultSignifiesExhaustiveFlag = "default-signifies-exhaustive"
+	CheckGeneratedFilesFlag        = "check-generated"
+)
 
 var (
 	fDefaultSignifiesExhaustive bool
@@ -105,7 +108,7 @@ var (
 
 func init() {
 	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, "indicates that switch statements are to be considered exhaustive if a 'default' case is present, even if all enum members aren't listed in the switch")
-	Analyzer.Flags.BoolVar(&fCheckGeneratedFiles, "check-generated", false, "include generated files in checks")
+	Analyzer.Flags.BoolVar(&fCheckGeneratedFiles, CheckGeneratedFilesFlag, false, "include generated files in checks")
 
 	gob.Register(enumMembers{})
 }
