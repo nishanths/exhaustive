@@ -29,6 +29,8 @@ The command line usage is:
 Usage: exhaustive [-flags] [packages...]
 
 Flags:
+  -check-generated
+    	include generated files in checks
   -default-signifies-exhaustive
     	indicates that switch statements are to be considered exhaustive if a 'default' case
     	is present, even if all enum members aren't listed in the switch (default false)
@@ -36,8 +38,8 @@ Flags:
     	apply all suggested fixes (default false)
 
 Examples:
-  exhaustive code.org/proj/...
-  exhaustive -fix example.org/foo/pkg example.org/foo/bar
+  exhaustive github.com/foo/bar/...
+  exhaustive github.com/a/b github.com/a/b
 ```
 
 ## Example
@@ -65,11 +67,11 @@ import "token"
 func processToken(t token.Token) {
 	switch t {
 	case token.Add:
-		// ...
+		...
 	case token.Subtract:
-		// ...
+		...
 	case token.Multiply:
-		// ...
+		...
 	}
 }
 ```
@@ -79,6 +81,8 @@ Running the `exhaustive` command will print:
 ```
 calc.go:6:2: missing cases in switch of type token.Token: Quotient, Remainder
 ```
+
+(Enums may also be defined using explicit constant values instead of `iota`.)
 
 ## License
 
