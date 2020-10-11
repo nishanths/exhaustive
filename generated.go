@@ -35,8 +35,7 @@ func isSlashSlashStyleComment(s string) bool {
 }
 
 func containsGeneratedComment(s string) bool {
-	return len(s) >= len(genCommentPrefix)+len(genCommentSuffix) &&
-		strings.HasPrefix(s, genCommentPrefix) &&
+	return strings.HasPrefix(s, genCommentPrefix) &&
 		strings.HasSuffix(s, genCommentSuffix)
 }
 
