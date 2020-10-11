@@ -1,7 +1,6 @@
 package exhaustive
 
 import (
-	"bytes"
 	"go/ast"
 	"strings"
 )
@@ -9,10 +8,7 @@ import (
 // Adapated from https://gotools.org/dmitri.shuralyov.com/go/generated
 
 func isGeneratedFile(file *ast.File) bool {
-	buf := bytes.NewBufferString("") // shared buffer, reset each loop
-
 	for _, c := range file.Comments {
-		buf.Reset()
 		for _, cc := range c.List {
 			s := cc.Text // "\n" already removed (see doc comment)
 			if len(s) >= 1 && s[len(s)-1] == '\r' {
