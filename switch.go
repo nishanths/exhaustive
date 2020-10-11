@@ -20,11 +20,33 @@ func isDefaultCase(c *ast.CaseClause) bool {
 	return c.List == nil // see doc comment on field
 }
 
-func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, comments map[*ast.File]ast.CommentMap) {
+func checkSwitchStatements(
+	pass *analysis.Pass,
+	inspect *inspector.Inspector,
+	comments map[*ast.File]ast.CommentMap,
+	generated map[*ast.File]bool,
+) {
 	inspect.WithStack([]ast.Node{&ast.SwitchStmt{}}, func(n ast.Node, push bool, stack []ast.Node) bool {
 		if !push {
 			return true
 		}
+
+		file := stack[0].(*ast.File)
+
+		// Determine if file is a generated file, based on https://golang.org/s/generatedcode.
+		// If generated, don't check this file.
+		var isGenerated bool
+		if gen, ok := generated[file]; ok {
+			isGenerated = gen
+		} else {
+			isGenerated = isGeneratedFile(file)
+			generated[file] = isGenerated
+		}
+		if isGenerated {
+			// don't check
+			return true
+		}
+
 		sw := n.(*ast.SwitchStmt)
 		if sw.Tag == nil {
 			return true
@@ -59,7 +81,6 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, co
 		}
 
 		// Get comment map.
-		file := stack[0].(*ast.File)
 		var allComments ast.CommentMap
 		if cm, ok := comments[file]; ok {
 			allComments = cm
@@ -407,4 +428,8 @@ func missingCasesTextEdit(fset *token.FileSet, f *ast.File, samePkg bool, sw *as
 		End:     sw.Body.Rbrace - 1,
 		NewText: []byte(insert),
 	}
+}
+
+func isGeneratedFile(file *ast.File) bool {
+	return false
 }

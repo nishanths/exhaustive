@@ -165,8 +165,9 @@ func run(pass *analysis.Pass) (interface{}, error) {
 
 	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 	comments := make(map[*ast.File]ast.CommentMap) // CommentMap per package file, lazily populated by reference
+	generated := make(map[*ast.File]bool)
 
-	checkSwitchStatements(pass, inspect, comments)
+	checkSwitchStatements(pass, inspect, comments, generated)
 	return nil, nil
 }
 
