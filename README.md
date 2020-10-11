@@ -2,6 +2,8 @@
 
 [![Godoc](https://godoc.org/github.com/nishanths/exhaustive?status.svg)](https://godoc.org/github.com/nishanths/exhaustive)
 
+[![Build Status](https://travis-ci.org/nishanths/exhaustive.svg?branch=master)](https://travis-ci.org/nishanths/exhaustive)
+
 The `exhaustive` package and command line program can be used to detect
 enum switch statements that are not exhaustive.
 
