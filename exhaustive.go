@@ -37,11 +37,15 @@
 // Flags
 //
 // The analyzer accepts a boolean flag: -default-signifies-exhaustive.
-// The flag, if set, indicates to the analyzer that switch statements
+// The flag, if enabled, indicates to the analyzer that switch statements
 // are to be considered exhaustive as long as a 'default' case is present, even
 // if all enum members aren't listed in the switch statements cases.
 //
-// The other relevant flag is the -fix flag.
+// The -check-generated boolean flag, disabled by default, indicates whether
+// to check generated Go source files.
+//
+// The other relevant flag is the -fix flag; its behavior is described
+// in the next section.
 //
 // Fixes
 //
@@ -73,8 +77,9 @@
 // is associated with a switch statement, the analyzer skips
 // checking of the switch statement and no diagnostics are reported.
 //
-// Additionally, no diagnostics are reported for generated files
-// (https://golang.org/s/generatedcode).
+// Additionally, no diagnostics are reported for generated files (see
+// https://golang.org/s/generatedcode for definition of generated file),
+// unless the -check-generated flag is enabled.
 package exhaustive
 
 import (
