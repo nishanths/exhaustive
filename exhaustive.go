@@ -93,10 +93,14 @@ import (
 // is exported for use by analyzer driver programs.
 const DefaultSignifiesExhaustiveFlag = "default-signifies-exhaustive"
 
-var fDefaultSignifiesExhaustive bool
+var (
+	fDefaultSignifiesExhaustive bool
+	fCheckGeneratedFiles        bool
+)
 
 func init() {
 	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, "indicates that switch statements are to be considered exhaustive if a 'default' case is present, even if all enum members aren't listed in the switch")
+	Analyzer.Flags.BoolVar(&fCheckGeneratedFiles, "check-generated", false, "include generated files in checks")
 
 	gob.Register(enumMembers{})
 }

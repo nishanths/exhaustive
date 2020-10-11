@@ -42,7 +42,7 @@ func checkSwitchStatements(
 			isGenerated = isGeneratedFile(file)
 			generated[file] = isGenerated
 		}
-		if isGenerated {
+		if isGenerated && !fCheckGeneratedFiles {
 			// don't check
 			return true
 		}
