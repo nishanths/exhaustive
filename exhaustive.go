@@ -122,8 +122,7 @@ var Analyzer = &analysis.Analyzer{
 }
 
 // IgnoreDirectivePrefix is used to exclude checking of specific switch statements.
-// See https://godoc.org/github.com/nishanths/exhaustive#hdr-Skip_analysis_of_specific_switch_statements
-// for details.
+// See package comment for details.
 const IgnoreDirectivePrefix = "//exhaustive:ignore"
 
 func containsIgnoreDirective(comments []*ast.Comment) bool {
