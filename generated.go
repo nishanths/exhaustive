@@ -15,9 +15,6 @@ func isGeneratedFile(file *ast.File) bool {
 		buf.Reset()
 		for _, cc := range c.List {
 			s := cc.Text // "\n" already removed (see doc comment)
-			if !isSlashSlashStyleComment(s) {
-				continue
-			}
 			if len(s) >= 1 && s[len(s)-1] == '\r' {
 				s = s[:len(s)-1] // Trim "\r".
 			}
@@ -28,10 +25,6 @@ func isGeneratedFile(file *ast.File) bool {
 	}
 
 	return false
-}
-
-func isSlashSlashStyleComment(s string) bool {
-	return strings.HasPrefix(s, "//")
 }
 
 func containsGeneratedComment(s string) bool {
