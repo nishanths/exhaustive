@@ -429,7 +429,3 @@ func missingCasesTextEdit(fset *token.FileSet, f *ast.File, samePkg bool, sw *as
 		NewText: []byte(insert),
 	}
 }
-
-func isGeneratedFile(file *ast.File) bool {
-	return false
-}

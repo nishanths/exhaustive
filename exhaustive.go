@@ -64,7 +64,7 @@
 //
 // Imports will be adjusted automatically to account for the "fmt" dependency.
 //
-// Skip analysis of specific switch statements
+// Skipping analysis
 //
 // If the following directive comment:
 //
@@ -72,6 +72,9 @@
 //
 // is associated with a switch statement, the analyzer skips
 // checking of the switch statement and no diagnostics are reported.
+//
+// Additionally, no diagnostics are reported for generated files
+// (https://golang.org/s/generatedcode).
 package exhaustive
 
 import (
