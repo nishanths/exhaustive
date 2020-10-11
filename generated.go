@@ -8,9 +8,6 @@ import (
 
 // Adapated from https://gotools.org/dmitri.shuralyov.com/go/generated
 
-// TODO: this needs to ensure that comment starts with "//".
-// "/*"-style comments don't count.
-
 func isGeneratedFile(file *ast.File) bool {
 	buf := bytes.NewBufferString("") // shared buffer, reset each loop
 
