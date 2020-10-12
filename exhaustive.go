@@ -97,7 +97,7 @@ import (
 // driver programs.
 const (
 	DefaultSignifiesExhaustiveFlag = "default-signifies-exhaustive"
-	CheckGeneratedFilesFlag        = "check-generated"
+	CheckGeneratedFlag             = "check-generated"
 )
 
 var (
@@ -107,7 +107,7 @@ var (
 
 func init() {
 	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, "indicates that switch statements are to be considered exhaustive if a 'default' case is present, even if all enum members aren't listed in the switch")
-	Analyzer.Flags.BoolVar(&fCheckGeneratedFiles, CheckGeneratedFilesFlag, false, "check switch statements in generated files also")
+	Analyzer.Flags.BoolVar(&fCheckGeneratedFiles, CheckGeneratedFlag, false, "check switch statements in generated files also")
 }
 
 var Analyzer = &analysis.Analyzer{
