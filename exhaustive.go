@@ -83,7 +83,6 @@
 package exhaustive
 
 import (
-	"encoding/gob"
 	"go/ast"
 	"go/types"
 	"sort"
@@ -94,7 +93,7 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
-// Flag names used by the analyzer. They are are exported for use by analyzer
+// Flag names used by the analyzer. They are exported for use by analyzer
 // driver programs.
 const (
 	DefaultSignifiesExhaustiveFlag = "default-signifies-exhaustive"
@@ -109,8 +108,6 @@ var (
 func init() {
 	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, "indicates that switch statements are to be considered exhaustive if a 'default' case is present, even if all enum members aren't listed in the switch")
 	Analyzer.Flags.BoolVar(&fCheckGeneratedFiles, CheckGeneratedFilesFlag, false, "check switch statements in generated files also")
-
-	gob.Register(enumMembers{})
 }
 
 var Analyzer = &analysis.Analyzer{
@@ -156,10 +153,10 @@ func (e *enumsFact) String() string {
 		buf.WriteString(k)
 		buf.WriteString(":")
 
-		for j, vv := range v.orderedNames {
+		for j, vv := range v.OrderedNames {
 			buf.WriteString(vv)
 			// add comma separator between each enum member in an enum type
-			if j != len(v.orderedNames)-1 {
+			if j != len(v.OrderedNames)-1 {
 				buf.WriteString(",")
 			}
 		}

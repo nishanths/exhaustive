@@ -12,36 +12,36 @@ type enums map[string]*enumMembers // enum type name -> enum members
 
 type enumMembers struct {
 	// Names in the order encountered in the AST.
-	// Invariant: len(orderedNames) == len(nameToValue)
-	orderedNames []string
+	// Invariant: len(OrderedNames) == len(nameToValue)
+	OrderedNames []string
 
 	// Maps name -> (constant.Value).ExactString() | nil.
-	nameToValue map[string]*string
+	NameToValue map[string]*string
 
 	// Maps (constant.Value).ExactString() -> names.
 	// Names that don't have a constant.Value defined in the AST (e.g., some
 	// iota constants) will not have a corresponding entry in this map.
-	valueToNames map[string][]string
+	ValueToNames map[string][]string
 }
 
 func (em *enumMembers) add(name string, constVal *string) {
-	em.orderedNames = append(em.orderedNames, name)
+	em.OrderedNames = append(em.OrderedNames, name)
 
-	if em.nameToValue == nil {
-		em.nameToValue = make(map[string]*string)
+	if em.NameToValue == nil {
+		em.NameToValue = make(map[string]*string)
 	}
-	em.nameToValue[name] = constVal
+	em.NameToValue[name] = constVal
 
 	if constVal != nil {
-		if em.valueToNames == nil {
-			em.valueToNames = make(map[string][]string)
+		if em.ValueToNames == nil {
+			em.ValueToNames = make(map[string][]string)
 		}
-		em.valueToNames[*constVal] = append(em.valueToNames[*constVal], name)
+		em.ValueToNames[*constVal] = append(em.ValueToNames[*constVal], name)
 	}
 }
 
 func (em *enumMembers) numMembers() int {
-	return len(em.orderedNames)
+	return len(em.OrderedNames)
 }
 
 func findEnums(pass *analysis.Pass) enums {

@@ -152,7 +152,7 @@ func checkSwitchStatements(
 }
 
 func updateHitlist(hitlist map[string]struct{}, em *enumMembers, foundName string) {
-	constVal := em.nameToValue[foundName]
+	constVal := em.NameToValue[foundName]
 	if constVal == nil {
 		// only delete the name alone from hitlist
 		delete(hitlist, foundName)
@@ -160,7 +160,7 @@ func updateHitlist(hitlist map[string]struct{}, em *enumMembers, foundName strin
 	}
 
 	// delete all of the same-valued names from hitlist
-	namesToDelete := em.valueToNames[*constVal]
+	namesToDelete := em.ValueToNames[*constVal]
 	for _, n := range namesToDelete {
 		delete(hitlist, n)
 	}
@@ -177,7 +177,7 @@ func isPackageNameIdentifier(pass *analysis.Pass, ident *ast.Ident) bool {
 
 func hitlistFromEnumMembers(em *enumMembers, checkUnexported bool) map[string]struct{} {
 	hitlist := make(map[string]struct{})
-	for _, m := range em.orderedNames {
+	for _, m := range em.OrderedNames {
 		if m == "_" {
 			// blank identifier is often used to skip entries in iota lists
 			continue
@@ -195,7 +195,7 @@ func determineMissingOutput(missingMembers map[string]struct{}, em *enumMembers)
 	var otherMembers []string                    // non-constant value names
 
 	for m := range missingMembers {
-		if constVal := em.nameToValue[m]; constVal != nil {
+		if constVal := em.NameToValue[m]; constVal != nil {
 			constValMembers[*constVal] = append(constValMembers[*constVal], m)
 		} else {
 			otherMembers = append(otherMembers, m)
