@@ -21,8 +21,10 @@ func TestSwitchFix(t *testing.T) {
 	analysistest.RunWithSuggestedFixes(t, analysistest.TestData(), Analyzer, "switchfix/...")
 }
 
+// NOTE: This test doesn't cover everything that could go wrong during gob
+// encoding/decoding.
 func TestGobCompatible(t *testing.T) {
-	// The analysis package does this internally, but we need to do it
+	// The go/analysis package does this internally, but we need to do it
 	// manually here for the test.
 	for _, typ := range Analyzer.FactTypes {
 		gob.Register(typ)

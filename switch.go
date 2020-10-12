@@ -152,15 +152,15 @@ func checkSwitchStatements(
 }
 
 func updateHitlist(hitlist map[string]struct{}, em *enumMembers, foundName string) {
-	constVal := em.NameToValue[foundName]
-	if constVal == nil {
+	constVal, ok := em.NameToValue[foundName]
+	if !ok {
 		// only delete the name alone from hitlist
 		delete(hitlist, foundName)
 		return
 	}
 
 	// delete all of the same-valued names from hitlist
-	namesToDelete := em.ValueToNames[*constVal]
+	namesToDelete := em.ValueToNames[constVal]
 	for _, n := range namesToDelete {
 		delete(hitlist, n)
 	}
@@ -195,8 +195,8 @@ func determineMissingOutput(missingMembers map[string]struct{}, em *enumMembers)
 	var otherMembers []string                    // non-constant value names
 
 	for m := range missingMembers {
-		if constVal := em.NameToValue[m]; constVal != nil {
-			constValMembers[*constVal] = append(constValMembers[*constVal], m)
+		if constVal, ok := em.NameToValue[m]; ok {
+			constValMembers[constVal] = append(constValMembers[constVal], m)
 		} else {
 			otherMembers = append(otherMembers, m)
 		}

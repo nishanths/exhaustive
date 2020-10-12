@@ -12,11 +12,12 @@ type enums map[string]*enumMembers // enum type name -> enum members
 
 type enumMembers struct {
 	// Names in the order encountered in the AST.
-	// Invariant: len(OrderedNames) == len(nameToValue)
 	OrderedNames []string
 
-	// Maps name -> (constant.Value).ExactString() | nil.
-	NameToValue map[string]*string
+	// Maps name -> (constant.Value).ExactString().
+	// If a name is missing in the map, it means that it does not have a
+	// corresponding constant.Value defined in the AST.
+	NameToValue map[string]string
 
 	// Maps (constant.Value).ExactString() -> names.
 	// Names that don't have a constant.Value defined in the AST (e.g., some
@@ -27,12 +28,12 @@ type enumMembers struct {
 func (em *enumMembers) add(name string, constVal *string) {
 	em.OrderedNames = append(em.OrderedNames, name)
 
-	if em.NameToValue == nil {
-		em.NameToValue = make(map[string]*string)
-	}
-	em.NameToValue[name] = constVal
-
 	if constVal != nil {
+		if em.NameToValue == nil {
+			em.NameToValue = make(map[string]string)
+		}
+		em.NameToValue[name] = *constVal
+
 		if em.ValueToNames == nil {
 			em.ValueToNames = make(map[string][]string)
 		}
