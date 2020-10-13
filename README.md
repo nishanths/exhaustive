@@ -44,6 +44,13 @@ Examples:
   exhaustive github.com/a/b github.com/x/y
 ```
 
+## FAQ
+
+__Switch statement is reported as non-exhaustive even though `default` case is
+present__
+
+Consider enabling the `-default-signifies-exhaustive` flag.
+
 ## Example
 
 Given the code:
