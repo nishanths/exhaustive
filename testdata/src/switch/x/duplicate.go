@@ -1,4 +1,4 @@
-// want package:"Direction:N,E,S,W,directionInvalid; River:DefaultRiver,Yamuna,Ganga,Kaveri; SortDirection:_,Asc,Desc; State:_,TamilNadu,Kerala,Karnataka,DefaultState"
+// want package:"^Direction:N,E,S,W,directionInvalid; River:DefaultRiver,Yamuna,Ganga,Kaveri; SortDirection:_,Asc,Desc; State:_,TamilNadu,Kerala,Karnataka,DefaultState$"
 
 package x
 
@@ -43,7 +43,7 @@ func _q() {
 	// value-based checks not available for iota enums (implementation detail: since
 	// we cannot determine a constant.Value from type information).
 
-	switch s { // want "missing cases in switch of type State: DefaultState"
+	switch s { // want "^missing cases in switch of type State: DefaultState$"
 	case TamilNadu, Kerala, Karnataka:
 	}
 }
@@ -52,13 +52,13 @@ func _r() {
 	// should report correctly (in union '|' form) when same-valued names are
 	// missing.
 	var r River
-	switch r { // want "missing cases in switch of type River: DefaultRiver|Ganga, Kaveri"
+	switch r { // want "^missing cases in switch of type River: DefaultRiver|Ganga, Kaveri$"
 	case Yamuna:
 	}
 
 	// reporting should work correctly when constant.Values are not present also.
 	var s State
-	switch s { // want "missing cases in switch of type State: DefaultState, Kerala, TamilNadu"
+	switch s { // want "^missing cases in switch of type State: DefaultState, Kerala, TamilNadu$"
 	case Karnataka:
 	}
 }

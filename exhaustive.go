@@ -36,16 +36,23 @@
 //
 // Flags
 //
-// The analyzer accepts a boolean flag: -default-signifies-exhaustive.
-// The flag, if enabled, indicates to the analyzer that switch statements
-// are to be considered exhaustive as long as a 'default' case is present, even
-// if all enum members aren't listed in the switch statements cases.
+// The analyzer accepts 4 flags.
 //
-// The -check-generated boolean flag, disabled by default, indicates whether
-// to check switch statements in generated Go source files.
+// The -default-signifies-exhaustive boolean flag indicates to the analyzer
+// whether switch statements are to be considered exhaustive as long as a
+// 'default' case is present (even if all enum members aren't listed in the
+// switch statements cases). The default value is false.
 //
-// The other relevant flag is the -fix flag; its behavior is described
-// in the next section.
+// The -check-generated boolean flag indicates whether to check switch
+// statements in generated Go source files. The default value is false.
+//
+// The -ignore-pattern flag specifies a regular expression pattern. Member names
+// in enum definitions that match the regular expression do not require a case
+// clause to satisfy exhaustiveness. The regular expression is matched against
+// enum member names inclusive of the import path, e.g. of the
+// form: github.com/foo/bar.Biome.
+//
+// The behavior of the -fix flag is described in the next section.
 //
 // Fixes
 //
@@ -77,9 +84,11 @@
 // is associated with a switch statement, the analyzer skips
 // checking of the switch statement and no diagnostics are reported.
 //
-// Additionally, no diagnostics are reported for switch statements in
+// No diagnostics are reported for switch statements in
 // generated files (see https://golang.org/s/generatedcode for definition of
 // generated file), unless the -check-generated flag is enabled.
+//
+// Additionally, see the -ignore-pattern flag.
 package exhaustive
 
 import (
@@ -98,16 +107,27 @@ import (
 const (
 	DefaultSignifiesExhaustiveFlag = "default-signifies-exhaustive"
 	CheckGeneratedFlag             = "check-generated"
+	IgnorePatternFlag              = "ignore-pattern"
 )
 
 var (
 	fDefaultSignifiesExhaustive bool
 	fCheckGeneratedFiles        bool
+	fIgnorePattern              string
 )
 
 func init() {
 	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, "indicates that switch statements are to be considered exhaustive if a 'default' case is present, even if all enum members aren't listed in the switch")
 	Analyzer.Flags.BoolVar(&fCheckGeneratedFiles, CheckGeneratedFlag, false, "check switch statements in generated files also")
+	Analyzer.Flags.StringVar(&fIgnorePattern, IgnorePatternFlag, "", "do not require a case clause to satisfy exhaustiveness for enum member names that match the provided regular expression pattern")
+}
+
+// resetFlags resets the flag variables to their default values.
+// Useful in tests.
+func resetFlags() {
+	fDefaultSignifiesExhaustive = false
+	fCheckGeneratedFiles = false
+	fIgnorePattern = ""
 }
 
 var Analyzer = &analysis.Analyzer{
@@ -116,6 +136,17 @@ var Analyzer = &analysis.Analyzer{
 	Run:       run,
 	Requires:  []*analysis.Analyzer{inspect.Analyzer},
 	FactTypes: []analysis.Fact{&enumsFact{}},
+}
+
+func run(pass *analysis.Pass) (interface{}, error) {
+	e := findEnums(pass)
+	if len(e) != 0 {
+		pass.ExportPackageFact(&enumsFact{Enums: e})
+	}
+
+	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
+	err := checkSwitchStatements(pass, inspect)
+	return nil, err
 }
 
 // IgnoreDirectivePrefix is used to exclude checking of specific switch statements.
@@ -166,20 +197,6 @@ func (e *enumsFact) String() string {
 		}
 	}
 	return buf.String()
-}
-
-func run(pass *analysis.Pass) (interface{}, error) {
-	e := findEnums(pass)
-	if len(e) != 0 {
-		pass.ExportPackageFact(&enumsFact{Enums: e})
-	}
-
-	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
-	comments := make(map[*ast.File]ast.CommentMap) // CommentMap per package file, lazily populated by reference
-	generated := make(map[*ast.File]bool)
-
-	checkSwitchStatements(pass, inspect, comments, generated)
-	return nil, nil
 }
 
 func enumTypeName(e *types.Named, samePkg bool) string {

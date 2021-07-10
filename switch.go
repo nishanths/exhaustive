@@ -7,6 +7,7 @@ import (
 	"go/printer"
 	"go/token"
 	"go/types"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -23,9 +24,27 @@ func isDefaultCase(c *ast.CaseClause) bool {
 func checkSwitchStatements(
 	pass *analysis.Pass,
 	inspect *inspector.Inspector,
+) error {
+	comments := make(map[*ast.File]ast.CommentMap) // CommentMap per package file, lazily populated by reference
+	generated := make(map[*ast.File]bool)
+	return checkSwitchStatements_(pass, inspect, comments, generated)
+}
+
+func checkSwitchStatements_(
+	pass *analysis.Pass,
+	inspect *inspector.Inspector,
 	comments map[*ast.File]ast.CommentMap,
 	generated map[*ast.File]bool,
-) {
+) error {
+	var ignorePattern *regexp.Regexp
+	if fIgnorePattern != "" {
+		var err error
+		ignorePattern, err = regexp.Compile(fIgnorePattern)
+		if err != nil {
+			return fmt.Errorf("-%s: bad regexp: %s", IgnorePatternFlag, err)
+		}
+	}
+
 	inspect.WithStack([]ast.Node{&ast.SwitchStmt{}}, func(n ast.Node, push bool, stack []ast.Node) bool {
 		if !push {
 			return true
@@ -99,10 +118,8 @@ func checkSwitchStatements(
 		samePkg := tagPkg == pass.Pkg
 		checkUnexported := samePkg
 
-		hitlist := hitlistFromEnumMembers(em, checkUnexported)
+		hitlist := hitlistFromEnumMembers(em, tagPkg, checkUnexported, ignorePattern)
 		if len(hitlist) == 0 {
-			// can happen if external package and enum consists only of
-			// unexported members
 			return true
 		}
 
@@ -149,6 +166,8 @@ func checkSwitchStatements(
 		}
 		return true
 	})
+
+	return nil
 }
 
 func updateHitlist(hitlist map[string]struct{}, em *enumMembers, foundName string) {
@@ -175,17 +194,20 @@ func isPackageNameIdentifier(pass *analysis.Pass, ident *ast.Ident) bool {
 	return ok
 }
 
-func hitlistFromEnumMembers(em *enumMembers, checkUnexported bool) map[string]struct{} {
+func hitlistFromEnumMembers(em *enumMembers, enumPkg *types.Package, checkUnexported bool, ignorePattern *regexp.Regexp) map[string]struct{} {
 	hitlist := make(map[string]struct{})
-	for _, m := range em.OrderedNames {
-		if m == "_" {
+	for _, name := range em.OrderedNames {
+		if name == "_" {
 			// blank identifier is often used to skip entries in iota lists
 			continue
 		}
-		if !ast.IsExported(m) && !checkUnexported {
+		if ignorePattern != nil && ignorePattern.MatchString(enumPkg.Path()+"."+name) {
 			continue
 		}
-		hitlist[m] = struct{}{}
+		if !ast.IsExported(name) && !checkUnexported {
+			continue
+		}
+		hitlist[name] = struct{}{}
 	}
 	return hitlist
 }
@@ -253,9 +275,7 @@ func computeFix(pass *analysis.Pass, fset *token.FileSet, f *ast.File, sw *ast.S
 		return analysis.SuggestedFix{}, false
 	}
 
-	textEdits := []analysis.TextEdit{
-		missingCasesTextEdit(fset, f, samePkg, sw, enumType, missingMembers),
-	}
+	textEdits := []analysis.TextEdit{missingCasesTextEdit(fset, f, samePkg, sw, enumType, missingMembers)}
 
 	// need to add "fmt" import if "fmt" import doesn't already exist
 	if !hasImportWithPath(fset, f, `"fmt"`) {
@@ -269,7 +289,7 @@ func computeFix(pass *analysis.Pass, fset *token.FileSet, f *ast.File, sw *ast.S
 	sort.Strings(missing)
 
 	return analysis.SuggestedFix{
-		Message:   fmt.Sprintf("add case clause for: %s?", strings.Join(missing, ", ")),
+		Message:   fmt.Sprintf("add case clause for: %s", strings.Join(missing, ", ")),
 		TextEdits: textEdits,
 	}, true
 }

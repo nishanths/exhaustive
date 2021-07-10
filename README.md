@@ -23,34 +23,6 @@ go get github.com/nishanths/exhaustive/...
 
 https://godoc.org/github.com/nishanths/exhaustive
 
-## Usage
-
-The command line usage is:
-
-```
-Usage: exhaustive [-flags] [packages...]
-
-Flags:
-  -check-generated
-    	check switch statements in generated files also
-  -default-signifies-exhaustive
-    	indicates that switch statements are to be considered exhaustive if a 'default' case
-    	is present, even if all enum members aren't listed in the switch (default false)
-  -fix
-    	apply all suggested fixes (default false)
-
-Examples:
-  exhaustive github.com/foo/bar/...
-  exhaustive github.com/a/b github.com/x/y
-```
-
-## FAQ
-
-__Switch statement is reported as non-exhaustive even though `default` case is
-present__
-
-Consider enabling the `-default-signifies-exhaustive` flag.
-
 ## Example
 
 Given the code:

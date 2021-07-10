@@ -10,15 +10,26 @@ import (
 )
 
 func TestEnum(t *testing.T) {
-	analysistest.Run(t, analysistest.TestData(), Analyzer, "enumvariant/...")
+	resetFlags()
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "enumvariant")
 }
 
 func TestSwitch(t *testing.T) {
-	analysistest.Run(t, analysistest.TestData(), Analyzer, "switch/...")
+	resetFlags()
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "switch/x", "switch/y")
+}
+
+func TestSwitch_ignorePattern(t *testing.T) {
+	t.Run("basic", func(t *testing.T) {
+		resetFlags()
+		fIgnorePattern = "_UNSPECIFIED$|^switch/y.Echinodermata$"
+		analysistest.Run(t, analysistest.TestData(), Analyzer, "switch/ignorepattern")
+	})
 }
 
 func TestSwitchFix(t *testing.T) {
-	analysistest.RunWithSuggestedFixes(t, analysistest.TestData(), Analyzer, "switchfix/...")
+	resetFlags()
+	analysistest.RunWithSuggestedFixes(t, analysistest.TestData(), Analyzer, "switchfix")
 }
 
 // NOTE: This test doesn't cover everything that could go wrong during gob

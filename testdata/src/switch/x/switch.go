@@ -22,7 +22,7 @@ func _a() {
 	// check since enum is in same package.
 
 	var d Direction
-	switch d { // want "missing cases in switch of type Direction: E, directionInvalid"
+	switch d { // want "^missing cases in switch of type Direction: E, directionInvalid$"
 	case N:
 	case S:
 	case W:
@@ -37,7 +37,7 @@ func _b() {
 	// check since enum is in external package.
 
 	var p bar.Phylum
-	switch p { // want "missing cases in switch of type bar.Phylum: Mollusca"
+	switch p { // want "^missing cases in switch of type bar.Phylum: Mollusca$"
 	case bar.Chordata:
 	case bar.Echinodermata:
 	}
@@ -46,8 +46,8 @@ func _b() {
 func _j() {
 	// Named imports still report real package name.
 
-	var p bar.Phylum
-	switch p { // want "missing cases in switch of type bar.Phylum: Mollusca"
+	var p barpkg.Phylum
+	switch p { // want "^missing cases in switch of type bar.Phylum: Mollusca$"
 	case barpkg.Chordata:
 	case barpkg.Echinodermata:
 	}
@@ -56,7 +56,7 @@ func _j() {
 func _k(d Direction) {
 	// Parenthesized values in case statements.
 
-	switch d { // want "missing cases in switch of type Direction: S, directionInvalid"
+	switch d { // want "^missing cases in switch of type Direction: S, directionInvalid$"
 	case (N):
 	case (E):
 	case (W):
@@ -67,7 +67,7 @@ func _f() {
 	// Multiple values in single case.
 
 	var d Direction
-	switch d { // want "missing cases in switch of type Direction: W"
+	switch d { // want "^missing cases in switch of type Direction: W$"
 	case E, directionInvalid, S:
 	default:
 	case N:
@@ -79,16 +79,16 @@ func _g() {
 
 	var d Direction
 	if true {
-		switch d { // want "missing cases in switch of type Direction: S, directionInvalid"
+		switch d { // want "^missing cases in switch of type Direction: S, directionInvalid$"
 		case (N):
 		case (E):
 		case (W):
 		}
 	}
 
-	switch d { // want "missing cases in switch of type Direction: E, S, W, directionInvalid"
+	switch d { // want "^missing cases in switch of type Direction: E, S, W, directionInvalid$"
 	case N:
-		switch d { // want "missing cases in switch of type Direction: N, S, W"
+		switch d { // want "^missing cases in switch of type Direction: N, S, W$"
 		case E, directionInvalid:
 		}
 	}
@@ -113,14 +113,14 @@ func _n() {
 func _o() {
 	// Selector isn't of the form "enumPkg.enumMember"
 
-	type holdsMollusca struct {
-		Mollusca bar.Phylum // can hold any Phylum value
+	type holdsPhylum struct {
+		Mollusca bar.Phylum // can technically hold any Phylum value, but field is named Mollusca
 	}
 
 	var p bar.Phylum
-	var h holdsMollusca
+	var h holdsPhylum
 
-	switch p { // want "missing cases in switch of type bar.Phylum: Mollusca"
+	switch p { // want "^missing cases in switch of type bar.Phylum: Mollusca$"
 	case bar.Chordata:
 	case bar.Echinodermata:
 	case h.Mollusca:
