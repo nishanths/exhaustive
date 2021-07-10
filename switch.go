@@ -123,11 +123,11 @@ func checkSwitchStatements_(
 			return true
 		}
 
-		defaultCaseExists := false
+		var defaultCase *ast.CaseClause
 		for _, stmt := range sw.Body.List {
 			caseCl := stmt.(*ast.CaseClause)
 			if isDefaultCase(caseCl) {
-				defaultCaseExists = true
+				defaultCase = caseCl
 				continue // nothing more to do if it's the default case
 			}
 			for _, e := range caseCl.List {
@@ -158,11 +158,11 @@ func checkSwitchStatements_(
 			}
 		}
 
-		defaultSuffices := fDefaultSignifiesExhaustive && defaultCaseExists
+		defaultSuffices := fDefaultSignifiesExhaustive && defaultCase != nil
 		shouldReport := len(hitlist) > 0 && !defaultSuffices
 
 		if shouldReport {
-			reportSwitch(pass, sw, samePkg, tagType, em, hitlist, defaultCaseExists, file)
+			reportSwitch(pass, sw, defaultCase, samePkg, tagType, em, hitlist, file)
 		}
 		return true
 	})
@@ -237,20 +237,18 @@ func determineMissingOutput(missingMembers map[string]struct{}, em *enumMembers)
 func reportSwitch(
 	pass *analysis.Pass,
 	sw *ast.SwitchStmt,
+	defaultCase *ast.CaseClause,
 	samePkg bool,
 	enumType *types.Named,
 	em *enumMembers,
 	missingMembers map[string]struct{},
-	defaultCaseExists bool,
 	f *ast.File,
 ) {
 	missingOutput := determineMissingOutput(missingMembers, em)
 
 	var fixes []analysis.SuggestedFix
-	if !defaultCaseExists {
-		if fix, ok := computeFix(pass, pass.Fset, f, sw, enumType, samePkg, missingMembers); ok {
-			fixes = append(fixes, fix)
-		}
+	if fix, ok := computeFix(pass, pass.Fset, f, sw, defaultCase, enumType, samePkg, missingMembers); ok {
+		fixes = append(fixes, fix)
 	}
 
 	pass.Report(analysis.Diagnostic{
@@ -261,7 +259,7 @@ func reportSwitch(
 	})
 }
 
-func computeFix(pass *analysis.Pass, fset *token.FileSet, f *ast.File, sw *ast.SwitchStmt, enumType *types.Named, samePkg bool, missingMembers map[string]struct{}) (analysis.SuggestedFix, bool) {
+func computeFix(pass *analysis.Pass, fset *token.FileSet, f *ast.File, sw *ast.SwitchStmt, defaultCase *ast.CaseClause, enumType *types.Named, samePkg bool, missingMembers map[string]struct{}) (analysis.SuggestedFix, bool) {
 	// Function and method calls may be mutative, so we don't want to reuse the
 	// call expression in the about-to-be-inserted case clause body. So we just
 	// don't suggest a fix in such situations.
@@ -275,7 +273,7 @@ func computeFix(pass *analysis.Pass, fset *token.FileSet, f *ast.File, sw *ast.S
 		return analysis.SuggestedFix{}, false
 	}
 
-	textEdits := []analysis.TextEdit{missingCasesTextEdit(fset, f, samePkg, sw, enumType, missingMembers)}
+	textEdits := []analysis.TextEdit{missingCasesTextEdit(fset, f, samePkg, sw, defaultCase, enumType, missingMembers)}
 
 	// need to add "fmt" import if "fmt" import doesn't already exist
 	if !hasImportWithPath(fset, f, `"fmt"`) {
@@ -396,7 +394,7 @@ func fmtImportTextEdit(fset *token.FileSet, f *ast.File) analysis.TextEdit {
 	}
 }
 
-func missingCasesTextEdit(fset *token.FileSet, f *ast.File, samePkg bool, sw *ast.SwitchStmt, enumType *types.Named, missingMembers map[string]struct{}) analysis.TextEdit {
+func missingCasesTextEdit(fset *token.FileSet, f *ast.File, samePkg bool, sw *ast.SwitchStmt, defaultCase *ast.CaseClause, enumType *types.Named, missingMembers map[string]struct{}) analysis.TextEdit {
 	// ... Construct insertion text for case clause and its body ...
 
 	var tag bytes.Buffer
@@ -443,9 +441,14 @@ func missingCasesTextEdit(fset *token.FileSet, f *ast.File, samePkg bool, sw *as
 
 	// ... Create the text edit ...
 
+	pos := sw.Body.Rbrace - 1 // put it as last case
+	if defaultCase != nil {
+		pos = defaultCase.Case - 2 // put it before the default case (why -2?)
+	}
+
 	return analysis.TextEdit{
-		Pos:     sw.Body.Rbrace - 1,
-		End:     sw.Body.Rbrace - 1,
+		Pos:     pos,
+		End:     pos,
 		NewText: []byte(insert),
 	}
 }

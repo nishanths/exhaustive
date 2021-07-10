@@ -56,9 +56,8 @@
 //
 // Fixes
 //
-// The analyzer suggests fixes for a switch statement if it is not exhaustive
-// and does not have a 'default' case. The suggested fix always adds a single
-// case clause for the missing enum members.
+// The analyzer suggests fixes for a switch statement if it is not exhaustive.
+// The suggested fix always adds a single case clause for the missing enum members.
 //
 //   case MissingA, MissingB, MissingC:
 //       panic(fmt.Sprintf("unhandled value: %v", v))
