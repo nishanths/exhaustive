@@ -10,6 +10,7 @@ func _caseclause_defaultexists() {
 	case N:
 	case S:
 	case W:
+		_ = 3
 	case E, directionInvalid:
 		panic(fmt.Sprintf("unhandled value: %v", d))
 	default:

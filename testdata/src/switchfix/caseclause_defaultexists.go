@@ -6,6 +6,7 @@ func _caseclause_defaultexists() {
 	case N:
 	case S:
 	case W:
+		_ = 3
 	default:
 	}
 }
