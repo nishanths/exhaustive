@@ -1,4 +1,4 @@
-// want package:"AcrossBlocksDeclsFiles:Here,Separate,There; ByteEnum:ByteA; FloatEnum:FloatEnumA,FloatEnumB; Int32Enum:Int32A,Int32B; IotaEnum:IotaA,ItoaB; RepeatedValue:RepeatedValueA,RepeatedValueB; RuneEnum:RuneA; StringEnum:StringA,StringB,StringC; UIntEnum:UIntA,UIntB; UnexportedMembers:unexportedMembersA,unexportedMembersB; VarMembers:VarMemberA"
+// want package:"^AcrossBlocksDeclsFiles:Here,Separate,There; ByteEnum:ByteA; FloatEnum:FloatEnumA,FloatEnumB; Int32Enum:Int32A,Int32B; IotaEnum:IotaA,ItoaB; RepeatedValue:RepeatedValueA,RepeatedValueB; RuneEnum:RuneA; StringEnum:StringA,StringB,StringC; UIntEnum:UIntA,UIntB; UnexportedMembers:unexportedMembersA,unexportedMembersB; VarMembers:VarMemberA$"
 
 package enumvariants
 

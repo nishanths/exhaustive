@@ -1,4 +1,4 @@
-// want package:"Phylum:Chordata,Echinodermata,Mollusca,platyhelminthes"
+// want package:"^Phylum:Chordata,Echinodermata,Mollusca,platyhelminthes$"
 
 package bar
 

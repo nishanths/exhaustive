@@ -7,7 +7,7 @@ import (
 
 func _caseclause_othermemberspkg() {
 	var phy barpkg.Phylum
-	switch phy { // want "missing cases in switch of type bar.Phylum: Chordata, Echinodermata"
+	switch phy { // want "^missing cases in switch of type bar.Phylum: Chordata, Echinodermata$"
 	case barpkg.Mollusca:
 		{
 		}
