@@ -46,11 +46,12 @@
 // The -check-generated boolean flag indicates whether to check switch
 // statements in generated Go source files. The default value is false.
 //
-// The -ignore-pattern flag specifies a regular expression pattern. Member names
+// The -ignore-pattern flag specifies a regular expression. Member names
 // in enum definitions that match the regular expression do not require a case
 // clause to satisfy exhaustiveness. The regular expression is matched against
 // enum member names inclusive of the import path, e.g. of the
-// form: github.com/foo/bar.Biome.
+// form: github.com/foo/bar.Tundra, where the import path is github.com/foo/bar
+// and the enum member name is Tundra.
 //
 // The behavior of the -fix flag is described in the next section.
 //
@@ -112,13 +113,13 @@ const (
 var (
 	fDefaultSignifiesExhaustive bool
 	fCheckGeneratedFiles        bool
-	fIgnorePattern              string
+	fIgnorePattern              regexpFlag
 )
 
 func init() {
 	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, "indicates that switch statements are to be considered exhaustive if a 'default' case is present, even if all enum members aren't listed in the switch")
 	Analyzer.Flags.BoolVar(&fCheckGeneratedFiles, CheckGeneratedFlag, false, "check switch statements in generated files also")
-	Analyzer.Flags.StringVar(&fIgnorePattern, IgnorePatternFlag, "", "do not require a case clause to satisfy exhaustiveness for enum member names that match the provided regular expression pattern")
+	Analyzer.Flags.Var(&fIgnorePattern, IgnorePatternFlag, "do not require a case clause to satisfy exhaustiveness for enum member names that match the provided regular expression pattern")
 }
 
 // resetFlags resets the flag variables to their default values.
@@ -126,7 +127,7 @@ func init() {
 func resetFlags() {
 	fDefaultSignifiesExhaustive = false
 	fCheckGeneratedFiles = false
-	fIgnorePattern = ""
+	fIgnorePattern = regexpFlag{}
 }
 
 var Analyzer = &analysis.Analyzer{

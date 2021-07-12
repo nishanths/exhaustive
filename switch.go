@@ -36,15 +36,6 @@ func checkSwitchStatements_(
 	comments map[*ast.File]ast.CommentMap,
 	generated map[*ast.File]bool,
 ) error {
-	var ignorePattern *regexp.Regexp
-	if fIgnorePattern != "" {
-		var err error
-		ignorePattern, err = regexp.Compile(fIgnorePattern)
-		if err != nil {
-			return fmt.Errorf("-%s: bad regexp: %s", IgnorePatternFlag, err)
-		}
-	}
-
 	inspect.WithStack([]ast.Node{&ast.SwitchStmt{}}, func(n ast.Node, push bool, stack []ast.Node) bool {
 		if !push {
 			return true
@@ -118,7 +109,7 @@ func checkSwitchStatements_(
 		samePkg := tagPkg == pass.Pkg
 		checkUnexported := samePkg
 
-		hitlist := hitlistFromEnumMembers(em, tagPkg, checkUnexported, ignorePattern)
+		hitlist := hitlistFromEnumMembers(em, tagPkg, checkUnexported, fIgnorePattern.Get().(*regexp.Regexp))
 		if len(hitlist) == 0 {
 			return true
 		}

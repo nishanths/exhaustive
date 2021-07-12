@@ -22,7 +22,7 @@ func TestSwitch(t *testing.T) {
 func TestSwitch_ignorePattern(t *testing.T) {
 	t.Run("basic", func(t *testing.T) {
 		resetFlags()
-		fIgnorePattern = "_UNSPECIFIED$|^switch/y.Echinodermata$"
+		requireNoError(t, fIgnorePattern.Set("_UNSPECIFIED$|^switch/y.Echinodermata$"))
 		analysistest.Run(t, analysistest.TestData(), Analyzer, "switch/ignorepattern")
 	})
 }
@@ -57,5 +57,19 @@ func TestGobCompatible(t *testing.T) {
 				return
 			}
 		})
+	}
+}
+
+func requireNoError(t *testing.T, err error) {
+	t.Helper()
+	if err != nil {
+		t.Fatalf("want nil error, got %s", err)
+	}
+}
+
+func requireError(t *testing.T, err error) {
+	t.Helper()
+	if err == nil {
+		t.Fatalf("want error, got nil")
 	}
 }
