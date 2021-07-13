@@ -1,9 +1,17 @@
 package exhaustive
 
 import (
+	"flag"
 	"regexp"
 )
 
+var _ interface {
+	flag.Value
+	flag.Getter
+} = (*regexpFlag)(nil)
+
+// regexpFlag implements the flag.Value and flag.Getter interfaces for parsing
+// regular expression flag values.
 type regexpFlag struct {
 	r *regexp.Regexp
 }

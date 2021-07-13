@@ -8,23 +8,30 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
+// enums holds the enum types and their members defined in a single package.
 type enums map[string]*enumMembers // enum type name -> enum members
 
+// enumMembers is the members for a single enum type.
+// The zero value is ready to use.
 type enumMembers struct {
 	// Names in the order encountered in the AST.
 	OrderedNames []string
 
-	// Maps name -> (constant.Value).ExactString().
+	// NameToValue maps member name -> (constant.Value).ExactString().
 	// If a name is missing in the map, it means that it does not have a
 	// corresponding constant.Value defined in the AST.
 	NameToValue map[string]string
 
-	// Maps (constant.Value).ExactString() -> names.
+	// ValueToNames maps (constant.Value).ExactString() -> member names.
 	// Names that don't have a constant.Value defined in the AST (e.g., some
 	// iota constants) will not have a corresponding entry in this map.
 	ValueToNames map[string][]string
 }
 
+// add adds an encountered member name and its (constant.Value).ExactString().
+// The constVal may be nil if no constant.Value is present in the AST for the
+// name. add must be called for each name in the order they are
+// encountered in the AST.
 func (em *enumMembers) add(name string, constVal *string) {
 	em.OrderedNames = append(em.OrderedNames, name)
 

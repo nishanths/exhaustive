@@ -94,7 +94,6 @@ package exhaustive
 import (
 	"go/ast"
 	"go/types"
-	"sort"
 	"strings"
 
 	"golang.org/x/tools/go/analysis"
@@ -160,43 +159,6 @@ func containsIgnoreDirective(comments []*ast.Comment) bool {
 		}
 	}
 	return false
-}
-
-type enumsFact struct {
-	Enums enums
-}
-
-var _ analysis.Fact = (*enumsFact)(nil)
-
-func (e *enumsFact) AFact() {}
-
-func (e *enumsFact) String() string {
-	// sort for stability (required for testing)
-	var sortedKeys []string
-	for k := range e.Enums {
-		sortedKeys = append(sortedKeys, k)
-	}
-	sort.Strings(sortedKeys)
-
-	var buf strings.Builder
-	for i, k := range sortedKeys {
-		v := e.Enums[k]
-		buf.WriteString(k)
-		buf.WriteString(":")
-
-		for j, vv := range v.OrderedNames {
-			buf.WriteString(vv)
-			// add comma separator between each enum member in an enum type
-			if j != len(v.OrderedNames)-1 {
-				buf.WriteString(",")
-			}
-		}
-		// add semicolon separator between each enum type
-		if i != len(sortedKeys)-1 {
-			buf.WriteString("; ")
-		}
-	}
-	return buf.String()
 }
 
 func enumTypeName(e *types.Named, samePkg bool) string {
