@@ -13,6 +13,10 @@ The `exhaustive` package provides an `Analyzer` that follows the guidelines
 described in the [go/analysis](https://godoc.org/golang.org/x/tools/go/analysis) package; this makes
 it possible to integrate into existing analysis driver programs.
 
+## Known issues
+
+The program does not correctly handle enum types which are [type aliases](https://go.googlesource.com/proposal/+/master/design/18130-type-alias.md). See issue #7.
+
 ## Install
 
 ```
