@@ -15,7 +15,7 @@ it possible to integrate into existing analysis driver programs.
 
 ## Known issues
 
-The program does not correctly handle enum types which are [type aliases](https://go.googlesource.com/proposal/+/master/design/18130-type-alias.md). See issue #7.
+The program does not correctly handle enum types which are [type aliases](https://go.googlesource.com/proposal/+/master/design/18130-type-alias.md). See issue [#13](https://github.com/nishanths/exhaustive/issues/13).
 
 ## Install
 
