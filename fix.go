@@ -44,8 +44,8 @@ func flattenImportSpec(iss [][]*ast.ImportSpec) []*ast.ImportSpec {
 	return out
 }
 
-// copies an GenDecl in a manner such that appending to the returned GenDecl's Specs field
-// doesn't mutate the original GenDecl
+// copies a GenDecl in a manner such that appending to the returned GenDecl's Specs field
+// doesn't affect the original GenDecl
 func copyGenDecl(im *ast.GenDecl) *ast.GenDecl {
 	imCopy := *im
 	imCopy.Specs = make([]ast.Spec, len(im.Specs))

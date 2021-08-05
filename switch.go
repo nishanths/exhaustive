@@ -326,7 +326,6 @@ func fmtImportTextEdit(fset *token.FileSet, f *ast.File) analysis.TextEdit {
 	// create the text edit
 	var buf bytes.Buffer
 	printer.Fprint(&buf, fset, firstDeclCopy)
-
 	return analysis.TextEdit{
 		Pos:     firstDecl.Pos(),
 		End:     firstDecl.End(),
