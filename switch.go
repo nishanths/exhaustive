@@ -260,14 +260,14 @@ func computeFix(pass *analysis.Pass, fset *token.FileSet, f *ast.File, sw *ast.S
 	//
 	// We'll need to lookup type information for this, and can't rely solely
 	// on the AST.
-	if containsFuncCall(pass, sw.Tag) {
+	if containsFuncCall(pass.TypesInfo, sw.Tag) {
 		return analysis.SuggestedFix{}, false
 	}
 
 	textEdits := []analysis.TextEdit{missingCasesTextEdit(fset, f, samePkg, sw, defaultCase, enumType, missingMembers)}
 
 	// need to add "fmt" import if "fmt" import doesn't already exist
-	if !hasImportWithPath(fset, f, `"fmt"`) {
+	if !hasImportWithPath(flattenImportSpec(astutil.Imports(fset, f)), `"fmt"`) {
 		textEdits = append(textEdits, fmtImportTextEdit(fset, f))
 	}
 
@@ -283,59 +283,8 @@ func computeFix(pass *analysis.Pass, fset *token.FileSet, f *ast.File, sw *ast.S
 	}, true
 }
 
-func containsFuncCall(pass *analysis.Pass, e ast.Expr) bool {
-	e = astutil.Unparen(e)
-	c, ok := e.(*ast.CallExpr)
-	if !ok {
-		return false
-	}
-	if _, isFunc := pass.TypesInfo.TypeOf(c.Fun).Underlying().(*types.Signature); isFunc {
-		return true
-	}
-	for _, a := range c.Args {
-		if containsFuncCall(pass, a) {
-			return true
-		}
-	}
-	return false
-}
-
-func firstImportDecl(fset *token.FileSet, f *ast.File) *ast.GenDecl {
-	for _, decl := range f.Decls {
-		genDecl, ok := decl.(*ast.GenDecl)
-		if ok && genDecl.Tok == token.IMPORT {
-			// first IMPORT GenDecl
-			return genDecl
-		}
-	}
-	return nil
-}
-
-// copies an GenDecl in a manner such that appending to the returned GenDecl's Specs field
-// doesn't mutate the original GenDecl
-func copyGenDecl(im *ast.GenDecl) *ast.GenDecl {
-	imCopy := *im
-	imCopy.Specs = make([]ast.Spec, len(im.Specs))
-	for i := range im.Specs {
-		imCopy.Specs[i] = im.Specs[i]
-	}
-	return &imCopy
-}
-
-func hasImportWithPath(fset *token.FileSet, f *ast.File, pathLiteral string) bool {
-	igroups := astutil.Imports(fset, f)
-	for _, igroup := range igroups {
-		for _, importSpec := range igroup {
-			if importSpec.Path.Value == pathLiteral {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 func fmtImportTextEdit(fset *token.FileSet, f *ast.File) analysis.TextEdit {
-	firstDecl := firstImportDecl(fset, f)
+	firstDecl := firstImportDecl(f)
 
 	if firstDecl == nil {
 		// file has no import declarations

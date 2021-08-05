@@ -66,7 +66,7 @@ func checkEnumsFactExported(t *testing.T, v *enumsFact) {
 	t.Helper()
 
 	if c := reflect.TypeOf(v).Elem().NumField(); c != 1 {
-		t.Errorf("unexpected number of fields: %d (test needs update?)", c)
+		t.Errorf("unexpected number of fields: %d, wanted: 1 (test needs update?)", c)
 		return
 	}
 	f, ok := reflect.TypeOf(v).Elem().FieldByName("Enums") // Enums field is exported obviously as we're referring to it with uppercase
@@ -75,14 +75,17 @@ func checkEnumsFactExported(t *testing.T, v *enumsFact) {
 		return
 	}
 
-	enumMembers := f.Type.Elem().Elem()                                  // 1st Elem(): obtain map value, 2nd Elem(): obtain pointer value
-	if !assertEqual(t, "exhaustive.enumMembers", enumMembers.String()) { // sanity check that we have the right type
+	enumMembers := f.Type.Elem().Elem()                                 // 1st Elem(): obtain map value, 2nd Elem(): obtain pointer value
+	if !checkEqual(t, "exhaustive.enumMembers", enumMembers.String()) { // sanity check that we have the right type
 		return
 	}
 
 	for i := 0; i < enumMembers.NumField(); i++ {
+		// TODO: Go1.17 will add pkg reflect, method (StructField) IsExported() bool.
+		// https://github.com/golang/go/issues/41563
 		if name := enumMembers.Field(i).Name; !ast.IsExported(name) {
 			t.Errorf("field %q not exported", name)
 		}
+
 	}
 }

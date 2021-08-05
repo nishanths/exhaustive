@@ -10,6 +10,6 @@ func TestEnumsFact(t *testing.T) {
 				"op":    {OrderedNames: []string{"add", "sub", "mul", "quotient", "remainder"}},
 			},
 		}
-		assertEqual(t, "Biome:Tundra,Savanna,Desert; op:add,sub,mul,quotient,remainder", e.String())
+		checkEqual(t, "Biome:Tundra,Savanna,Desert; op:add,sub,mul,quotient,remainder", e.String())
 	})
 }
