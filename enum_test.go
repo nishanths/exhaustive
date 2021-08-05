@@ -1,6 +1,9 @@
 package exhaustive
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
 
 func TestEnumMembers_add(t *testing.T) {
 	var v enumMembers
@@ -10,14 +13,21 @@ func TestEnumMembers_add(t *testing.T) {
 	v.add("y", ptrString("Y"))
 	v.add("x", ptrString("X"))
 
-	checkEqual(t, []string{"foo", "z", "bar", "y", "x"}, v.OrderedNames)
-	checkEqual(t, map[string]string{
+	if want, got := []string{"foo", "z", "bar", "y", "x"}, v.OrderedNames; !reflect.DeepEqual(want, got) {
+		t.Errorf("want %v, got %v", want, got)
+	}
+	if want, got := map[string]string{
 		"z": "X",
 		"y": "Y",
 		"x": "X",
-	}, v.NameToValue)
-	checkEqual(t, map[string][]string{
-		"X": []string{"z", "x"},
-		"Y": []string{"y"},
-	}, v.ValueToNames)
+	}, v.NameToValue; !reflect.DeepEqual(want, got) {
+		t.Errorf("want %v, got %v", want, got)
+	}
+
+	if want, got := map[string][]string{
+		"X": {"z", "x"},
+		"Y": {"y"},
+	}, v.ValueToNames; !reflect.DeepEqual(want, got) {
+		t.Errorf("want %v, got %v", want, got)
+	}
 }

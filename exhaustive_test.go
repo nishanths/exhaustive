@@ -19,9 +19,8 @@ func TestSwitch(t *testing.T) {
 func TestSwitch_ignorePattern(t *testing.T) {
 	t.Run("basic", func(t *testing.T) {
 		resetFlags()
-		if err := fIgnorePattern.Set("_UNSPECIFIED$|^switch/y.Echinodermata$"); !checkNoError(t, err) {
-			return
-		}
+		err := fIgnorePattern.Set("_UNSPECIFIED$|^switch/y.Echinodermata$")
+		assertNoError(t, err)
 		analysistest.Run(t, analysistest.TestData(), Analyzer, "switch/ignorepattern")
 	})
 }
