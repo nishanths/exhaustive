@@ -29,12 +29,12 @@ also use iota instead of explicitly specifying values.)
 Definition of exhaustiveness
 
 An enum switch statement is exhaustive if it has cases for each of the enum's
-member values.
+members.
 
 For an enum type defined in the same package as the switch statement, both
-exported and unexported enum member values must be present in order to consider
+exported and unexported enum members must be present in order to consider
 the switch exhaustive. On the other hand, for an enum type defined
-in an external package it is sufficient for just exported enum member values
+in an external package it is sufficient for just exported enum members
 to be present in order to consider the switch exhaustive.
 
 Flags
@@ -44,7 +44,7 @@ additional flags, such as -fix.)
 
 The -default-signifies-exhaustive boolean flag indicates to the analyzer
 whether switch statements are to be considered exhaustive as long as a
-'default' case is present (even if all enum member values aren't listed in the
+'default' case is present (even if all enum members aren't listed in the
 switch statements cases). The default value is false.
 
 The -check-generated boolean flag indicates whether to check switch
@@ -54,8 +54,8 @@ The -ignore-pattern flag specifies a regular expression. Member names
 in enum definitions that match the regular expression do not require a case
 clause to satisfy exhaustiveness. The regular expression is matched against
 enum member names inclusive of the import path, e.g. of the
-form: github.com/foo/bar.Tundra, where the import path is github.com/foo/bar
-and the enum member name is Tundra.
+form "github.com/foo/bar.Tundra", where "github.com/foo/bar" is the import path
+and "Tundra" is the enum member name.
 
 Fixes
 
