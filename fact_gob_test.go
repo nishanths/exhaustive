@@ -66,6 +66,7 @@ func checkOneFactType(t *testing.T, factType analysis.Fact) {
 	})
 }
 
+// check that fields in all types references in v's definition are exported.
 func checkEnumsFactExported(t *testing.T, v *enumsFact) {
 	t.Helper()
 
@@ -82,9 +83,9 @@ func checkEnumsFactExported(t *testing.T, v *enumsFact) {
 		return
 	}
 
-	// We know the Enums field to be a map[string]*enumMembers. Check that it is.
-	keyType := f.Type.Key()
-	elemType := f.Type.Elem()
+	// Sanity check: We know the Enums field to be a map[string]*enumMembers.
+	// Check that it matches our knowledge.
+	keyType, elemType := f.Type.Key(), f.Type.Elem()
 	if keyType.String() != "string" {
 		t.Errorf("want key type string, got %v", keyType.String())
 		return

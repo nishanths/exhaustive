@@ -4,8 +4,6 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
-
-	"golang.org/x/tools/go/analysis"
 )
 
 // enums holds the enum types and their members defined in a single package.
@@ -52,11 +50,13 @@ func (em *enumMembers) numMembers() int {
 	return len(em.OrderedNames)
 }
 
-func findEnums(pass *analysis.Pass) enums {
+// Find the enums for the files in a package. The files is typically obtained from
+// pass.Files and typesInfo is obtained from pass.TypesInfo.
+func findEnums(files []*ast.File, typesInfo *types.Info) enums {
 	pkgEnums := make(enums)
 
-	// Gather enum types.
-	for _, f := range pass.Files {
+	// Gather probable enum types.
+	for _, f := range files {
 		for _, decl := range f.Decls {
 			gen, ok := decl.(*ast.GenDecl)
 			if !ok {
@@ -68,7 +68,7 @@ func findEnums(pass *analysis.Pass) enums {
 			for _, s := range gen.Specs {
 				// Must be TypeSpec since we've filtered on token.TYPE.
 				t, ok := s.(*ast.TypeSpec)
-				obj := pass.TypesInfo.Defs[t.Name]
+				obj := typesInfo.Defs[t.Name]
 				if obj == nil {
 					continue
 				}
@@ -95,7 +95,7 @@ func findEnums(pass *analysis.Pass) enums {
 	}
 
 	// Gather enum members.
-	for _, f := range pass.Files {
+	for _, f := range files {
 		for _, decl := range f.Decls {
 			gen, ok := decl.(*ast.GenDecl)
 			if !ok {
@@ -108,7 +108,7 @@ func findEnums(pass *analysis.Pass) enums {
 				// Must be ValueSpec since we've filtered on token.CONST, token.VAR.
 				v := s.(*ast.ValueSpec)
 				for i, name := range v.Names {
-					obj := pass.TypesInfo.Defs[name]
+					obj := typesInfo.Defs[name]
 					if obj == nil {
 						continue
 					}
@@ -122,9 +122,8 @@ func findEnums(pass *analysis.Pass) enums {
 					var constVal *string
 					if len(v.Values) > i {
 						value := v.Values[i]
-						if con, ok := pass.TypesInfo.Types[value]; ok && con.Value != nil {
-							str := con.Value.ExactString() // temp var to be able to take address
-							constVal = &str
+						if con, ok := typesInfo.Types[value]; ok && con.Value != nil {
+							constVal = ptrString(con.Value.ExactString())
 						}
 					}
 
@@ -151,3 +150,5 @@ func findEnums(pass *analysis.Pass) enums {
 
 	return pkgEnums
 }
+
+func ptrString(s string) *string { return &s }

@@ -4,14 +4,16 @@
 
 [![Build Status](https://travis-ci.org/nishanths/exhaustive.svg?branch=master)](https://travis-ci.org/nishanths/exhaustive)
 
-The `exhaustive` package and command line program can be used to detect
-enum switch statements that are not exhaustive.
+The `exhaustive` package and command line program can be used to detect enum
+switch statements that are not exhaustive.
 
-An enum switch statement is exhaustive if it has cases for each of the enum's members. See godoc for the definition of enum used by the program.
+An enum switch statement is exhaustive if it has cases for each of the enum's
+members. See godoc for the definition of enum used by the program.
 
 The `exhaustive` package provides an `Analyzer` that follows the guidelines
-described in the [go/analysis](https://godoc.org/golang.org/x/tools/go/analysis) package; this makes
-it possible to integrate into existing analysis driver programs.
+described in the [go/analysis](https://godoc.org/golang.org/x/tools/go/analysis)
+package; this makes it possible to integrate into existing analysis driver
+programs.
 
 ## Install
 

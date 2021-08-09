@@ -36,7 +36,8 @@
 //
 // Flags
 //
-// The analyzer accepts 4 flags.
+// The analyzer accepts the following flags.(The analysis package provides
+// additional flags, such as -fix.)
 //
 // The -default-signifies-exhaustive boolean flag indicates to the analyzer
 // whether switch statements are to be considered exhaustive as long as a
@@ -52,8 +53,6 @@
 // enum member names inclusive of the import path, e.g. of the
 // form: github.com/foo/bar.Tundra, where the import path is github.com/foo/bar
 // and the enum member name is Tundra.
-//
-// The behavior of the -fix flag is described in the next section.
 //
 // Fixes
 //
@@ -138,7 +137,7 @@ var Analyzer = &analysis.Analyzer{
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
-	e := findEnums(pass)
+	e := findEnums(pass.Files, pass.TypesInfo)
 	if len(e) != 0 {
 		pass.ExportPackageFact(&enumsFact{Enums: e})
 	}

@@ -22,7 +22,7 @@ func TestContainsFuncCall(t *testing.T) {
 	decl := syn.Decls[len(syn.Decls)-1].(*ast.GenDecl)
 
 	if len(decl.Specs) != 8 {
-		t.Errorf("wrong number of specs (either test or testdata file needs update?), want 8, got %d", len(decl.Specs))
+		t.Errorf("wrong number of specs: want 8, got %d (either test or testdata file needs update?)", len(decl.Specs))
 		return
 	}
 
