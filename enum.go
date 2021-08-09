@@ -54,8 +54,33 @@ func (em *enumMembers) numMembers() int {
 // pass.Files and typesInfo is obtained from pass.TypesInfo.
 func findEnums(files []*ast.File, typesInfo *types.Info) enums {
 	pkgEnums := make(enums)
+	knownEnumTypes := make(map[string]struct{})
 
-	// Gather probable enum types.
+	// Gather possible enum types.
+	findPossibleEnumTypes(files, typesInfo, func(name string) {
+		pkgEnums[name] = &enumMembers{}
+		knownEnumTypes[name] = struct{}{}
+	})
+
+	// Gather enum members.
+	findEnumMembers(files, typesInfo, knownEnumTypes, func(memberName, typeName string, constVal *string) {
+		pkgEnums[typeName].add(memberName, constVal)
+	})
+
+	// Delete member-less enum types.
+	// We can't call these enums, since we can't be sure without
+	// the existence of members. (The type may just be a named type,
+	// for instance.)
+	for k, v := range pkgEnums {
+		if v.numMembers() == 0 {
+			delete(pkgEnums, k)
+		}
+	}
+
+	return pkgEnums
+}
+
+func findPossibleEnumTypes(files []*ast.File, typesInfo *types.Info, found func(name string)) {
 	for _, f := range files {
 		for _, decl := range f.Decls {
 			gen, ok := decl.(*ast.GenDecl)
@@ -83,18 +108,15 @@ func findEnums(files []*ast.File, typesInfo *types.Info) enums {
 				}
 
 				switch i := basic.Info(); {
-				case i&types.IsInteger != 0:
-					pkgEnums[named.Obj().Name()] = &enumMembers{}
-				case i&types.IsFloat != 0:
-					pkgEnums[named.Obj().Name()] = &enumMembers{}
-				case i&types.IsString != 0:
-					pkgEnums[named.Obj().Name()] = &enumMembers{}
+				case i&types.IsInteger != 0, i&types.IsFloat != 0, i&types.IsString != 0:
+					found(named.Obj().Name())
 				}
 			}
 		}
 	}
+}
 
-	// Gather enum members.
+func findEnumMembers(files []*ast.File, typesInfo *types.Info, knownEnumTypes map[string]struct{}, found func(memberName, typeName string, constVal *string)) {
 	for _, f := range files {
 		for _, decl := range f.Decls {
 			gen, ok := decl.(*ast.GenDecl)
@@ -127,28 +149,15 @@ func findEnums(files []*ast.File, typesInfo *types.Info) enums {
 						}
 					}
 
-					em, ok := pkgEnums[named.Obj().Name()]
-					if !ok {
+					if _, ok := knownEnumTypes[named.Obj().Name()]; !ok {
 						continue
 					}
-					em.add(obj.Name(), constVal)
-					pkgEnums[named.Obj().Name()] = em
+
+					found(obj.Name(), named.Obj().Name(), constVal)
 				}
 			}
 		}
 	}
-
-	// Delete member-less enum types.
-	// We can't call these enums, since we can't be sure without
-	// the existence of members. (The type may just be a named type,
-	// for instance.)
-	for k, v := range pkgEnums {
-		if v.numMembers() == 0 {
-			delete(pkgEnums, k)
-		}
-	}
-
-	return pkgEnums
 }
 
 func ptrString(s string) *string { return &s }
