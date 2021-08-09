@@ -43,7 +43,7 @@ func TestContainsFuncCall(t *testing.T) {
 }
 
 func TestHasImportWithPath(t *testing.T) {
-	t.Run("does not have", func(t *testing.T) {
+	t.Run("does not have import", func(t *testing.T) {
 		got := hasImportWithPath([]*ast.ImportSpec{
 			{Path: &ast.BasicLit{Value: `"foo/bar"`}},
 			{Path: &ast.BasicLit{Value: `"x/y"`}},
@@ -51,10 +51,11 @@ func TestHasImportWithPath(t *testing.T) {
 		}, `"foo"`)
 		if got {
 			t.Errorf("unexpectedly true")
+			return
 		}
 	})
 
-	t.Run("has", func(t *testing.T) {
+	t.Run("has import", func(t *testing.T) {
 		got := hasImportWithPath([]*ast.ImportSpec{
 			{Path: &ast.BasicLit{Value: `"foo/bar"`}},
 			{Path: &ast.BasicLit{Value: `"x/y"`}},
@@ -62,6 +63,7 @@ func TestHasImportWithPath(t *testing.T) {
 		}, `"x/y"`)
 		if !got {
 			t.Errorf("unexpectedly false")
+			return
 		}
 	})
 }
@@ -104,6 +106,7 @@ import ( "bytes" )
 		decl := firstImportDecl(f)
 		if want, got := `"fmt"`, decl.Specs[0].(*ast.ImportSpec).Path.Value; want != got {
 			t.Errorf("want %v, got %v", want, got)
+			return
 		}
 	})
 
@@ -114,6 +117,7 @@ import ( "bytes" )
 		decl := firstImportDecl(f)
 		if decl != nil {
 			t.Errorf("decl unexpectedly non-nil: %+v", decl)
+			return
 		}
 	})
 }

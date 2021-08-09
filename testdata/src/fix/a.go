@@ -1,4 +1,4 @@
-// want package:"^Direction:N,E,S,W,directionInvalid$"
+// want package:"^Direction:N,E,S,W,directionInvalid; River:DefaultRiver,Yamuna,Ganga,Kaveri$"
 
 // a.go is a stable first package file for package fact testing.
 

@@ -390,3 +390,10 @@ func missingCasesTextEdit(fset *token.FileSet, f *ast.File, samePkg bool, sw *as
 		NewText: []byte(insert),
 	}
 }
+
+func enumTypeName(e *types.Named, samePkg bool) string {
+	if samePkg {
+		return e.Obj().Name()
+	}
+	return e.Obj().Pkg().Name() + "." + e.Obj().Name()
+}

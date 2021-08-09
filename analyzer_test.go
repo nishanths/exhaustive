@@ -1,0 +1,57 @@
+package exhaustive
+
+import (
+	"regexp"
+	"testing"
+
+	"golang.org/x/tools/go/analysis/analysistest"
+)
+
+// Integration-style tests using analysistest.
+
+func TestAnalyzer(t *testing.T) {
+	// Enum discovery.
+	t.Run("enum", func(t *testing.T) {
+		resetFlags()
+		analysistest.Run(t, analysistest.TestData(), Analyzer, "enum")
+	})
+
+	// Switch statements associated with the ignore directive comment should not
+	// have diagnostics.
+	t.Run("ignore directive comment", func(t *testing.T) {
+		resetFlags()
+		analysistest.Run(t, analysistest.TestData(), Analyzer, "ignorecomment")
+	})
+
+	// For an enum switch to be exhaustive, it is sufficient for each unique enum
+	// value to be listed, not each unique member by name.
+	t.Run("duplicate enum value", func(t *testing.T) {
+		resetFlags()
+		analysistest.Run(t, analysistest.TestData(), Analyzer, "duplicateenumvalue")
+	})
+
+	// No diagnostics for missing enum members that match the supplied regular expression.
+	t.Run("ignore enum member", func(t *testing.T) {
+		resetFlags()
+		fIgnorePattern = regexpFlag{regexp.MustCompile("_UNSPECIFIED$|^general/y.Echinodermata$")}
+		analysistest.Run(t, analysistest.TestData(), Analyzer, "ignoreenummember")
+	})
+
+	// Generated files should not have diagnostics.
+	t.Run("generated file", func(t *testing.T) {
+		resetFlags()
+		analysistest.Run(t, analysistest.TestData(), Analyzer, "generated")
+	})
+
+	// General exhaustiveness tests.
+	t.Run("general", func(t *testing.T) {
+		resetFlags()
+		analysistest.Run(t, analysistest.TestData(), Analyzer, "general/...")
+	})
+
+	// Tests for '-fix' flag.
+	t.Run("fix", func(t *testing.T) {
+		resetFlags()
+		analysistest.RunWithSuggestedFixes(t, analysistest.TestData(), Analyzer, "fix")
+	})
+}
