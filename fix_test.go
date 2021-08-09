@@ -96,14 +96,16 @@ func TestFlattenImportSpec(t *testing.T) {
 
 func TestFirstImportDecl(t *testing.T) {
 	t.Run("basic", func(t *testing.T) {
-		const source = `
-package foo
+		const source = `package foo
 import "fmt"
-import ( "bytes" )
-`
+import ( "bytes" )`
 		f, err := parser.ParseFile(token.NewFileSet(), "", source, parser.AllErrors)
 		assertNoError(t, err)
 		decl := firstImportDecl(f)
+		if len(decl.Specs) != 1 {
+			t.Errorf("wrong length %d", len(decl.Specs))
+			return
+		}
 		if want, got := `"fmt"`, decl.Specs[0].(*ast.ImportSpec).Path.Value; want != got {
 			t.Errorf("want %v, got %v", want, got)
 			return
@@ -116,7 +118,74 @@ import ( "bytes" )
 		assertNoError(t, err)
 		decl := firstImportDecl(f)
 		if decl != nil {
-			t.Errorf("decl unexpectedly non-nil: %+v", decl)
+			t.Errorf("unexpectedly found decl: %+v", decl)
+			return
+		}
+	})
+}
+
+func TestFmtImportTextEdit(t *testing.T) {
+	t.Run("file with existing imports", func(t *testing.T) {
+		const source = `package foo
+
+import ( "bytes" )
+
+import ( "example.org/pkg" )`
+		fset := token.NewFileSet()
+		f, err := parser.ParseFile(fset, "", source, parser.AllErrors)
+		assertNoError(t, err)
+
+		edit := fmtImportTextEdit(fset, f)
+		gotText := string(edit.NewText)
+		wantText := `import (
+	"bytes"
+	"fmt"
+)`
+		if wantText != gotText {
+			t.Errorf("want %v, got %v", wantText, gotText)
+			return
+		}
+
+		idx := strings.IndexByte(source, 'i') + 1
+		wantPos := token.Pos(len(source[:idx]))
+		if wantPos != edit.Pos {
+			t.Errorf("Pos: want %v, got %v", wantPos, edit.Pos)
+			return
+		}
+
+		idx = strings.IndexByte(source, ')') + 1
+		wantEnd := token.Pos(len(source[:idx]) + 1) // when valid RParen exists go/token uses + 1
+		if wantEnd != edit.End {
+			t.Errorf("Pos: want %v, got %v", wantEnd, edit.End)
+			return
+		}
+	})
+
+	t.Run("file without existing imports", func(t *testing.T) {
+		const source = `package foo`
+		fset := token.NewFileSet()
+		f, err := parser.ParseFile(fset, "", source, parser.AllErrors)
+		assertNoError(t, err)
+
+		edit := fmtImportTextEdit(fset, f)
+		gotText := string(edit.NewText)
+		wantText := `import (
+	"fmt"
+)`
+		if wantText != gotText {
+			t.Errorf("want %v, got %v", wantText, gotText)
+			return
+		}
+
+		wantPos := token.Pos(13)
+		if wantPos != edit.Pos {
+			t.Errorf("Pos: want %v, got %v", wantPos, edit.Pos)
+			return
+		}
+
+		wantEnd := token.Pos(13)
+		if wantEnd != edit.End {
+			t.Errorf("Pos: want %v, got %v", wantEnd, edit.End)
 			return
 		}
 	})

@@ -9,7 +9,6 @@ import (
 	"go/types"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 
 	"golang.org/x/tools/go/analysis"
@@ -21,21 +20,31 @@ func isDefaultCase(c *ast.CaseClause) bool {
 	return c.List == nil // see doc comment on field
 }
 
-func checkSwitchStatements(
-	pass *analysis.Pass,
-	inspect *inspector.Inspector,
-) error {
-	comments := make(map[*ast.File]ast.CommentMap) // CommentMap per package file, lazily populated by reference
-	generated := make(map[*ast.File]bool)
-	return checkSwitchStatements_(pass, inspect, comments, generated)
+func isPackageNameIdentifier(typesInfo *types.Info, ident *ast.Ident) bool {
+	obj := typesInfo.ObjectOf(ident)
+	if obj == nil {
+		return false
+	}
+	_, ok := obj.(*types.PkgName)
+	return ok
 }
 
-func checkSwitchStatements_(
-	pass *analysis.Pass,
-	inspect *inspector.Inspector,
-	comments map[*ast.File]ast.CommentMap,
-	generated map[*ast.File]bool,
-) error {
+func enumTypeName(e *types.Named, samePkg bool) string {
+	if samePkg {
+		return e.Obj().Name()
+	}
+	return e.Obj().Pkg().Name() + "." + e.Obj().Name()
+}
+
+func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector) error {
+	return checkSwitchStatements_(
+		pass, inspect,
+		make(map[*ast.File]ast.CommentMap), // CommentMap per package file, lazily populated by reference
+		make(map[*ast.File]bool),
+	)
+}
+
+func checkSwitchStatements_(pass *analysis.Pass, inspect *inspector.Inspector, comments map[*ast.File]ast.CommentMap, generated map[*ast.File]bool) error {
 	inspect.WithStack([]ast.Node{&ast.SwitchStmt{}}, func(n ast.Node, push bool, stack []ast.Node) bool {
 		if !push {
 			return true
@@ -81,6 +90,7 @@ func checkSwitchStatements_(
 		var enums enumsFact
 		if !pass.ImportPackageFact(tagPkg, &enums) {
 			// Can't do anything further.
+			// TODO(nishanth): Either return an error or panic instead of the current "quiet" behavior.
 			return true
 		}
 
@@ -109,8 +119,8 @@ func checkSwitchStatements_(
 		samePkg := tagPkg == pass.Pkg
 		checkUnexported := samePkg
 
-		hitlist := hitlistFromEnumMembers(em, tagPkg, checkUnexported, fIgnorePattern.Get().(*regexp.Regexp))
-		if len(hitlist) == 0 {
+		hitlist := makeHitlist(em, tagPkg, checkUnexported, fIgnorePattern.Get().(*regexp.Regexp))
+		if hitlist.len() == 0 {
 			return true
 		}
 
@@ -128,7 +138,7 @@ func checkSwitchStatements_(
 					if !ok {
 						continue
 					}
-					updateHitlist(hitlist, em, ident.Name)
+					hitlist.found(ident.Name)
 				} else {
 					selExpr, ok := e.(*ast.SelectorExpr)
 					if !ok {
@@ -140,20 +150,20 @@ func checkSwitchStatements_(
 					if !ok {
 						continue
 					}
-					if !isPackageNameIdentifier(pass, ident) {
+					if !isPackageNameIdentifier(pass.TypesInfo, ident) {
 						continue
 					}
 
-					updateHitlist(hitlist, em, selExpr.Sel.Name)
+					hitlist.found(selExpr.Sel.Name)
 				}
 			}
 		}
 
 		defaultSuffices := fDefaultSignifiesExhaustive && defaultCase != nil
-		shouldReport := len(hitlist) > 0 && !defaultSuffices
+		shouldReport := hitlist.len() != 0 && !defaultSuffices
 
 		if shouldReport {
-			reportSwitch(pass, sw, defaultCase, samePkg, tagType, em, hitlist, file)
+			reportSwitch(pass, sw, defaultCase, samePkg, tagType, em, hitlist.remaining(), file)
 		}
 		return true
 	})
@@ -161,51 +171,9 @@ func checkSwitchStatements_(
 	return nil
 }
 
-func updateHitlist(hitlist map[string]struct{}, em *enumMembers, foundName string) {
-	constVal, ok := em.NameToValue[foundName]
-	if !ok {
-		// only delete the name alone from hitlist
-		delete(hitlist, foundName)
-		return
-	}
-
-	// delete all of the same-valued names from hitlist
-	namesToDelete := em.ValueToNames[constVal]
-	for _, n := range namesToDelete {
-		delete(hitlist, n)
-	}
-}
-
-func isPackageNameIdentifier(pass *analysis.Pass, ident *ast.Ident) bool {
-	obj := pass.TypesInfo.ObjectOf(ident)
-	if obj == nil {
-		return false
-	}
-	_, ok := obj.(*types.PkgName)
-	return ok
-}
-
-func hitlistFromEnumMembers(em *enumMembers, enumPkg *types.Package, checkUnexported bool, ignorePattern *regexp.Regexp) map[string]struct{} {
-	hitlist := make(map[string]struct{})
-	for _, name := range em.OrderedNames {
-		if name == "_" {
-			// blank identifier is often used to skip entries in iota lists
-			continue
-		}
-		if ignorePattern != nil && ignorePattern.MatchString(enumPkg.Path()+"."+name) {
-			continue
-		}
-		if !ast.IsExported(name) && !checkUnexported {
-			continue
-		}
-		hitlist[name] = struct{}{}
-	}
-	return hitlist
-}
-
-func determineMissingOutput(missingMembers map[string]struct{}, em *enumMembers) []string {
-	constValMembers := make(map[string][]string) // value -> names
-	var otherMembers []string                    // non-constant value names
+func missingCasesOutput(missingMembers map[string]struct{}, em *enumMembers) []string {
+	constValMembers := make(map[string][]string) // constant value -> member name
+	var otherMembers []string                    // non-constant value member names
 
 	for m := range missingMembers {
 		if constVal, ok := em.NameToValue[m]; ok {
@@ -215,14 +183,14 @@ func determineMissingOutput(missingMembers map[string]struct{}, em *enumMembers)
 		}
 	}
 
-	missingOutput := make([]string, 0, len(constValMembers)+len(otherMembers))
+	ret := make([]string, 0, len(constValMembers)+len(otherMembers))
 	for _, names := range constValMembers {
 		sort.Strings(names)
-		missingOutput = append(missingOutput, strings.Join(names, "|"))
+		ret = append(ret, strings.Join(names, "|"))
 	}
-	missingOutput = append(missingOutput, otherMembers...)
-	sort.Strings(missingOutput)
-	return missingOutput
+	ret = append(ret, otherMembers...)
+	sort.Strings(ret)
+	return ret
 }
 
 func reportSwitch(
@@ -235,7 +203,7 @@ func reportSwitch(
 	missingMembers map[string]struct{},
 	f *ast.File,
 ) {
-	missingOutput := determineMissingOutput(missingMembers, em)
+	missingOutput := missingCasesOutput(missingMembers, em)
 
 	var fixes []analysis.SuggestedFix
 	if fix, ok := computeFix(pass, pass.Fset, f, sw, defaultCase, enumType, samePkg, missingMembers); ok {
@@ -281,56 +249,6 @@ func computeFix(pass *analysis.Pass, fset *token.FileSet, f *ast.File, sw *ast.S
 		Message:   fmt.Sprintf("add case clause for: %s", strings.Join(missing, ", ")),
 		TextEdits: textEdits,
 	}, true
-}
-
-func fmtImportTextEdit(fset *token.FileSet, f *ast.File) analysis.TextEdit {
-	firstDecl := firstImportDecl(f)
-
-	if firstDecl == nil {
-		// file has no import declarations
-		// insert "fmt" import spec after package statement
-		return analysis.TextEdit{
-			Pos: f.Name.End() + 1, // end of package name + 1
-			End: f.Name.End() + 1,
-			NewText: []byte(`import (
-				"fmt"
-			)`),
-		}
-	}
-
-	// copy because we'll be mutating its Specs field
-	firstDeclCopy := copyGenDecl(firstDecl)
-
-	// find insertion index for "fmt" import spec
-	var i int
-	for ; i < len(firstDeclCopy.Specs); i++ {
-		im := firstDeclCopy.Specs[i].(*ast.ImportSpec)
-		if v, _ := strconv.Unquote(im.Path.Value); v > "fmt" {
-			break
-		}
-	}
-
-	// insert "fmt" import spec at the index
-	fmtSpec := &ast.ImportSpec{
-		Path: &ast.BasicLit{
-			// NOTE: Pos field doesn't seem to be required for our
-			// purposes here.
-			Kind:  token.STRING,
-			Value: `"fmt"`,
-		},
-	}
-	s := firstDeclCopy.Specs // local var for easier comprehension of next line
-	s = append(s[:i], append([]ast.Spec{fmtSpec}, s[i:]...)...)
-	firstDeclCopy.Specs = s
-
-	// create the text edit
-	var buf bytes.Buffer
-	printer.Fprint(&buf, fset, firstDeclCopy)
-	return analysis.TextEdit{
-		Pos:     firstDecl.Pos(),
-		End:     firstDecl.End(),
-		NewText: buf.Bytes(),
-	}
 }
 
 func missingCasesTextEdit(fset *token.FileSet, f *ast.File, samePkg bool, sw *ast.SwitchStmt, defaultCase *ast.CaseClause, enumType *types.Named, missingMembers map[string]struct{}) analysis.TextEdit {
@@ -389,11 +307,4 @@ func missingCasesTextEdit(fset *token.FileSet, f *ast.File, samePkg bool, sw *as
 		End:     pos,
 		NewText: []byte(insert),
 	}
-}
-
-func enumTypeName(e *types.Named, samePkg bool) string {
-	if samePkg {
-		return e.Obj().Name()
-	}
-	return e.Obj().Pkg().Name() + "." + e.Obj().Name()
 }

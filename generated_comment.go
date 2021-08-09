@@ -14,7 +14,7 @@ func isGeneratedFile(file *ast.File) bool {
 			if len(s) >= 1 && s[len(s)-1] == '\r' {
 				s = s[:len(s)-1] // Trim "\r".
 			}
-			if containsGeneratedComment(s) {
+			if isGeneratedFileComment(s) {
 				return true
 			}
 		}
@@ -23,7 +23,7 @@ func isGeneratedFile(file *ast.File) bool {
 	return false
 }
 
-func containsGeneratedComment(s string) bool {
+func isGeneratedFileComment(s string) bool {
 	return strings.HasPrefix(s, genCommentPrefix) &&
 		strings.HasSuffix(s, genCommentSuffix)
 }

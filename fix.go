@@ -1,10 +1,14 @@
 package exhaustive
 
 import (
+	"bytes"
 	"go/ast"
+	"go/printer"
 	"go/token"
 	"go/types"
+	"strconv"
 
+	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/ast/astutil"
 )
 
@@ -64,4 +68,55 @@ func firstImportDecl(f *ast.File) *ast.GenDecl {
 		}
 	}
 	return nil
+}
+
+// Returns a TextEdit that adds "fmt" import to the file.
+func fmtImportTextEdit(fset *token.FileSet, f *ast.File) analysis.TextEdit {
+	firstDecl := firstImportDecl(f)
+
+	if firstDecl == nil {
+		// file has no import declarations
+		// insert "fmt" import spec after package statement
+		return analysis.TextEdit{
+			Pos: f.Name.End() + 1, // end of package name + 1
+			End: f.Name.End() + 1,
+			NewText: []byte(`import (
+	"fmt"
+)`),
+		}
+	}
+
+	// copy because we'll be mutating its Specs field
+	firstDeclCopy := copyGenDecl(firstDecl)
+
+	// find insertion index for "fmt" import spec
+	var i int
+	for ; i < len(firstDeclCopy.Specs); i++ {
+		im := firstDeclCopy.Specs[i].(*ast.ImportSpec)
+		if v, _ := strconv.Unquote(im.Path.Value); v > "fmt" {
+			break
+		}
+	}
+
+	// insert "fmt" import spec at the index
+	fmtSpec := &ast.ImportSpec{
+		Path: &ast.BasicLit{
+			// NOTE: Pos field doesn't seem to be required for our
+			// purposes here.
+			Kind:  token.STRING,
+			Value: `"fmt"`,
+		},
+	}
+	s := firstDeclCopy.Specs // local var for easier comprehension of next line
+	s = append(s[:i], append([]ast.Spec{fmtSpec}, s[i:]...)...)
+	firstDeclCopy.Specs = s
+
+	// create the text edit
+	var buf bytes.Buffer
+	printer.Fprint(&buf, fset, firstDeclCopy)
+	return analysis.TextEdit{
+		Pos:     firstDecl.Pos(),
+		End:     firstDecl.End(),
+		NewText: buf.Bytes(),
+	}
 }

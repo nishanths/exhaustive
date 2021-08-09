@@ -31,6 +31,3 @@ func TestEnumMembers_add(t *testing.T) {
 		t.Errorf("want %v, got %v", want, got)
 	}
 }
-
-func TestFindEnums(t *testing.T) {
-}

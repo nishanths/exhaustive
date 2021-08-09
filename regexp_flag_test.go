@@ -42,7 +42,7 @@ func TestRegexpFlag(t *testing.T) {
 			t.Errorf("error unexpectedly non-nil: %v", err)
 		}
 		if !v.Get().(*regexp.Regexp).MatchString("foo") {
-			t.Errorf("want regexp match, but did not match")
+			t.Errorf("did not match")
 		}
 	})
 
