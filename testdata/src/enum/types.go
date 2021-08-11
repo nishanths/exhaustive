@@ -40,11 +40,11 @@ const (
 	Int32B Int32Enum = 1
 )
 
-type FloatEnum float64
+type Float64Enum float64
 
 const (
-	FloatEnumA FloatEnum = iota
-	FloatEnumB
+	Float64A Float64Enum = iota
+	Float64B
 )
 
 type BoolNotEnum bool

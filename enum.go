@@ -53,29 +53,22 @@ func (em *enumMembers) numMembers() int {
 // Find the enums for the files in a package. The files is typically obtained from
 // pass.Files and typesInfo is obtained from pass.TypesInfo.
 func findEnums(files []*ast.File, typesInfo *types.Info) enums {
-	pkgEnums := make(enums)
 	knownEnumTypes := make(map[string]struct{})
 
 	// Gather possible enum types.
 	findPossibleEnumTypes(files, typesInfo, func(name string) {
-		pkgEnums[name] = &enumMembers{}
 		knownEnumTypes[name] = struct{}{}
 	})
 
+	pkgEnums := make(enums)
+
 	// Gather enum members.
 	findEnumMembers(files, typesInfo, knownEnumTypes, func(memberName, typeName string, constVal *string) {
+		if _, ok := pkgEnums[typeName]; !ok {
+			pkgEnums[typeName] = &enumMembers{}
+		}
 		pkgEnums[typeName].add(memberName, constVal)
 	})
-
-	// Delete member-less enum types.
-	// We can't call these enums, since we can't be sure without
-	// the existence of members. (The type may just be a named type,
-	// for instance.)
-	for k, v := range pkgEnums {
-		if v.numMembers() == 0 {
-			delete(pkgEnums, k)
-		}
-	}
 
 	return pkgEnums
 }
