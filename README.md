@@ -83,8 +83,8 @@ Enums can also be defined using explicit constant values instead of `iota`.
 
 BSD 2-Clause
 
-[godoc]: https://godoc.org/github.com/nishanths/exhaustive?status.svg
-[godoc-status]: https://godoc.org/github.com/nishanths/exhaustive
+[godoc]: https://godoc.org/github.com/nishanths/exhaustive
+[godoc-status]: https://godoc.org/github.com/nishanths/exhaustive?status.svg
 [build]: https://travis-ci.org/nishanths/exhaustive
 [build-status]: https://travis-ci.org/nishanths/exhaustive.svg?branch=master
 [3]: https://godoc.org/golang.org/x/tools/go/analysis
