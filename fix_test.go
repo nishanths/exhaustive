@@ -37,7 +37,6 @@ func TestContainsFuncCall(t *testing.T) {
 		got := containsFuncCall(pkg.TypesInfo, spec.Values[0])
 		if want != got {
 			t.Errorf("[%d]: want %v, got %v", idx, want, got)
-			continue
 		}
 	}
 }

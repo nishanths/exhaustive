@@ -12,8 +12,10 @@ import (
 
 // This test exists to prevent regressions where changes made to a fact type used
 // by the Analyzer makes the type fail to gob-encode/decode. Particuarly:
+//
 //  * gob values cannot seem to have nil pointers.
 //  * fields must be exported to survive the encode/decode.
+//
 // The test doesn't cover everything that could go wrong during gob
 // encoding/decoding.
 func TestFactsGobCompatible(t *testing.T) {

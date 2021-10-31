@@ -43,7 +43,7 @@ func TestAnalyzer(t *testing.T) {
 		analysistest.Run(t, analysistest.TestData(), Analyzer, "generated")
 	})
 
-	// General exhaustiveness tests.
+	// General tests (a mixture).
 	t.Run("general", func(t *testing.T) {
 		resetFlags()
 		analysistest.Run(t, analysistest.TestData(), Analyzer, "general/...")

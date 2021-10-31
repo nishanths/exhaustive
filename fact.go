@@ -29,10 +29,10 @@ func (e *enumsFact) String() string {
 		buf.WriteString(k)
 		buf.WriteString(":")
 
-		for j, vv := range v.OrderedNames {
+		for j, vv := range v.Names {
 			buf.WriteString(vv)
 			// add comma separator between each enum member in an enum type
-			if j != len(v.OrderedNames)-1 {
+			if j != len(v.Names)-1 {
 				buf.WriteString(",")
 			}
 		}

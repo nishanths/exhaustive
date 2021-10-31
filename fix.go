@@ -30,8 +30,17 @@ func containsFuncCall(typesInfo *types.Info, e ast.Expr) bool {
 }
 
 func hasImportWithPath(specs []*ast.ImportSpec, pathLiteral string) bool {
+	in, err := strconv.Unquote(pathLiteral)
+	if err != nil {
+		panic("strconv.Unquote(" + pathLiteral + "): " + err.Error())
+	}
+
 	for _, spec := range specs {
-		if spec.Path.Value == pathLiteral {
+		s, err := strconv.Unquote(spec.Path.Value)
+		if err != nil {
+			panic("strconv.Unquote(" + spec.Path.Value + "): " + err.Error())
+		}
+		if s == in {
 			return true
 		}
 	}

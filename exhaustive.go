@@ -49,6 +49,6 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	}
 
 	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
-	err := checkSwitchStatements(pass, inspect)
+	err := checkSwitchStatements(pass, inspect, byValue) // TODO: support other hitlist strategies via a user-specified flag
 	return nil, err
 }

@@ -16,7 +16,7 @@ func TestEnumMembers_add(t *testing.T) {
 		v.add("y", ptrString("Y"))
 		v.add("x", ptrString("X"))
 
-		if want, got := []string{"foo", "z", "bar", "y", "x"}, v.OrderedNames; !reflect.DeepEqual(want, got) {
+		if want, got := []string{"foo", "z", "bar", "y", "x"}, v.Names; !reflect.DeepEqual(want, got) {
 			t.Errorf("want %v, got %v", want, got)
 		}
 		if want, got := map[string]string{
@@ -221,7 +221,6 @@ func checkEnums(t *testing.T, got map[string]*enumMembers) {
 	for k := range want {
 		if !reflect.DeepEqual(want[k], got[k]) {
 			t.Errorf("%s: want %v, got %v", k, *want[k], *got[k])
-			continue
 		}
 	}
 }

@@ -36,15 +36,15 @@ func enumTypeName(e *types.Named, samePkg bool) string {
 	return e.Obj().Pkg().Name() + "." + e.Obj().Name()
 }
 
-func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector) error {
+func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, strategy hitlistStrategy) error {
 	return checkSwitchStatements_(
-		pass, inspect,
+		pass, inspect, strategy,
 		make(map[*ast.File]ast.CommentMap), // CommentMap per package file, lazily populated by reference
 		make(map[*ast.File]bool),
 	)
 }
 
-func checkSwitchStatements_(pass *analysis.Pass, inspect *inspector.Inspector, comments map[*ast.File]ast.CommentMap, generated map[*ast.File]bool) error {
+func checkSwitchStatements_(pass *analysis.Pass, inspect *inspector.Inspector, strategy hitlistStrategy, comments map[*ast.File]ast.CommentMap, generated map[*ast.File]bool) error {
 	inspect.WithStack([]ast.Node{&ast.SwitchStmt{}}, func(n ast.Node, push bool, stack []ast.Node) bool {
 		if !push {
 			return true
@@ -120,7 +120,7 @@ func checkSwitchStatements_(pass *analysis.Pass, inspect *inspector.Inspector, c
 		checkUnexported := samePkg
 
 		hitlist := makeHitlist(em, tagPkg, checkUnexported, fIgnorePattern.Get().(*regexp.Regexp))
-		if hitlist.len() == 0 {
+		if len(hitlist.remaining()) == 0 {
 			return true
 		}
 
@@ -138,7 +138,7 @@ func checkSwitchStatements_(pass *analysis.Pass, inspect *inspector.Inspector, c
 					if !ok {
 						continue
 					}
-					hitlist.found(ident.Name)
+					hitlist.found(ident.Name, strategy)
 				} else {
 					selExpr, ok := e.(*ast.SelectorExpr)
 					if !ok {
@@ -154,13 +154,13 @@ func checkSwitchStatements_(pass *analysis.Pass, inspect *inspector.Inspector, c
 						continue
 					}
 
-					hitlist.found(selExpr.Sel.Name)
+					hitlist.found(selExpr.Sel.Name, strategy)
 				}
 			}
 		}
 
 		defaultSuffices := fDefaultSignifiesExhaustive && defaultCase != nil
-		shouldReport := hitlist.len() != 0 && !defaultSuffices
+		shouldReport := len(hitlist.remaining()) != 0 && !defaultSuffices
 
 		if shouldReport {
 			reportSwitch(pass, sw, defaultCase, samePkg, tagType, em, hitlist.remaining(), file)

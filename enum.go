@@ -12,16 +12,19 @@ type enums map[string]*enumMembers // enum type name -> enum members
 // enumMembers is the members for a single enum type.
 // The zero value is ready to use.
 type enumMembers struct {
-	// Names in the order encountered in the AST.
-	OrderedNames []string
+	// Names is the enum member names,
+	// in the order encountered in the AST.
+	Names []string
 
 	// NameToValue maps member name -> (constant.Value).ExactString().
-	// If a name is missing in the map, it means that it does not have a
+	// If a name is missing in the map, it means that the name does not have a
 	// corresponding constant.Value defined in the AST.
 	NameToValue map[string]string
 
 	// ValueToNames maps (constant.Value).ExactString() -> member names.
-	// Names that don't have a constant.Value defined in the AST (e.g., some
+	// Note the use of []string for the value type of the map: Multiple
+	// names can have the same value.
+	// Names that don't have a constant.Value defined in the AST (e.g. some
 	// iota constants) will not have a corresponding entry in this map.
 	ValueToNames map[string][]string
 }
@@ -31,7 +34,7 @@ type enumMembers struct {
 // name. add must be called for each name in the order they are
 // encountered in the AST.
 func (em *enumMembers) add(name string, constVal *string) {
-	em.OrderedNames = append(em.OrderedNames, name)
+	em.Names = append(em.Names, name)
 
 	if constVal != nil {
 		if em.NameToValue == nil {
@@ -47,7 +50,7 @@ func (em *enumMembers) add(name string, constVal *string) {
 }
 
 func (em *enumMembers) numMembers() int {
-	return len(em.OrderedNames)
+	return len(em.Names)
 }
 
 // Find the enums for the files in a package. The files is typically obtained from
