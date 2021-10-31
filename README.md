@@ -8,7 +8,7 @@ members. See godoc for the definition of enum used by the program.
 
 The `exhaustive` package provides an `Analyzer` type that follows the
 guidelines described in the [go/analysis][3] package; this makes it
-possible to also integrate exhaustive into existing analysis driver
+possible to also integrate `exhaustive` into analysis driver
 programs.
 
 ### Install
