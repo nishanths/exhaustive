@@ -83,6 +83,11 @@ guidelines described in the [go/analysis][3] package; this should make
 it possible to integrate `exhaustive` into analysis driver
 programs.
 
+### Contributing
+
+Pull requests are welcome! But please create a new issue or comment on
+an existing issue before making a pull request for a new feature.
+
 ### License
 
 BSD 2-Clause
