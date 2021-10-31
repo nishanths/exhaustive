@@ -1,15 +1,12 @@
 ## exhaustive [![Godoc][godoc-status]][godoc] [![Build Status][build-status]][build]
 
-The `exhaustive` package and command line program can be used to detect enum
-switch statements that are not exhaustive.
+The `exhaustive` package and the related command line program
+(`cmd/exhaustive`) can be used to check exhaustiveness of enum switch
+statements in Go code.
 
-An enum switch statement is exhaustive if it has cases for each of the enum's
-members. See godoc for the definition of enum used by the program.
-
-The `exhaustive` package provides an `Analyzer` type that follows the
-guidelines described in the [go/analysis][3] package; this makes it
-possible to also integrate `exhaustive` into analysis driver
-programs.
+An enum switch statement is exhaustive if it has cases for each of the
+enum type's members. See godoc for the definition of enum used by this
+package.
 
 ### Install
 
@@ -27,8 +24,8 @@ go get github.com/nishanths/exhaustive
 
 ### Known issues
 
-The program may not correctly handle enum types that are [type
-aliases][4]. See [issue #13][5].
+The package may not correctly handle enum types that are [type
+aliases][4]. See issue [#13][5].
 
 ### Docs
 
@@ -78,6 +75,13 @@ calc.go:6:2: missing cases in switch of type token.Token: Quotient, Remainder
 ```
 
 Enums can also be defined using explicit constant values instead of `iota`.
+
+### Integrate with analyzer driver programs
+
+The `exhaustive` package provides an `Analyzer` type that follows the
+guidelines described in the [go/analysis][3] package; this should make
+it possible to integrate `exhaustive` into analysis driver
+programs.
 
 ### License
 
