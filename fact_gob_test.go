@@ -101,7 +101,7 @@ func checkEnumsFactExported(t *testing.T, v *enumsFact) {
 
 	// Check that all fields are exported.
 	for i := 0; i < enumMembers.NumField(); i++ {
-		// TODO: Go1.17 will add StructField.IsExported()
+		// TODO: Go1.17 will add StructField.IsExported(), maybe that is appropriate to use here?
 		// https://github.com/golang/go/issues/41563
 		if name := enumMembers.Field(i).Name; !ast.IsExported(name) {
 			t.Errorf("field %q not exported", name)

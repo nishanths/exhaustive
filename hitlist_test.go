@@ -132,6 +132,11 @@ func TestHitlist(t *testing.T) {
 			})
 		})
 
+		t.Run("matches multiple", func(t *testing.T) {
+			hitlist := makeHitlist(em, enumPkg, false, regexp.MustCompile(`^github.com/example/bar-go`))
+			checkRemaining(t, hitlist, map[string]struct{}{})
+		})
+
 		t.Run("uses package path, not package name", func(t *testing.T) {
 			hitlist := makeHitlist(em, enumPkg, false, regexp.MustCompile(`bar.G`))
 			checkRemaining(t, hitlist, map[string]struct{}{

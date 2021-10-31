@@ -45,5 +45,4 @@ func TestRegexpFlag(t *testing.T) {
 			t.Errorf("did not match")
 		}
 	})
-
 }

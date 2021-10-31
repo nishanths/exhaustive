@@ -1,8 +1,4 @@
-# exhaustive
-
-[![Godoc](https://godoc.org/github.com/nishanths/exhaustive?status.svg)](https://godoc.org/github.com/nishanths/exhaustive)
-
-[![Build Status](https://travis-ci.org/nishanths/exhaustive.svg?branch=master)](https://travis-ci.org/nishanths/exhaustive)
+## exhaustive [![Godoc][godoc-status]][godoc] [![Build Status][build-status]][build]
 
 The `exhaustive` package and command line program can be used to detect enum
 switch statements that are not exhaustive.
@@ -10,24 +6,38 @@ switch statements that are not exhaustive.
 An enum switch statement is exhaustive if it has cases for each of the enum's
 members. See godoc for the definition of enum used by the program.
 
-The `exhaustive` package provides an `Analyzer` that follows the guidelines
-described in the [go/analysis](https://godoc.org/golang.org/x/tools/go/analysis)
-package; this makes it possible to integrate into existing analysis driver
+The `exhaustive` package provides an `Analyzer` type that follows the
+guidelines described in the [go/analysis][3] package; this makes it
+possible to also integrate exhaustive into existing analysis driver
 programs.
 
-## Install
+[godoc]: https://godoc.org/github.com/nishanths/exhaustive?status.svg
+[godoc-status]: https://godoc.org/github.com/nishanths/exhaustive
+[build]: https://travis-ci.org/nishanths/exhaustive
+[build-status]: https://travis-ci.org/nishanths/exhaustive.svg?branch=master
+[3]: https://godoc.org/golang.org/x/tools/go/analysis
+
+### Install
+
+Tnstall the command line program (requires Go 1.16 or higher):
 
 ```
-go get github.com/nishanths/exhaustive/...
+go install github.com/nishanths/exhaustive/cmd/exhaustive@latest
 ```
 
-## Docs
+Tnstall the package:
+
+```
+go get github.com/nishanths/exhaustive
+```
+
+### Docs
 
 https://godoc.org/github.com/nishanths/exhaustive
 
-## Example
+### Example
 
-Given the code:
+Given this enum type:
 
 ```diff
 package token
@@ -42,6 +52,9 @@ const (
 +	Remainder
 )
 ```
+
+And code elsewhere that switches on the enum:
+
 ```
 package calc
 
@@ -67,6 +80,6 @@ calc.go:6:2: missing cases in switch of type token.Token: Quotient, Remainder
 
 Enums can also be defined using explicit constant values instead of `iota`.
 
-## License
+### License
 
 BSD 2-Clause
