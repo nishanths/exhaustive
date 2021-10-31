@@ -1,10 +1,10 @@
 /*
 Package exhaustive provides an analyzer that checks exhaustiveness of enum
-switch statements.
+switch statements in Go code.
 
-The analyzer also provides fixes to make the offending
-switch statements exhaustive (see "Fixes" section).
-See "cmd/exhaustive" subpackage for the related command line program.
+The analyzer also provides fixes to make the offending switch statements
+exhaustive (see "Fixes" section). For the related command line program, see the
+"cmd/exhaustive" subpackage.
 
 Definition of enum
 
@@ -15,8 +15,9 @@ a string type. An enum type must have associated with it one or more
 package-level variables of the named type in the package. These variables
 constitute the enum's members.
 
-In the code snippet below, Biome is an enum type with 3 members. (You may
-also use iota instead of explicitly specifying values.)
+In the code snippet below, Biome is an enum type with 3 members. You may
+also use iota instead of explicitly specifying values, and enum members
+don't necessarily have to be all defined in the same var/const block.
 
   type Biome int
 
@@ -32,30 +33,29 @@ An enum switch statement is exhaustive if it has cases for each of the enum's
 members.
 
 For an enum type defined in the same package as the switch statement, both
-exported and unexported enum members must be present in order to consider
-the switch exhaustive. On the other hand, for an enum type defined
-in an external package it is sufficient for just exported enum members
-to be present in order to consider the switch exhaustive.
+exported and unexported enum members must be present in order to consider the
+switch exhaustive. For an enum type defined in an external package it is
+sufficient for just the exported enum members to be present in order to consider
+the switch exhaustive.
 
-Flags
+Notable flags
 
-The analyzer accepts the following flags.(The analysis package provides
-additional flags, such as -fix.)
+The -default-signifies-exhaustive boolean flag indicates to the analyzer whether
+switch statements are to be considered exhaustive (even if all enum members
+aren't listed in the switch statements cases) as long as a 'default' case is
+present. The default value for the flag is false.
 
-The -default-signifies-exhaustive boolean flag indicates to the analyzer
-whether switch statements are to be considered exhaustive as long as a
-'default' case is present (even if all enum members aren't listed in the
-switch statements cases). The default value is false.
+The -check-generated boolean flag indicates whether to check switch statements
+in generated Go source files. The default value for the flag is false.
 
-The -check-generated boolean flag indicates whether to check switch
-statements in generated Go source files. The default value is false.
+The -ignore-pattern flag specifies a regular expression. Enum members that match
+the regular expression do not require a case clause in switch statements to
+satisfy exhaustiveness. The regular expression is matched against enum member
+names inclusive of the enum package's import path. For example, in
+"github.com/foo/bar.Tundra", the enum package's import path is
+"github.com/foo/bar" and the enum member name is Tundra.
 
-The -ignore-pattern flag specifies a regular expression. Member names
-in enum definitions that match the regular expression do not require a case
-clause to satisfy exhaustiveness. The regular expression is matched against
-enum member names inclusive of the import path, e.g. of the
-form "github.com/foo/bar.Tundra", where "github.com/foo/bar" is the import path
-and "Tundra" is the enum member name.
+For details on the -fix boolean flag, see the next section.
 
 Fixes
 
@@ -73,8 +73,8 @@ in the panic/fmt.Sprintf call could be mutative.
 
 The rationale for the fix using panic is that it might be better to fail loudly
 on existing unhandled or impossible cases than to let them slip by quietly
-unnoticed. An even better fix may, of course, be to manually inspect the sites
-reported by the package and handle the missing cases if necessary.
+unnoticed. An even better fix, of course, may be to manually inspect the sites
+reported by the package and handle the missing cases as necessary.
 
 Imports will be adjusted automatically to account for the "fmt" dependency.
 
@@ -87,7 +87,7 @@ If the following directive comment:
 is associated with a switch statement, the analyzer skips
 checking of the switch statement and no diagnostics are reported.
 
-No diagnostics are reported for switch statements in
+Additionally, no diagnostics are reported for switch statements in
 generated files (see https://golang.org/s/generatedcode for definition of
 generated file), unless the -check-generated flag is enabled.
 

@@ -5,7 +5,7 @@ The `exhaustive` package and the related command line program
 statements in Go code.
 
 An enum switch statement is exhaustive if it has cases for each of the
-enum type's members. See godoc for the definition of enum used by this
+enum's members. See godoc for the definition of enum used by this
 package.
 
 ### Install
@@ -24,7 +24,7 @@ go get github.com/nishanths/exhaustive
 
 ### Known issues
 
-The package may not correctly handle enum types that are [type
+The package may not correctly handle enums that are [type
 aliases][4]. See issue [#13][5].
 
 ### Docs
@@ -82,11 +82,6 @@ The `exhaustive` package provides an `Analyzer` type that follows the
 guidelines described in the [go/analysis][3] package; this should make
 it possible to integrate `exhaustive` into analysis driver
 programs.
-
-### Contributing
-
-Pull requests are welcome! But please create a new issue or comment on
-an existing issue before making a pull request for a new feature.
 
 ### License
 
