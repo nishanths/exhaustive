@@ -1,6 +1,6 @@
-// Command exhaustive can find enum switch statements that are non-exhaustive.
+// Command exhaustive checks exhaustiveness of enum switch statements.
 //
-// For documentation, see https://godoc.org/github.com/nishanths/exhaustive.
+// For documentation see https://godoc.org/github.com/nishanths/exhaustive.
 package main
 
 import (
