@@ -13,13 +13,13 @@ programs.
 
 ### Install
 
-Tnstall the command line program (requires Go 1.16 or higher):
+Install the command line program (with Go 1.16 or higher):
 
 ```
 go install github.com/nishanths/exhaustive/cmd/exhaustive@latest
 ```
 
-Tnstall the package:
+Install the package:
 
 ```
 go get github.com/nishanths/exhaustive
