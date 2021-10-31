@@ -1,75 +1,57 @@
 package exhaustive
 
 import (
-	"bytes"
-	"encoding/gob"
-	"reflect"
+	"regexp"
 	"testing"
 
 	"golang.org/x/tools/go/analysis/analysistest"
 )
 
-func TestEnum(t *testing.T) {
-	resetFlags()
-	analysistest.Run(t, analysistest.TestData(), Analyzer, "enumvariant")
-}
+// Integration-style tests using analysistest.
 
-func TestSwitch(t *testing.T) {
-	resetFlags()
-	analysistest.Run(t, analysistest.TestData(), Analyzer, "switch/x", "switch/y")
-}
-
-func TestSwitch_ignorePattern(t *testing.T) {
-	t.Run("basic", func(t *testing.T) {
+func TestAnalyzer(t *testing.T) {
+	// Enum discovery.
+	t.Run("enum", func(t *testing.T) {
 		resetFlags()
-		requireNoError(t, fIgnorePattern.Set("_UNSPECIFIED$|^switch/y.Echinodermata$"))
-		analysistest.Run(t, analysistest.TestData(), Analyzer, "switch/ignorepattern")
+		analysistest.Run(t, analysistest.TestData(), Analyzer, "enum")
 	})
-}
 
-func TestSwitchFix(t *testing.T) {
-	resetFlags()
-	analysistest.RunWithSuggestedFixes(t, analysistest.TestData(), Analyzer, "switchfix")
-}
+	// Switch statements associated with the ignore directive comment should not
+	// have diagnostics.
+	t.Run("ignore directive comment", func(t *testing.T) {
+		resetFlags()
+		analysistest.Run(t, analysistest.TestData(), Analyzer, "ignorecomment")
+	})
 
-// NOTE: This test doesn't cover everything that could go wrong during gob
-// encoding/decoding.
-func TestGobCompatible(t *testing.T) {
-	// The go/analysis package does this internally, but we need to do it
-	// manually here for the test.
-	for _, typ := range Analyzer.FactTypes {
-		gob.Register(typ)
-	}
+	// For an enum switch to be exhaustive, it is sufficient for each unique enum
+	// value to be listed, not each unique member by name.
+	t.Run("duplicate enum value", func(t *testing.T) {
+		resetFlags()
+		analysistest.Run(t, analysistest.TestData(), Analyzer, "duplicateenumvalue")
+	})
 
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-	dec := gob.NewDecoder(&buf)
+	// No diagnostics for missing enum members that match the supplied regular expression.
+	t.Run("ignore enum member", func(t *testing.T) {
+		resetFlags()
+		fIgnorePattern = regexpFlag{regexp.MustCompile("_UNSPECIFIED$|^general/y.Echinodermata$")}
+		analysistest.Run(t, analysistest.TestData(), Analyzer, "ignoreenummember")
+	})
 
-	for _, typ := range Analyzer.FactTypes {
-		t.Run(reflect.TypeOf(typ).String(), func(t *testing.T) {
-			buf.Reset()
-			if err := enc.Encode(typ); err != nil {
-				t.Errorf("failed to encode: %s", err)
-				return
-			}
-			if err := dec.Decode(typ); err != nil {
-				t.Errorf("failed to decode: %s", err)
-				return
-			}
-		})
-	}
-}
+	// Generated files should not have diagnostics.
+	t.Run("generated file", func(t *testing.T) {
+		resetFlags()
+		analysistest.Run(t, analysistest.TestData(), Analyzer, "generated")
+	})
 
-func requireNoError(t *testing.T, err error) {
-	t.Helper()
-	if err != nil {
-		t.Fatalf("want nil error, got %s", err)
-	}
-}
+	// General tests (a mixture).
+	t.Run("general", func(t *testing.T) {
+		resetFlags()
+		analysistest.Run(t, analysistest.TestData(), Analyzer, "general/...")
+	})
 
-func requireError(t *testing.T, err error) {
-	t.Helper()
-	if err == nil {
-		t.Fatalf("want error, got nil")
-	}
+	// Tests for '-fix' flag.
+	t.Run("fix", func(t *testing.T) {
+		resetFlags()
+		analysistest.RunWithSuggestedFixes(t, analysistest.TestData(), Analyzer, "fix")
+	})
 }
