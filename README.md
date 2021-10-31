@@ -11,12 +11,6 @@ guidelines described in the [go/analysis][3] package; this makes it
 possible to also integrate exhaustive into existing analysis driver
 programs.
 
-[godoc]: https://godoc.org/github.com/nishanths/exhaustive?status.svg
-[godoc-status]: https://godoc.org/github.com/nishanths/exhaustive
-[build]: https://travis-ci.org/nishanths/exhaustive
-[build-status]: https://travis-ci.org/nishanths/exhaustive.svg?branch=master
-[3]: https://godoc.org/golang.org/x/tools/go/analysis
-
 ### Install
 
 Tnstall the command line program (requires Go 1.16 or higher):
@@ -30,6 +24,11 @@ Tnstall the package:
 ```
 go get github.com/nishanths/exhaustive
 ```
+
+### Known issues
+
+The program may not correctly handle enum types that are [type
+aliases][4]. See [issue #13][5].
 
 ### Docs
 
@@ -83,3 +82,11 @@ Enums can also be defined using explicit constant values instead of `iota`.
 ### License
 
 BSD 2-Clause
+
+[godoc]: https://godoc.org/github.com/nishanths/exhaustive?status.svg
+[godoc-status]: https://godoc.org/github.com/nishanths/exhaustive
+[build]: https://travis-ci.org/nishanths/exhaustive
+[build-status]: https://travis-ci.org/nishanths/exhaustive.svg?branch=master
+[3]: https://godoc.org/golang.org/x/tools/go/analysis
+[4]: https://go.googlesource.com/proposal/+/master/design/18130-type-alias.md
+[5]: https://github.com/nishanths/exhaustive/issues/13
