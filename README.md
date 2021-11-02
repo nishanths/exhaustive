@@ -1,4 +1,4 @@
-# exhaustive [![Godoc][godoc-status]][godoc] [![Build Status][build-status]][build]
+# exhaustive [![Godoc][godoc-status]][godoc]
 
 The `exhaustive` package and the related command line program
 (`cmd/exhaustive`) can be used to check exhaustiveness of enum switch
