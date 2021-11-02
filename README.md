@@ -33,7 +33,7 @@ go install github.com/nishanths/exhaustive/cmd/exhaustive@master
 
 ## Example
 
-Given this enum:
+Given this enum in package `token`:
 
 ```diff
 package token
@@ -49,7 +49,7 @@ const (
 )
 ```
 
-And code elsewhere that switches on the enum:
+And code elsewhere in package `calc` that switches on the enum:
 
 ```
 package calc
@@ -68,7 +68,7 @@ func processToken(t token.Token) {
 }
 ```
 
-Running the `exhaustive` command on the `calc` package will print:
+Running the `exhaustive` command on package `calc` will print:
 
 ```
 calc.go:6:2: missing cases in switch of type token.Token: Quotient, Remainder
