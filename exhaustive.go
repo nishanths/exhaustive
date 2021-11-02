@@ -59,14 +59,9 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		pass.ExportPackageFact(&enumsFact{Enums: e})
 	}
 
-	var strategy checkingStrategy
-	switch fCheckingStrategy {
-	case "value":
-		strategy = byValue
-	case "name":
-		strategy = byName
-	default:
-		return nil, fmt.Errorf("bad value %q for flag -%s", fCheckingStrategy, CheckingStrategyFlag)
+	strategy, err := determineCheckingStrategy()
+	if err != nil {
+		return nil, err
 	}
 
 	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
@@ -77,6 +72,17 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		checkingStrategy:           strategy,
 	}
 
-	err := checkSwitchStatements(pass, inspect, cfg)
+	err = checkSwitchStatements(pass, inspect, cfg)
 	return nil, err
+}
+
+func determineCheckingStrategy() (checkingStrategy, error) {
+	switch fCheckingStrategy {
+	case "value":
+		return byValue, nil
+	case "name":
+		return byName, nil
+	default:
+		return 0, fmt.Errorf("bad value %q for flag -%s", fCheckingStrategy, CheckingStrategyFlag)
+	}
 }
