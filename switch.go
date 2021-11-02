@@ -13,6 +13,7 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
+// config is configuration for the checkSwitchStatements function.
 type config struct {
 	defaultSignifiesExhaustive bool
 	checkGeneratedFiles        bool
@@ -20,9 +21,18 @@ type config struct {
 	hitlistStrategy            hitlistStrategy
 }
 
+// checkSwitchStatements checks exhaustiveness of switch statements for the supplied
+// pass. It reports switch statements that are not exhaustiveness via pass.Report.
 func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, cfg config) error {
 	comments := make(map[*ast.File]ast.CommentMap)
 	generated := make(map[*ast.File]bool)
+
+	var firstErr error
+	setErr := func(err error) {
+		if firstErr == nil {
+			firstErr = err
+		}
+	}
 
 	inspect.WithStack([]ast.Node{&ast.SwitchStmt{}}, func(n ast.Node, push bool, stack []ast.Node) bool {
 		if !push {
@@ -68,7 +78,8 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, cf
 
 		var enums enumsFact
 		if !pass.ImportPackageFact(tagPkg, &enums) {
-			panic(fmt.Sprintf("pass.ImportPackageFact returned false for %s", tagPkg))
+			setErr(fmt.Errorf("pass.ImportPackageFact returned false for %s", tagPkg))
+			return true
 		}
 
 		em, isEnum := enums.Enums[tagType.Obj().Name()]
@@ -107,7 +118,7 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, cf
 		return true
 	})
 
-	return nil
+	return firstErr
 }
 
 func isDefaultCase(c *ast.CaseClause) bool {
