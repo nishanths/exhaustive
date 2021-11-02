@@ -13,16 +13,16 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
-// nodeVisitor is similar to the visitor function used by inspect.WithStack,
-// except that it returns two additional values: a short string representing
+// nodeVisitor is similar to the visitor function used by Inspector.WithStack,
+// except that it returns two additional values: a short string describing
 // the result of this node visit, and an error.
 //
 // The result is typically useful in debugging or in unit tests to check
 // that the nodeVisitor function took the expected code path.
 //
-// A returned non-nil error does not stop further calls to the visitor; that is
-// solely controlled by the proceed value. The error however allows users the
-// opportunity to e.g. record errors encountered during visits.
+// A returned non-nil error does not stop further calls to the visitor; this is
+// solely controlled by the proceed value. The error however allows callers
+// to e.g. record errors encountered during visits.
 type nodeVisitor func(n ast.Node, push bool, stack []ast.Node) (proceed bool, result string, err error)
 
 // Result values returned by a node visitor constructed via switchStmtChecker.
@@ -240,7 +240,9 @@ func analyzeCaseClauseExpr(e ast.Expr, typesInfo *types.Info, samePkg bool, foun
 	found(selExpr.Sel.Name)
 }
 
-func missingCasesOutput(missingMembers []string, em *enumMembers, strategy hitlistStrategy) []string {
+// diagnosticMissingMembersOutput constructs the list of missing enum members,
+// suitable for use in diagnostic message.
+func diagnosticMissingMembersOutput(missingMembers []string, em *enumMembers, strategy hitlistStrategy) []string {
 	switch strategy {
 	case byValue:
 		var out []string
@@ -287,7 +289,7 @@ func diagnosticEnumTypeName(enumType *types.Named, samePkg bool) string {
 func makeDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumType *types.Named, allMembers *enumMembers, missingMembers []string, strategy hitlistStrategy) analysis.Diagnostic {
 	message := fmt.Sprintf("missing cases in switch of type %s: %s",
 		diagnosticEnumTypeName(enumType, samePkg),
-		strings.Join(missingCasesOutput(missingMembers, allMembers, strategy), ", "))
+		strings.Join(diagnosticMissingMembersOutput(missingMembers, allMembers, strategy), ", "))
 
 	return analysis.Diagnostic{
 		Pos:            sw.Pos(),
