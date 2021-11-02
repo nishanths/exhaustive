@@ -41,9 +41,9 @@ func TestHitlist(t *testing.T) {
 	t.Run("panics on unknown strategy", func(t *testing.T) {
 		hitlist := makeHitlist(em, enumPkg, false, nil)
 		f := func() {
-			hitlist.found("A", hitlistStrategy(8238))
+			hitlist.found("A", checkingStrategy(8238))
 		}
-		assertPanic(t, f, fmt.Sprintf("unknown strategy %v", hitlistStrategy(8238)))
+		assertPanic(t, f, fmt.Sprintf("unknown strategy %v", checkingStrategy(8238)))
 	})
 
 	t.Run("main operations", func(t *testing.T) {

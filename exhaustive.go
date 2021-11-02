@@ -27,11 +27,11 @@ var (
 )
 
 func init() {
-	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, "presence of 'default' case in switch statement satisfies exhaustiveness, even if all enum members aren't listed")
+	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, "presence of 'default' case in a switch statement satisfies exhaustiveness, even if all enum members aren't listed")
 	Analyzer.Flags.BoolVar(&fCheckGeneratedFiles, CheckGeneratedFlag, false, "check switch statements in generated files")
 	Analyzer.Flags.StringVar(&fDeprecatedIgnorePattern, IgnorePatternFlag, "", "no effect (deprecated); see -"+IgnoreEnumMembersFlag+" instead")
-	Analyzer.Flags.Var(&fIgnoreEnumMembers, IgnoreEnumMembersFlag, "enum members matching `regex` do not have to be listed in switch statement to satisfy exhaustiveness")
-	Analyzer.Flags.BoolVar(&fByName, ByNameFlag, false, "require every enum member name to be listed in switch statement to satisfy exhaustiveness, as opposed to every enum member value (which is the default behavior)")
+	Analyzer.Flags.Var(&fIgnoreEnumMembers, IgnoreEnumMembersFlag, "enum members matching `regex` do not have to be listed in a switch statement to satisfy exhaustiveness")
+	Analyzer.Flags.BoolVar(&fByName, ByNameFlag, false, "require every enum member name to be listed in a switch statement to satisfy exhaustiveness, as opposed to every enum member value (which is the default behavior)")
 }
 
 // resetFlags resets the flag variables to their default values.
@@ -68,7 +68,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		defaultSignifiesExhaustive: fDefaultSignifiesExhaustive,
 		checkGeneratedFiles:        fCheckGeneratedFiles,
 		ignoreEnumMembers:          fIgnoreEnumMembers.Get().(*regexp.Regexp),
-		hitlistStrategy:            strategy,
+		checkingStrategy:           strategy,
 	}
 
 	err := checkSwitchStatements(pass, inspect, cfg)

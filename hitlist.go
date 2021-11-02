@@ -7,10 +7,10 @@ import (
 	"regexp"
 )
 
-type hitlistStrategy int
+type checkingStrategy int
 
 const (
-	byValue hitlistStrategy = iota
+	byValue checkingStrategy = iota
 	byName
 )
 
@@ -52,7 +52,7 @@ func makeHitlist(em *enumMembers, enumPkg *types.Package, includeUnexported bool
 	}
 }
 
-func (h *hitlist) found(memberName string, strategy hitlistStrategy) {
+func (h *hitlist) found(memberName string, strategy checkingStrategy) {
 	switch strategy {
 	case byValue:
 		if constVal, ok := h.em.NameToValue[memberName]; ok {

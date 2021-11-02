@@ -6,7 +6,7 @@ import "testing"
 
 func TestDiagnosticEnumTypeName(t *testing.T) {}
 
-func TestDiagnosticMissingMembersOutput(t *testing.T) {}
+func TestDiagnosticMissingMembers(t *testing.T) {}
 
 func TestMakeDiagnostic(t *testing.T) {}
 

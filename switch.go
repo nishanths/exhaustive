@@ -38,11 +38,11 @@ const (
 	resultSwitchIgnoreComment  = "switch statement has ignore comment"
 	resultEnumMembersAccounted = "requisite enum members accounted for"
 	resultDefaultCaseSuffices  = "default case presence satisfies exhaustiveness"
-	resultReported             = "reported diagnostic"
+	resultReportedDiagnostic   = "reported diagnostic"
 )
 
 // switchStmtChecker returns a node visitor that checks exhaustiveness
-// of switch statements for the supplied pass, and reports diagnostics for
+// of enum switch statements for the supplied pass, and reports diagnostics for
 // switch statements that are non-exhaustive.
 func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 	comments := make(map[*ast.File]ast.CommentMap)
@@ -114,7 +114,7 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 		hitlist := makeHitlist(em, tagPkg, checkUnexported, cfg.ignoreEnumMembers)
 
 		hasDefaultCase := analyzeSwitchClauses(sw, pass.TypesInfo, samePkg, func(memberName string) {
-			hitlist.found(memberName, cfg.hitlistStrategy)
+			hitlist.found(memberName, cfg.checkingStrategy)
 		})
 
 		if len(hitlist.remaining()) == 0 {
@@ -128,8 +128,8 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 			// So don't report.
 			return true, resultDefaultCaseSuffices, nil
 		}
-		pass.Report(makeDiagnostic(sw, samePkg, tagType, em, toSlice(hitlist.remaining()), cfg.hitlistStrategy))
-		return true, resultReported, nil
+		pass.Report(makeDiagnostic(sw, samePkg, tagType, em, toSlice(hitlist.remaining()), cfg.checkingStrategy))
+		return true, resultReportedDiagnostic, nil
 	}
 }
 
@@ -138,10 +138,10 @@ type config struct {
 	defaultSignifiesExhaustive bool
 	checkGeneratedFiles        bool
 	ignoreEnumMembers          *regexp.Regexp
-	hitlistStrategy            hitlistStrategy
+	checkingStrategy           checkingStrategy
 }
 
-// checkSwitchStatements checks exhaustiveness of switch statements for the supplied
+// checkSwitchStatements checks exhaustiveness of enum switch statements for the supplied
 // pass. It reports switch statements that are not exhaustive via pass.Report.
 func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, cfg config) error {
 	f := switchStmtChecker(pass, cfg)
@@ -240,9 +240,9 @@ func analyzeCaseClauseExpr(e ast.Expr, typesInfo *types.Info, samePkg bool, foun
 	found(selExpr.Sel.Name)
 }
 
-// diagnosticMissingMembersOutput constructs the list of missing enum members,
+// diagnosticMissingMembers constructs the list of missing enum members,
 // suitable for use in a reported diagnostic message.
-func diagnosticMissingMembersOutput(missingMembers []string, em *enumMembers, strategy hitlistStrategy) []string {
+func diagnosticMissingMembers(missingMembers []string, em *enumMembers, strategy checkingStrategy) []string {
 	switch strategy {
 	case byValue:
 		var out []string
@@ -286,10 +286,10 @@ func diagnosticEnumTypeName(enumType *types.Named, samePkg bool) string {
 	return enumType.Obj().Pkg().Name() + "." + enumType.Obj().Name()
 }
 
-func makeDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumType *types.Named, allMembers *enumMembers, missingMembers []string, strategy hitlistStrategy) analysis.Diagnostic {
+func makeDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumType *types.Named, allMembers *enumMembers, missingMembers []string, strategy checkingStrategy) analysis.Diagnostic {
 	message := fmt.Sprintf("missing cases in switch of type %s: %s",
 		diagnosticEnumTypeName(enumType, samePkg),
-		strings.Join(diagnosticMissingMembersOutput(missingMembers, allMembers, strategy), ", "))
+		strings.Join(diagnosticMissingMembers(missingMembers, allMembers, strategy), ", "))
 
 	return analysis.Diagnostic{
 		Pos:     sw.Pos(),

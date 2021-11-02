@@ -22,7 +22,7 @@ type enumMembers struct {
 	NameToValue map[string]string
 
 	// ValueToNames maps (constant.Value).ExactString() -> member names.
-	// Note the use of []string for the value type of the map: Multiple
+	// Note the use of []string for the element type of the map: Multiple
 	// names can have the same value.
 	// Names that don't have a constant.Value defined in the AST (e.g. some
 	// iota constants) will not have a corresponding entry in this map.
@@ -47,10 +47,6 @@ func (em *enumMembers) add(name string, constVal *string) {
 		}
 		em.ValueToNames[*constVal] = append(em.ValueToNames[*constVal], name)
 	}
-}
-
-func (em *enumMembers) numMembers() int {
-	return len(em.Names)
 }
 
 // Find the enums for the files in a package. The files is typically obtained from
