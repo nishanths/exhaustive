@@ -138,7 +138,7 @@ func _o() {
 var ErrFoo = errors.New("foo")
 
 func _p() {
-	// Switch tag variable has nil package (lives in Universe scope).
+	// Switch tag variable's type has nil package (lives in Universe scope).
 	// Expect things to not panic and to not fail unexpectedly.
 
 	var err error
