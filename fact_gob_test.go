@@ -3,7 +3,6 @@ package exhaustive
 import (
 	"bytes"
 	"encoding/gob"
-	"go/ast"
 	"reflect"
 	"testing"
 
@@ -60,7 +59,7 @@ func checkOneFactType(t *testing.T, factType analysis.Fact) {
 		switch v := factType.(type) {
 		// NOTE: if there are more fact types, add them here.
 		case *enumsFact:
-			checkEnumsFactExported(t, v)
+			checkTypeEnumsFact(t, reflect.TypeOf(v).Elem())
 		default:
 			t.Errorf("unhandled type %T", v)
 			return
@@ -68,25 +67,23 @@ func checkOneFactType(t *testing.T, factType analysis.Fact) {
 	})
 }
 
-// check that fields in all types references in v's definition are exported.
-func checkEnumsFactExported(t *testing.T, v *enumsFact) {
+func checkTypeEnumsFact(t *testing.T, enumsFactType reflect.Type) {
 	t.Helper()
 
-	if c := reflect.TypeOf(v).Elem().NumField(); c != 1 {
-		t.Errorf("unexpected number of fields: %d, wanted: 1 (test needs update?)", c)
-		return
-	}
+	assertTypeFields(t, enumsFactType, []wantField{
+		{"Enums", "exhaustive.enums"},
+	})
 
-	// The single field is known to named 'Enums'; find it.
-	// The 'Enums' field is exported obviously as we're referring to it with uppercase.
-	f, ok := reflect.TypeOf(v).Elem().FieldByName("Enums")
+	// Check underlying type of the "Enums" field.
+	f, ok := enumsFactType.FieldByName("Enums")
 	if !ok {
 		t.Errorf("failed to find field")
 		return
 	}
-
-	// Sanity check: We know the Enums field to be a map[string]*enumMembers.
-	// Check that it matches our knowledge.
+	if f.Type.Kind() != reflect.Map {
+		t.Errorf("want reflect.Map, got %v (%v)", f.Type.Kind(), f.Type.Kind().String())
+		return
+	}
 	keyType, elemType := f.Type.Key(), f.Type.Elem()
 	if keyType.String() != "string" {
 		t.Errorf("want key type string, got %v", keyType.String())
@@ -97,14 +94,39 @@ func checkEnumsFactExported(t *testing.T, v *enumsFact) {
 		return
 	}
 
-	enumMembers := elemType.Elem() // pointer value
+	enumMembersType := elemType.Elem() // call Elem() on pointer type to get value type
+	checkTypeEnumMembers(t, enumMembersType)
+}
 
-	// Check that all fields are exported.
-	for i := 0; i < enumMembers.NumField(); i++ {
-		// TODO: Go1.17 will add StructField.IsExported(), maybe that is appropriate to use here?
-		// https://github.com/golang/go/issues/41563
-		if name := enumMembers.Field(i).Name; !ast.IsExported(name) {
-			t.Errorf("field %q not exported", name)
+func checkTypeEnumMembers(t *testing.T, enumMembersType reflect.Type) {
+	t.Helper()
+	assertTypeFields(t, enumMembersType, []wantField{
+		{"Names", "[]string"},
+		{"NameToValue", "map[string]string"},
+		{"ValueToNames", "map[string][]string"},
+	})
+}
+
+func assertTypeFields(t *testing.T, typ reflect.Type, wantFields []wantField) {
+	t.Helper()
+
+	if got := typ.NumField(); got != len(wantFields) {
+		t.Errorf("want %d, got %d", len(wantFields), got)
+		return
+	}
+
+	for i := 0; i < typ.NumField(); i++ {
+		field := typ.Field(i)
+		if wantFields[i].name != field.Name {
+			t.Errorf("want %q, got %q", wantFields[i].name, field.Name)
+		}
+		if wantFields[i].typ != field.Type.String() {
+			t.Errorf("want %q, got %q", wantFields[i].typ, field.Type.String())
 		}
 	}
+}
+
+type wantField struct {
+	name string
+	typ  string
 }
