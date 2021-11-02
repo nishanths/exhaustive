@@ -44,7 +44,7 @@ const (
 // switchStmtChecker returns a node visitor that checks exhaustiveness
 // of switch statements for the supplied pass, and reports diagnostics for
 // switch statements that are non-exhaustive.
-func switchStmtChecker(pass *analysis.Pass, inspect *inspector.Inspector, cfg config) nodeVisitor {
+func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 	comments := make(map[*ast.File]ast.CommentMap)
 	generated := make(map[*ast.File]bool)
 
@@ -111,7 +111,7 @@ func switchStmtChecker(pass *analysis.Pass, inspect *inspector.Inspector, cfg co
 
 		samePkg := tagPkg == pass.Pkg // do the switch statement and the switch tag type (i.e. enum type) live in the same package?
 		checkUnexported := samePkg    // we want to include unexported members in the exhaustiveness check only if we're in the same package
-		hitlist := makeHitlist(em, tagPkg, checkUnexported, cfg.ignoreMembers)
+		hitlist := makeHitlist(em, tagPkg, checkUnexported, cfg.ignoreEnumMembers)
 
 		hasDefaultCase := analyzeSwitchClauses(sw, pass.TypesInfo, samePkg, func(memberName string) {
 			hitlist.found(memberName, cfg.hitlistStrategy)
@@ -128,7 +128,7 @@ func switchStmtChecker(pass *analysis.Pass, inspect *inspector.Inspector, cfg co
 			// So don't report.
 			return true, resultDefaultCaseSuffices, nil
 		}
-		report(pass, sw, samePkg, tagType, em, hitlist.remaining())
+		pass.Report(makeDiagnostic(sw, samePkg, tagType, em, hitlist.remaining()))
 		return true, resultReported, nil
 	}
 }
@@ -137,14 +137,14 @@ func switchStmtChecker(pass *analysis.Pass, inspect *inspector.Inspector, cfg co
 type config struct {
 	defaultSignifiesExhaustive bool
 	checkGeneratedFiles        bool
-	ignoreMembers              *regexp.Regexp
+	ignoreEnumMembers          *regexp.Regexp
 	hitlistStrategy            hitlistStrategy
 }
 
 // checkSwitchStatements checks exhaustiveness of switch statements for the supplied
 // pass. It reports switch statements that are not exhaustiveness via pass.Report.
 func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, cfg config) error {
-	f := switchStmtChecker(pass, inspect, cfg)
+	f := switchStmtChecker(pass, cfg)
 
 	var firstErr error
 	setErr := func(err error) {
@@ -269,15 +269,15 @@ func diagnosticEnumTypeName(enumType *types.Named, samePkg bool) string {
 	return enumType.Obj().Pkg().Name() + "." + enumType.Obj().Name()
 }
 
-func report(pass *analysis.Pass, sw *ast.SwitchStmt, samePkg bool, enumType *types.Named, em *enumMembers, missingMembers map[string]struct{}) {
+func makeDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumType *types.Named, allMembers *enumMembers, missingMembers map[string]struct{}) analysis.Diagnostic {
 	message := fmt.Sprintf("missing cases in switch of type %s: %s",
 		diagnosticEnumTypeName(enumType, samePkg),
-		strings.Join(missingCasesOutput(missingMembers, em), ", "))
+		strings.Join(missingCasesOutput(missingMembers, allMembers), ", "))
 
-	pass.Report(analysis.Diagnostic{
+	return analysis.Diagnostic{
 		Pos:            sw.Pos(),
 		End:            sw.End(),
 		Message:        message,
 		SuggestedFixes: nil,
-	})
+	}
 }

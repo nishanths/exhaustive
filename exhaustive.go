@@ -54,7 +54,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	cfg := config{
 		defaultSignifiesExhaustive: fDefaultSignifiesExhaustive,
 		checkGeneratedFiles:        fCheckGeneratedFiles,
-		ignoreMembers:              fIgnorePattern.Get().(*regexp.Regexp),
+		ignoreEnumMembers:          fIgnorePattern.Get().(*regexp.Regexp),
 		hitlistStrategy:            byValue, // TODO: support other hitlist strategies via a user-specified flag
 	}
 
