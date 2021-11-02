@@ -142,7 +142,7 @@ type config struct {
 }
 
 // checkSwitchStatements checks exhaustiveness of switch statements for the supplied
-// pass. It reports switch statements that are not exhaustiveness via pass.Report.
+// pass. It reports switch statements that are not exhaustive via pass.Report.
 func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, cfg config) error {
 	f := switchStmtChecker(pass, cfg)
 
