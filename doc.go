@@ -104,6 +104,3 @@ https://golang.org/s/generatedcode for definition of generated file).
 Additionally, see the "-ignore-enum-members" flag.
 */
 package exhaustive
-
-// TODO: add docs for upcoming -by-name flag.
-// TODO: add docs to "Definition of exhaustiveness" section for by value vs. by name checking.
