@@ -157,7 +157,7 @@ func TestMakeDiagnostic(t *testing.T) {
 }
 
 func TestAnalyzeSwitchClauses(t *testing.T) {
-	cfg := &packages.Config{Mode: packages.NeedTypesInfo | packages.NeedTypes | packages.NeedSyntax}
+	cfg := &packages.Config{Mode: packages.NeedName | packages.NeedTypesInfo | packages.NeedTypes | packages.NeedSyntax}
 	pkgs, err := packages.Load(cfg, "./testdata/switchtest/...")
 	assertNoError(t, err)
 
@@ -193,31 +193,28 @@ func TestAnalyzeSwitchClauses(t *testing.T) {
 		declIdx int // func decl index
 
 		samePkg bool
-		file    *ast.File
 		pkg     *packages.Package
+		file    *ast.File
 
 		// what to expect at the decl index:
-
 		funcName      string
 		memberNames   []string
 		defaultExists bool
 	}
 
 	cases := []testSpec{
-		// same package
-		{1, true, switchtestGoFile, switchtest, "switchWithDefault", []string{"Tundra", "Desert"}, true},
-		{2, true, switchtestGoFile, switchtest, "switchWithoutDefault", []string{"Tundra", "Desert"}, false},
-		{3, true, switchtestGoFile, switchtest, "switchParen", []string{"Tundra", "Desert"}, false},
-		{4, true, switchtestGoFile, switchtest, "switchNotIdent", []string{"Savanna"}, false},
+		{1, true, switchtest, switchtestGoFile, "switchWithDefault", []string{"Tundra", "Desert"}, true},
+		{2, true, switchtest, switchtestGoFile, "switchWithoutDefault", []string{"Tundra", "Desert"}, false},
+		{3, true, switchtest, switchtestGoFile, "switchParen", []string{"Tundra", "Desert"}, false},
+		{4, true, switchtest, switchtestGoFile, "switchNotIdent", []string{"Savanna"}, false},
 
-		// different package
-		{1, false, otherpkgGoFile, otherpkg, "switchParen", []string{"Tundra", "Desert"}, false},
-		{2, false, otherpkgGoFile, otherpkg, "switchNotSelExpr", []string{"Tundra"}, false},
-		{4, false, otherpkgGoFile, otherpkg, "switchNotExpectedSelExpr", []string{"Desert"}, false},
+		{1, false, otherpkg, otherpkgGoFile, "switchParen", []string{"Tundra", "Desert"}, false},
+		{2, false, otherpkg, otherpkgGoFile, "switchNotSelExpr", []string{"Tundra"}, false},
+		{4, false, otherpkg, otherpkgGoFile, "switchNotExpectedSelExpr", []string{"Desert"}, false},
 	}
 
 	for _, tt := range cases {
-		t.Run(tt.funcName, func(t *testing.T) {
+		t.Run(tt.pkg.Name+"#"+tt.funcName, func(t *testing.T) {
 			fn := tt.file.Decls[tt.declIdx]
 			if getFuncName(fn) != tt.funcName {
 				t.Errorf("want func name %q, got %q", tt.funcName, getFuncName(fn))
