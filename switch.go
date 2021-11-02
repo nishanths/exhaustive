@@ -104,7 +104,7 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 		if _, ok := comments[file]; !ok {
 			comments[file] = ast.NewCommentMap(pass.Fset, file, file.Comments)
 		}
-		if containsIgnoreDirectiveGroups(comments[file].Filter(sw).Comments()) {
+		if containsIgnoreDirective(comments[file].Filter(sw).Comments()) {
 			// skip checking due to ignore directive
 			return true, resultSwitchIgnoreComment, nil
 		}
@@ -292,10 +292,9 @@ func makeDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumType *types.Named, all
 		strings.Join(diagnosticMissingMembersOutput(missingMembers, allMembers, strategy), ", "))
 
 	return analysis.Diagnostic{
-		Pos:            sw.Pos(),
-		End:            sw.End(),
-		Message:        message,
-		SuggestedFixes: nil,
+		Pos:     sw.Pos(),
+		End:     sw.End(),
+		Message: message,
 	}
 }
 
