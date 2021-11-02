@@ -128,7 +128,7 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 			// So don't report.
 			return true, resultDefaultCaseSuffices, nil
 		}
-		pass.Report(makeDiagnostic(sw, samePkg, tagType, em, hitlist.remaining()))
+		pass.Report(makeDiagnostic(sw, samePkg, tagType, em, toSlice(hitlist.remaining()), cfg.hitlistStrategy))
 		return true, resultReported, nil
 	}
 }
@@ -231,33 +231,47 @@ func analyzeCaseClauseExpr(e ast.Expr, typesInfo *types.Info, samePkg bool, foun
 	if !isPackageNameIdent(ident, typesInfo) {
 		return
 	}
-	// TODO(next): possible to check if ident is the package name of the enum package name?
+
+	// TODO: ident represents some package at this point; check if it represents
+	// the enum package? (Is this additional check necessary? Wouldn't the type
+	// checker have already failed if this wasn't the case?)
 
 	found(selExpr.Sel.Name)
 }
 
-func missingCasesOutput(missingMembers map[string]struct{}, em *enumMembers) []string {
-	// TODO: this has to be updated to account for byValue vs. byName.
+func missingCasesOutput(missingMembers []string, em *enumMembers, strategy hitlistStrategy) []string {
+	switch strategy {
+	case byValue:
+		var out []string
 
-	constValMembers := make(map[string][]string) // constant value -> member name
-	var otherMembers []string                    // non-constant value member names
+		constValMembers := make(map[string][]string) // constant value -> member name
+		var otherMembers []string                    // non-constant value member names
 
-	for m := range missingMembers {
-		if constVal, ok := em.NameToValue[m]; ok {
-			constValMembers[constVal] = append(constValMembers[constVal], m)
-		} else {
-			otherMembers = append(otherMembers, m)
+		for _, m := range missingMembers {
+			if constVal, ok := em.NameToValue[m]; ok {
+				constValMembers[constVal] = append(constValMembers[constVal], m)
+			} else {
+				otherMembers = append(otherMembers, m)
+			}
 		}
-	}
 
-	ret := make([]string, 0, len(constValMembers)+len(otherMembers))
-	for _, names := range constValMembers {
-		sort.Strings(names)
-		ret = append(ret, strings.Join(names, "|"))
+		for _, names := range constValMembers {
+			sort.Strings(names)
+			out = append(out, strings.Join(names, "|"))
+		}
+		out = append(out, otherMembers...)
+		sort.Strings(out)
+		return out
+
+	case byName:
+		out := make([]string, len(missingMembers))
+		copy(out, missingMembers)
+		sort.Strings(out)
+		return out
+
+	default:
+		panic(fmt.Sprintf("unknown strategy %v", strategy))
 	}
-	ret = append(ret, otherMembers...)
-	sort.Strings(ret)
-	return ret
 }
 
 // diagnosticEnumTypeName returns a string representation of an enum type for
@@ -269,10 +283,10 @@ func diagnosticEnumTypeName(enumType *types.Named, samePkg bool) string {
 	return enumType.Obj().Pkg().Name() + "." + enumType.Obj().Name()
 }
 
-func makeDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumType *types.Named, allMembers *enumMembers, missingMembers map[string]struct{}) analysis.Diagnostic {
+func makeDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumType *types.Named, allMembers *enumMembers, missingMembers []string, strategy hitlistStrategy) analysis.Diagnostic {
 	message := fmt.Sprintf("missing cases in switch of type %s: %s",
 		diagnosticEnumTypeName(enumType, samePkg),
-		strings.Join(missingCasesOutput(missingMembers, allMembers), ", "))
+		strings.Join(missingCasesOutput(missingMembers, allMembers, strategy), ", "))
 
 	return analysis.Diagnostic{
 		Pos:            sw.Pos(),
@@ -280,4 +294,12 @@ func makeDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumType *types.Named, all
 		Message:        message,
 		SuggestedFixes: nil,
 	}
+}
+
+func toSlice(m map[string]struct{}) []string {
+	var out []string
+	for k := range m {
+		out = append(out, k)
+	}
+	return out
 }
