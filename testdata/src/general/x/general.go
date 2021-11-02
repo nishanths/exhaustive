@@ -97,7 +97,7 @@ func _g() {
 type SortDirection int
 
 const (
-	_ SortDirection = iota
+	_ SortDirection = iota // blank identifier need to be listed in switch statement to satisfy exhaustiveness
 	Asc
 	Desc
 )
