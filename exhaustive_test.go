@@ -31,7 +31,7 @@ func TestAnalyzer(t *testing.T) {
 		})
 		t.Run("strategy: by name", func(t *testing.T) {
 			resetFlags()
-			fByName = true
+			fCheckingStrategy = "name"
 			analysistest.Run(t, analysistest.TestData(), Analyzer, "duplicateenumvalue/byname/...")
 		})
 	})

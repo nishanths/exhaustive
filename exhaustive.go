@@ -1,6 +1,7 @@
 package exhaustive
 
 import (
+	"fmt"
 	"regexp"
 
 	"golang.org/x/tools/go/analysis"
@@ -15,7 +16,7 @@ const (
 	CheckGeneratedFlag             = "check-generated"
 	IgnorePatternFlag              = "ignore-pattern" // Deprecated. See IgnoreEnumMembersFlag instead.
 	IgnoreEnumMembersFlag          = "ignore-enum-members"
-	ByNameFlag                     = "by-name"
+	CheckingStrategyFlag           = "checking-strategy"
 )
 
 var (
@@ -23,7 +24,7 @@ var (
 	fCheckGeneratedFiles        bool
 	fDeprecatedIgnorePattern    string // Deprecated.
 	fIgnoreEnumMembers          regexpFlag
-	fByName                     bool
+	fCheckingStrategy           string
 )
 
 func init() {
@@ -31,7 +32,7 @@ func init() {
 	Analyzer.Flags.BoolVar(&fCheckGeneratedFiles, CheckGeneratedFlag, false, "check switch statements in generated files")
 	Analyzer.Flags.StringVar(&fDeprecatedIgnorePattern, IgnorePatternFlag, "", "no effect (deprecated); see -"+IgnoreEnumMembersFlag+" instead")
 	Analyzer.Flags.Var(&fIgnoreEnumMembers, IgnoreEnumMembersFlag, "enum members matching `regex` do not have to be listed in a switch statement to satisfy exhaustiveness")
-	Analyzer.Flags.BoolVar(&fByName, ByNameFlag, false, "require every enum member name to be listed in a switch statement to satisfy exhaustiveness, as opposed to every enum member value (which is the default behavior)")
+	Analyzer.Flags.StringVar(&fCheckingStrategy, CheckingStrategyFlag, "value", "the `strategy` to use when checking exhaustiveness of switch statements; one of: value, name")
 }
 
 // resetFlags resets the flag variables to their default values.
@@ -41,7 +42,7 @@ func resetFlags() {
 	fCheckGeneratedFiles = false
 	fDeprecatedIgnorePattern = ""
 	fIgnoreEnumMembers = regexpFlag{}
-	fByName = false
+	fCheckingStrategy = "value"
 }
 
 var Analyzer = &analysis.Analyzer{
@@ -58,9 +59,14 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		pass.ExportPackageFact(&enumsFact{Enums: e})
 	}
 
-	strategy := byValue
-	if fByName {
+	var strategy checkingStrategy
+	switch fCheckingStrategy {
+	case "value":
+		strategy = byValue
+	case "name":
 		strategy = byName
+	default:
+		return nil, fmt.Errorf("unknown -%s value %q", CheckingStrategyFlag, fCheckingStrategy)
 	}
 
 	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
