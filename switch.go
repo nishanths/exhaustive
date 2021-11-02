@@ -33,28 +33,21 @@ func enumTypeName(e *types.Named, samePkg bool) string {
 	return e.Obj().Pkg().Name() + "." + e.Obj().Name()
 }
 
-func analyzeSwitchClauses(sw *ast.SwitchStmt, typesInfo *types.Info, hitlist *hitlist, strategy hitlistStrategy, samePkg bool) (defaultCase *ast.CaseClause) {
+func analyzeSwitchClauses(sw *ast.SwitchStmt, typesInfo *types.Info, samePkg bool, found func(identName string)) (defaultCase *ast.CaseClause) {
 	for _, stmt := range sw.Body.List {
 		caseCl := stmt.(*ast.CaseClause)
-
 		if isDefaultCase(caseCl) {
 			defaultCase = caseCl
 			continue // nothing more to do if it's the default case
 		}
-
-		analyzeCaseClause(caseCl, typesInfo, hitlist, strategy, samePkg)
+		for _, e := range caseCl.List {
+			analyzeCaseClauseExpr(e, typesInfo, samePkg, found)
+		}
 	}
-
-	return
+	return defaultCase
 }
 
-func analyzeCaseClause(caseCl *ast.CaseClause, typesInfo *types.Info, hitlist *hitlist, strategy hitlistStrategy, samePkg bool) {
-	for _, e := range caseCl.List {
-		analyzeCaseClauseExpr(e, typesInfo, hitlist, strategy, samePkg)
-	}
-}
-
-func analyzeCaseClauseExpr(e ast.Expr, typesInfo *types.Info, hitlist *hitlist, strategy hitlistStrategy, samePkg bool) {
+func analyzeCaseClauseExpr(e ast.Expr, typesInfo *types.Info, samePkg bool, found func(identName string)) {
 	e = astutil.Unparen(e)
 
 	if samePkg {
@@ -62,7 +55,7 @@ func analyzeCaseClauseExpr(e ast.Expr, typesInfo *types.Info, hitlist *hitlist, 
 		if !ok {
 			return
 		}
-		hitlist.found(ident.Name, strategy)
+		found(ident.Name)
 		return
 	}
 
@@ -79,19 +72,26 @@ func analyzeCaseClauseExpr(e ast.Expr, typesInfo *types.Info, hitlist *hitlist, 
 	if !ok {
 		return
 	}
-	// TODO(next): possible to check if ident is the package name of the enum package name?
+
 	if !isPackageNameIdentifier(typesInfo, ident) {
 		return
 	}
+	// TODO(next): possible to check if ident is the package name of the enum package name?
 
-	hitlist.found(selExpr.Sel.Name, strategy)
+	found(selExpr.Sel.Name)
 }
 
-func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, strategy hitlistStrategy) error {
-	return checkSwitchStatements_(pass, inspect, strategy, make(map[*ast.File]ast.CommentMap), make(map[*ast.File]bool))
+type config struct {
+	defaultSignifiesExhaustive bool
+	checkGeneratedFiles        bool
+	ignoreMembers              *regexp.Regexp
+	hitlistStrategy            hitlistStrategy
 }
 
-func checkSwitchStatements_(pass *analysis.Pass, inspect *inspector.Inspector, strategy hitlistStrategy, comments map[*ast.File]ast.CommentMap, generated map[*ast.File]bool) error {
+func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, cfg config) error {
+	comments := make(map[*ast.File]ast.CommentMap)
+	generated := make(map[*ast.File]bool)
+
 	inspect.WithStack([]ast.Node{&ast.SwitchStmt{}}, func(n ast.Node, push bool, stack []ast.Node) bool {
 		if !push {
 			// we only inspect things on the way down, not up.
@@ -105,7 +105,7 @@ func checkSwitchStatements_(pass *analysis.Pass, inspect *inspector.Inspector, s
 		if _, ok := generated[file]; !ok {
 			generated[file] = isGeneratedFile(file)
 		}
-		if generated[file] && !fCheckGeneratedFiles {
+		if generated[file] && !cfg.checkGeneratedFiles {
 			// don't check this file.
 			return true
 		}
@@ -155,11 +155,13 @@ func checkSwitchStatements_(pass *analysis.Pass, inspect *inspector.Inspector, s
 		samePkg := tagPkg == pass.Pkg
 		checkUnexported := samePkg
 
-		hitlist := makeHitlist(em, tagPkg, checkUnexported, fIgnorePattern.Get().(*regexp.Regexp))
+		hitlist := makeHitlist(em, tagPkg, checkUnexported, cfg.ignoreMembers)
 
-		defaultCase := analyzeSwitchClauses(sw, pass.TypesInfo, hitlist, strategy, samePkg)
+		defaultCase := analyzeSwitchClauses(sw, pass.TypesInfo, samePkg, func(name string) {
+			hitlist.found(name, cfg.hitlistStrategy)
+		})
 
-		defaultSuffices := fDefaultSignifiesExhaustive && defaultCase != nil
+		defaultSuffices := cfg.defaultSignifiesExhaustive && defaultCase != nil
 		shouldReport := len(hitlist.remaining()) != 0 && !defaultSuffices
 
 		if shouldReport {

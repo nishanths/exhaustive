@@ -1,6 +1,8 @@
 package exhaustive
 
 import (
+	"regexp"
+
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/inspector"
@@ -49,6 +51,13 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	}
 
 	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
-	err := checkSwitchStatements(pass, inspect, byValue) // TODO: support other hitlist strategies via a user-specified flag
+	cfg := config{
+		defaultSignifiesExhaustive: fDefaultSignifiesExhaustive,
+		checkGeneratedFiles:        fCheckGeneratedFiles,
+		ignoreMembers:              fIgnorePattern.Get().(*regexp.Regexp),
+		hitlistStrategy:            byValue, // TODO: support other hitlist strategies via a user-specified flag
+	}
+
+	err := checkSwitchStatements(pass, inspect, cfg)
 	return nil, err
 }
