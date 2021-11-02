@@ -53,69 +53,70 @@ func TestDiagnosticMissingMembers(t *testing.T) {
 		},
 	}
 
-	t.Run("strategy: value", func(t *testing.T) {
-		strategy := strategyValue
-
-		t.Run("missing some: same-valued", func(t *testing.T) {
-			got := diagnosticMissingMembers([]string{"Ganga", "Unspecified", "Kaveri"}, em, strategy)
+	t.Run("missing some: same-valued", func(t *testing.T) {
+		t.Run("strategy value", func(t *testing.T) {
+			got := diagnosticMissingMembers([]string{"Ganga", "Unspecified", "Kaveri"}, em, strategyValue)
 			want := []string{"Ganga|Unspecified", "Kaveri"}
 			if !reflect.DeepEqual(want, got) {
 				t.Errorf("want %v, got %v", want, got)
 			}
 		})
 
-		t.Run("missing some: all unique/unknown values", func(t *testing.T) {
-			got := diagnosticMissingMembers([]string{"Yamuna", "Kaveri"}, em, strategy)
-			want := []string{"Kaveri", "Yamuna"}
-			if !reflect.DeepEqual(want, got) {
-				t.Errorf("want %v, got %v", want, got)
-			}
-		})
-
-		t.Run("missing none", func(t *testing.T) {
-			got := diagnosticMissingMembers(nil, em, strategy)
-			if len(got) != 0 {
-				t.Errorf("want zero elements, got %d", len(got))
-			}
-		})
-
-		t.Run("missing all", func(t *testing.T) {
-			got := diagnosticMissingMembers([]string{"Ganga", "Kaveri", "Yamuna", "Unspecified"}, em, strategy)
-			want := []string{"Ganga|Unspecified", "Kaveri", "Yamuna"}
+		t.Run("strategy name", func(t *testing.T) {
+			got := diagnosticMissingMembers([]string{"Ganga", "Unspecified", "Kaveri"}, em, strategyName)
+			want := []string{"Ganga", "Kaveri", "Unspecified"}
 			if !reflect.DeepEqual(want, got) {
 				t.Errorf("want %v, got %v", want, got)
 			}
 		})
 	})
 
-	t.Run("strategy: name", func(t *testing.T) {
-		strategy := strategyName
-
-		t.Run("missing some: same-valued", func(t *testing.T) {
-			got := diagnosticMissingMembers([]string{"Ganga", "Unspecified", "Kaveri"}, em, strategy)
-			want := []string{"Ganga", "Kaveri", "Unspecified"}
-			if !reflect.DeepEqual(want, got) {
-				t.Errorf("want %v, got %v", want, got)
-			}
-		})
-
-		t.Run("missing some: all unique/unknown values", func(t *testing.T) {
-			got := diagnosticMissingMembers([]string{"Yamuna", "Kaveri"}, em, strategy)
+	t.Run("missing some: unique/unknown values", func(t *testing.T) {
+		t.Run("strategy value", func(t *testing.T) {
+			got := diagnosticMissingMembers([]string{"Yamuna", "Kaveri"}, em, strategyValue)
 			want := []string{"Kaveri", "Yamuna"}
 			if !reflect.DeepEqual(want, got) {
 				t.Errorf("want %v, got %v", want, got)
 			}
 		})
 
-		t.Run("missing none", func(t *testing.T) {
-			got := diagnosticMissingMembers(nil, em, strategy)
+		t.Run("strategy name", func(t *testing.T) {
+			got := diagnosticMissingMembers([]string{"Yamuna", "Kaveri"}, em, strategyName)
+			want := []string{"Kaveri", "Yamuna"}
+			if !reflect.DeepEqual(want, got) {
+				t.Errorf("want %v, got %v", want, got)
+			}
+		})
+
+	})
+
+	t.Run("missing none", func(t *testing.T) {
+		t.Run("strategy value", func(t *testing.T) {
+			got := diagnosticMissingMembers(nil, em, strategyValue)
 			if len(got) != 0 {
 				t.Errorf("want zero elements, got %d", len(got))
 			}
 		})
 
-		t.Run("missing all", func(t *testing.T) {
-			got := diagnosticMissingMembers([]string{"Ganga", "Kaveri", "Yamuna", "Unspecified"}, em, strategy)
+		t.Run("strategy name", func(t *testing.T) {
+			got := diagnosticMissingMembers(nil, em, strategyName)
+			if len(got) != 0 {
+				t.Errorf("want zero elements, got %d", len(got))
+			}
+		})
+	})
+
+	t.Run("missing all", func(t *testing.T) {
+		t.Run("strategy value", func(t *testing.T) {
+			got := diagnosticMissingMembers([]string{"Ganga", "Kaveri", "Yamuna", "Unspecified"}, em, strategyValue)
+			want := []string{"Ganga|Unspecified", "Kaveri", "Yamuna"}
+			if !reflect.DeepEqual(want, got) {
+				t.Errorf("want %v, got %v", want, got)
+			}
+		})
+
+		t.Run("strategy name", func(t *testing.T) {
+			got := diagnosticMissingMembers([]string{"Ganga", "Kaveri", "Yamuna", "Unspecified"}, em, strategyName)
 			want := []string{"Ganga", "Kaveri", "Unspecified", "Yamuna"}
 			if !reflect.DeepEqual(want, got) {
 				t.Errorf("want %v, got %v", want, got)
