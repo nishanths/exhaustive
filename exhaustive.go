@@ -1,6 +1,7 @@
 package exhaustive
 
 import (
+	"fmt"
 	"regexp"
 
 	"golang.org/x/tools/go/analysis"
@@ -13,19 +14,22 @@ import (
 const (
 	DefaultSignifiesExhaustiveFlag = "default-signifies-exhaustive"
 	CheckGeneratedFlag             = "check-generated"
-	IgnorePatternFlag              = "ignore-pattern"
+	IgnorePatternFlag              = "ignore-pattern" // Deprecated. See IgnoreEnumMembersFlag instead.
+	IgnoreEnumMembersFlag          = "ignore-enum-members"
 )
 
 var (
 	fDefaultSignifiesExhaustive bool
 	fCheckGeneratedFiles        bool
-	fIgnorePattern              regexpFlag
+	fIgnorePattern              regexpFlag // Deprecated.
+	fIgnoreEnumMembers          regexpFlag
 )
 
 func init() {
 	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, "switch statements are to be considered exhaustive if a 'default' case is present, even if all enum members aren't listed in the switch")
 	Analyzer.Flags.BoolVar(&fCheckGeneratedFiles, CheckGeneratedFlag, false, "check switch statements in generated files")
-	Analyzer.Flags.Var(&fIgnorePattern, IgnorePatternFlag, "ignore enum members matching the supplied regular expression when checking for exhaustiveness")
+	Analyzer.Flags.Var(&fIgnorePattern, IgnorePatternFlag, "deprecated: use -"+IgnoreEnumMembersFlag+" instead")
+	Analyzer.Flags.Var(&fIgnoreEnumMembers, IgnoreEnumMembersFlag, "ignore enum members matching `regex` when checking for exhaustiveness")
 }
 
 // resetFlags resets the flag variables to their default values.
@@ -34,6 +38,7 @@ func resetFlags() {
 	fDefaultSignifiesExhaustive = false
 	fCheckGeneratedFiles = false
 	fIgnorePattern = regexpFlag{}
+	fIgnoreEnumMembers = regexpFlag{}
 }
 
 var Analyzer = &analysis.Analyzer{
@@ -45,6 +50,10 @@ var Analyzer = &analysis.Analyzer{
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
+	if err := checkAndAdjustFlags(); err != nil {
+		return nil, err
+	}
+
 	e := findEnums(pass.Files, pass.TypesInfo)
 	if len(e) != 0 {
 		pass.ExportPackageFact(&enumsFact{Enums: e})
@@ -54,10 +63,20 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	cfg := config{
 		defaultSignifiesExhaustive: fDefaultSignifiesExhaustive,
 		checkGeneratedFiles:        fCheckGeneratedFiles,
-		ignoreEnumMembers:          fIgnorePattern.Get().(*regexp.Regexp),
+		ignoreEnumMembers:          fIgnoreEnumMembers.Get().(*regexp.Regexp),
 		hitlistStrategy:            byValue, // TODO: support other hitlist strategies via a user-specified flag
 	}
 
 	err := checkSwitchStatements(pass, inspect, cfg)
 	return nil, err
+}
+
+func checkAndAdjustFlags() error {
+	if fIgnorePattern.Get().(*regexp.Regexp) != nil && fIgnoreEnumMembers.Get().(*regexp.Regexp) != nil {
+		return fmt.Errorf("cannot specify both -%s and -%s", IgnorePatternFlag, IgnoreEnumMembersFlag)
+	}
+	if fIgnorePattern.Get().(*regexp.Regexp) != nil {
+		fIgnoreEnumMembers = fIgnorePattern
+	}
+	return nil
 }
