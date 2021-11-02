@@ -42,8 +42,8 @@ exhaustiveness. The "name" strategy requires that each independent enum member
 name is listed in a switch statement to satisfy exhaustiveness.
 
 To illustrate the difference between the strategies, consider the following enum
-type and switch statement. The switch statement is not exhaustive when using the
-"name" strategy (because the name AccessDefault is not listed). But it is
+and switch statement. The switch statement is not exhaustive when using the
+"name" strategy (because the name AccessDefault is not listed), but it is
 exhaustive when using the "value" strategy (because AccessDefault and AccessAll
 have the same value).
 
@@ -83,9 +83,9 @@ enum member name combined in the following format: <import path>.<enum member
 name>. For example: "github.com/foo/bar.Tundra", where the enum package's import
 path is "github.com/foo/bar" and the enum member name is "Tundra".
 
-The "-checking-strategy" flag specifies the checking strategy to use. The flag
-value must be either "value" (which is the default) or "name". See discussion
-in the "Defintion of exhaustiveness" section for more details.
+The "-checking-strategy" flag specifies the exhaustiveness checking strategy to
+use. The flag value must be either "value" (which is the default) or "name". See
+discussion in the "Defintion of exhaustiveness" section for more details.
 
 Skipping analysis
 
