@@ -2,10 +2,6 @@
 Package exhaustive provides an analyzer that checks exhaustiveness of enum
 switch statements in Go code.
 
-The analyzer also provides fixes to make the offending switch statements
-exhaustive (see "Fixes" section). For the related command line program, see the
-"cmd/exhaustive" subpackage.
-
 Definition of enum
 
 The Go language spec does not provide an explicit definition for enums.
@@ -40,43 +36,21 @@ the switch exhaustive.
 
 Notable flags
 
-The -default-signifies-exhaustive boolean flag indicates to the analyzer whether
-switch statements are to be considered exhaustive (even if all enum members
-aren't listed in the switch statements cases) as long as a 'default' case is
-present. The default value for the flag is false.
+The "-default-signifies-exhaustive" boolean flag indicates to the analyzer
+whether switch statements are to be considered exhaustive—even if all enum
+members aren't listed in the switch statements cases—as long as a 'default' case
+is present. The default value for the flag is false.
 
-The -check-generated boolean flag indicates whether to check switch statements
+The "-check-generated" boolean flag indicates whether to check switch statements
 in generated Go source files. The default value for the flag is false.
 
-The -ignore-pattern flag specifies a regular expression. Enum members that match
-the regular expression do not require a case clause in switch statements to
-satisfy exhaustiveness. The regular expression is matched against enum member
-names inclusive of the enum package's import path. For example, in
-"github.com/foo/bar.Tundra", the enum package's import path is
-"github.com/foo/bar" and the enum member name is Tundra.
-
-For details on the -fix boolean flag, see the next section.
-
-Fixes
-
-The analyzer suggests fixes for a switch statement if it is not exhaustive.
-The suggested fix always adds a single case clause for the missing enum member
-values.
-
-  case MissingA, MissingB, MissingC:
-      panic(fmt.Sprintf("unhandled value: %v", v))
-
-where v is the expression in the switch statement's tag (in other words, the
-value being switched upon). If the switch statement's tag is a function or a
-method call the analyzer does not suggest a fix, as reusing the call expression
-in the panic/fmt.Sprintf call could be mutative.
-
-The rationale for the fix using panic is that it might be better to fail loudly
-on existing unhandled or impossible cases than to let them slip by quietly
-unnoticed. An even better fix, of course, may be to manually inspect the sites
-reported by the package and handle the missing cases as necessary.
-
-Imports will be adjusted automatically to account for the "fmt" dependency.
+The "-ignore-pattern" flag specifies a regular expression. Enum members that
+match the regular expression do not require a case clause in switch statements
+in order for the switch statements to be considered exhaustive. Effectively, the
+enum member is ignored when checking exhaustiveness. The supplied regular
+expression is matched against the enum package's import path and the enum member
+name combined, e.g. "github.com/foo/bar.Tundra", where the enum package's import
+path is "github.com/foo/bar" and the enum member name is "Tundra".
 
 Skipping analysis
 
@@ -84,13 +58,17 @@ If the following directive comment:
 
   //exhaustive:ignore
 
-is associated with a switch statement, the analyzer skips
-checking of the switch statement and no diagnostics are reported.
+is associated with a switch statement, the analyzer skips checking of the switch
+statement and no diagnostics are reported. Note the lack of whitespace between
+the comment marker ("//") and the comment text.
 
-Additionally, no diagnostics are reported for switch statements in
-generated files (see https://golang.org/s/generatedcode for definition of
-generated file), unless the -check-generated flag is enabled.
+Additionally, no diagnostics are reported for switch statements in generated
+files unless the "-check-generated" flag is enabled. (See
+https://golang.org/s/generatedcode for definition of generated file).
 
-Additionally, see the -ignore-pattern flag.
+Additionally, see the "-ignore-pattern" flag.
 */
 package exhaustive
+
+// TODO: add docs for upcoming -by-name flag.
+// TODO: add docs to "Definition of exhaustiveness" section for by value vs. by name checking.

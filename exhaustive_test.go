@@ -48,10 +48,4 @@ func TestAnalyzer(t *testing.T) {
 		resetFlags()
 		analysistest.Run(t, analysistest.TestData(), Analyzer, "general/...")
 	})
-
-	// Tests for '-fix' flag.
-	t.Run("fix", func(t *testing.T) {
-		resetFlags()
-		analysistest.RunWithSuggestedFixes(t, analysistest.TestData(), Analyzer, "fix")
-	})
 }
