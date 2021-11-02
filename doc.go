@@ -44,12 +44,12 @@ is present. The default value for the flag is false.
 The "-check-generated" boolean flag indicates whether to check switch statements
 in generated Go source files. The default value for the flag is false.
 
-The "-ignore-pattern" flag specifies a regular expression. Enum members that
-match the regular expression do not require a case clause in switch statements
-in order for the switch statements to be considered exhaustive. Effectively, the
-enum member is ignored when checking for exhaustiveness. The supplied regular
-expression is matched against the enum package's import path and the enum member
-name combined, e.g. "github.com/foo/bar.Tundra", where the enum package's import
+The "-ignore-enum-members" flag specifies a regular expression. Enum members
+that match the regular expression do need to be listed in switch statements in
+order for switch statements to be considered exhaustive. The supplied
+regular expression is matched against the enum package's import path and the
+enum member name combined in the following format: <import path>.<enum member
+name>. For example: "github.com/foo/bar.Tundra", where the enum package's import
 path is "github.com/foo/bar" and the enum member name is "Tundra".
 
 Skipping analysis
@@ -66,7 +66,7 @@ Additionally, no diagnostics are reported for switch statements in generated
 files unless the "-check-generated" flag is enabled. (See
 https://golang.org/s/generatedcode for definition of generated file).
 
-Additionally, see the "-ignore-pattern" flag.
+Additionally, see the "-ignore-enum-members" flag.
 */
 package exhaustive
 

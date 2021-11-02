@@ -14,7 +14,7 @@ import (
 )
 
 // nodeVisitor is similar to the visitor function used by Inspector.WithStack,
-// except that it returns two additional values: a short string describing
+// except that it returns two additional values: a short description of
 // the result of this node visit, and an error.
 //
 // The result is typically useful in debugging or in unit tests to check
