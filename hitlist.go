@@ -52,8 +52,8 @@ func makeHitlist(em *enumMembers, enumPkg *types.Package, includeUnexported bool
 	}
 }
 
-func (h *hitlist) found(memberName string, deletionStrategy hitlistStrategy) {
-	switch deletionStrategy {
+func (h *hitlist) found(memberName string, strategy hitlistStrategy) {
+	switch strategy {
 	case byValue:
 		if constVal, ok := h.em.NameToValue[memberName]; ok {
 			// delete all of the same-valued names
@@ -70,7 +70,7 @@ func (h *hitlist) found(memberName string, deletionStrategy hitlistStrategy) {
 		delete(h.m, memberName)
 
 	default:
-		panic(fmt.Sprintf("unknown strategy %v", deletionStrategy))
+		panic(fmt.Sprintf("unknown strategy %v", strategy))
 	}
 }
 

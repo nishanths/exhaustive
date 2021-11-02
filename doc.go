@@ -47,7 +47,7 @@ in generated Go source files. The default value for the flag is false.
 The "-ignore-pattern" flag specifies a regular expression. Enum members that
 match the regular expression do not require a case clause in switch statements
 in order for the switch statements to be considered exhaustive. Effectively, the
-enum member is ignored when checking exhaustiveness. The supplied regular
+enum member is ignored when checking for exhaustiveness. The supplied regular
 expression is matched against the enum package's import path and the enum member
 name combined, e.g. "github.com/foo/bar.Tundra", where the enum package's import
 path is "github.com/foo/bar" and the enum member name is "Tundra".
