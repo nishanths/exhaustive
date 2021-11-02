@@ -1,6 +1,7 @@
 package x
 
 import (
+	"errors"
 	bar "general/y"
 	barpkg "general/y"
 )
@@ -131,5 +132,19 @@ func _o() {
 	case bar.Chordata:
 	case bar.Echinodermata:
 	case h.Mollusca:
+	}
+}
+
+var ErrFoo = errors.New("foo")
+
+func _p() {
+	// Switch tag variable has nil package (lives in Universe scope).
+	// Expect things to not panic and to not fail unexpectedly.
+
+	var err error
+
+	switch err {
+	case nil:
+	case ErrFoo:
 	}
 }
