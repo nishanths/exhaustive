@@ -11,9 +11,125 @@ import (
 
 // TODO: write tests that assert on the "result" returned by nodeVisitor.
 
-func TestDiagnosticEnumTypeName(t *testing.T) {}
+func TestDiagnosticEnumTypeName(t *testing.T) {
+	t.Run("same package", func(t *testing.T) {
+		enumType := types.NewNamed(
+			types.NewTypeName(50, types.NewPackage("example.org/enumpkg-go", "enumpkg"), "Biome", nil),
+			nil, /* underlying type should not matter */
+			nil,
+		)
+		got := diagnosticEnumTypeName(enumType, true)
+		want := "Biome"
+		if got != want {
+			t.Errorf("want %q, got %q", want, got)
+		}
+	})
 
-func TestDiagnosticMissingMembers(t *testing.T) {}
+	t.Run("different package", func(t *testing.T) {
+		enumType := types.NewNamed(
+			types.NewTypeName(50, types.NewPackage("example.org/enumpkg-go", "enumpkg"), "Biome", nil),
+			nil, /* underlying type should not matter */
+			nil,
+		)
+		got := diagnosticEnumTypeName(enumType, false)
+		want := "enumpkg.Biome"
+		if got != want {
+			t.Errorf("want %q, got %q", want, got)
+		}
+	})
+}
+
+func TestDiagnosticMissingMembers(t *testing.T) {
+	t.Run("strategy: value", func(t *testing.T) {
+		strategy := byValue
+		em := &enumMembers{
+			Names: []string{"Ganga", "Yamuna", "Kaveri", "Unspecified"},
+			NameToValue: map[string]string{
+				"Unspecified": "0",
+				"Ganga":       "0",
+			},
+			ValueToNames: map[string][]string{
+				"0": {"Unspecified", "Ganga"},
+			},
+		}
+
+		t.Run("missing some: same-valued", func(t *testing.T) {
+			got := diagnosticMissingMembers([]string{"Ganga", "Unspecified", "Kaveri"}, em, strategy)
+			want := []string{"Ganga|Unspecified", "Kaveri"}
+			if !reflect.DeepEqual(want, got) {
+				t.Errorf("want %v, got %v", want, got)
+			}
+		})
+
+		t.Run("missing some: all unique values", func(t *testing.T) {
+			got := diagnosticMissingMembers([]string{"Yamuna", "Kaveri"}, em, strategy)
+			want := []string{"Kaveri", "Yamuna"}
+			if !reflect.DeepEqual(want, got) {
+				t.Errorf("want %v, got %v", want, got)
+			}
+		})
+
+		t.Run("missing none", func(t *testing.T) {
+			got := diagnosticMissingMembers(nil, em, strategy)
+			if len(got) != 0 {
+				t.Errorf("want zero elements, got %d", len(got))
+			}
+		})
+
+		t.Run("missing all", func(t *testing.T) {
+			got := diagnosticMissingMembers([]string{"Ganga", "Kaveri", "Yamuna", "Unspecified"}, em, strategy)
+			want := []string{"Ganga|Unspecified", "Kaveri", "Yamuna"}
+			if !reflect.DeepEqual(want, got) {
+				t.Errorf("want %v, got %v", want, got)
+			}
+		})
+	})
+
+	t.Run("strategy: by name", func(t *testing.T) {
+		strategy := byName
+		em := &enumMembers{
+			Names: []string{"Ganga", "Yamuna", "Kaveri", "Unspecified"},
+			NameToValue: map[string]string{
+				"Unspecified": "0",
+				"Ganga":       "0",
+			},
+			ValueToNames: map[string][]string{
+				"0": {"Unspecified", "Ganga"},
+			},
+		}
+
+		t.Run("missing some: same-valued", func(t *testing.T) {
+			got := diagnosticMissingMembers([]string{"Ganga", "Unspecified", "Kaveri"}, em, strategy)
+			want := []string{"Ganga", "Kaveri", "Unspecified"}
+			if !reflect.DeepEqual(want, got) {
+				t.Errorf("want %v, got %v", want, got)
+			}
+		})
+
+		t.Run("missing some: all unique values", func(t *testing.T) {
+			got := diagnosticMissingMembers([]string{"Yamuna", "Kaveri"}, em, strategy)
+			want := []string{"Kaveri", "Yamuna"}
+			if !reflect.DeepEqual(want, got) {
+				t.Errorf("want %v, got %v", want, got)
+			}
+		})
+
+		t.Run("missing none", func(t *testing.T) {
+			got := diagnosticMissingMembers(nil, em, strategy)
+			if len(got) != 0 {
+				t.Errorf("want zero elements, got %d", len(got))
+			}
+		})
+
+		t.Run("missing all", func(t *testing.T) {
+			got := diagnosticMissingMembers([]string{"Ganga", "Kaveri", "Yamuna", "Unspecified"}, em, strategy)
+			want := []string{"Ganga", "Kaveri", "Unspecified", "Yamuna"}
+			if !reflect.DeepEqual(want, got) {
+				t.Errorf("want %v, got %v", want, got)
+			}
+		})
+	})
+}
 
 // This test mainly exists to ensure stability of the diagnostic message format.
 func TestMakeDiagnostic(t *testing.T) {
@@ -26,7 +142,7 @@ func TestMakeDiagnostic(t *testing.T) {
 	}
 	samePkg := false
 	enumType := types.NewNamed(
-		types.NewTypeName(1, types.NewPackage("example.org/enumpkg", "enumpkg"), "Biome", nil),
+		types.NewTypeName(50, types.NewPackage("example.org/enumpkg", "enumpkg"), "Biome", nil),
 		nil, /* underlying type should not matter */
 		nil,
 	)
