@@ -1,4 +1,4 @@
-// Utilities used across test files.
+// Shared testing utilities for use in test files.
 
 package exhaustive
 
@@ -22,6 +22,8 @@ func assertError(t *testing.T, err error) {
 }
 
 func assertPanic(t *testing.T, f func(), wantPanicVal interface{}) {
+	t.Helper()
+
 	defer func() {
 		r := recover()
 		if r == nil {

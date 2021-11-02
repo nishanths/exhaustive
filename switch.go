@@ -1,11 +1,8 @@
 package exhaustive
 
 import (
-	"bytes"
 	"fmt"
 	"go/ast"
-	"go/printer"
-	"go/token"
 	"go/types"
 	"regexp"
 	"sort"
@@ -16,11 +13,170 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
-func isDefaultCase(c *ast.CaseClause) bool {
-	return c.List == nil // see doc comment on field
+type checkingStrategy int
+
+const (
+	strategyValue checkingStrategy = iota
+	strategyName
+)
+
+// nodeVisitor is similar to the visitor function used by Inspector.WithStack,
+// except that it returns two additional values: a short description of
+// the result of this node visit, and an error.
+//
+// The result is typically useful in debugging or in unit tests to check
+// that the nodeVisitor function took the expected code path.
+//
+// A returned non-nil error does not stop further calls to the visitor; this is
+// solely controlled by the proceed value. The error however allows callers
+// to e.g. record errors encountered during visits.
+type nodeVisitor func(n ast.Node, push bool, stack []ast.Node) (proceed bool, result string, err error)
+
+// Result values returned by a node visitor constructed via switchStmtChecker.
+const (
+	resultNotPush              = "not push"
+	resultGeneratedFile        = "generated file"
+	resultNoSwitchTag          = "no switch tag"
+	resultTagNotValue          = "switch tag not value type"
+	resultTagNotNamed          = "switch tag not named type"
+	resultTagNoPkg             = "switch tag does not belong to regular package"
+	resultPassImportFailed     = "pass.ImportPackageFact failed"
+	resultTagNotEnum           = "switch tag not known enum type"
+	resultSwitchIgnoreComment  = "switch statement has ignore comment"
+	resultEnumMembersAccounted = "requisite enum members accounted for"
+	resultDefaultCaseSuffices  = "default case presence satisfies exhaustiveness"
+	resultReportedDiagnostic   = "reported diagnostic"
+)
+
+// switchStmtChecker returns a node visitor that checks exhaustiveness
+// of enum switch statements for the supplied pass, and reports diagnostics for
+// switch statements that are non-exhaustive.
+func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
+	comments := make(map[*ast.File]ast.CommentMap)
+	generated := make(map[*ast.File]bool)
+
+	return func(n ast.Node, push bool, stack []ast.Node) (bool, string, error) {
+		if !push {
+			// we only inspect things on the way down, not up.
+			return true, resultNotPush, nil
+		}
+
+		file := stack[0].(*ast.File)
+
+		// Determine if the file is a generated file, and save the result.
+		// If it is a generated file, don't check the file.
+		if _, ok := generated[file]; !ok {
+			generated[file] = isGeneratedFile(file)
+		}
+		if generated[file] && !cfg.checkGeneratedFiles {
+			// don't check this file.
+			return true, resultGeneratedFile, nil
+		}
+
+		sw := n.(*ast.SwitchStmt)
+
+		if sw.Tag == nil {
+			return true, resultNoSwitchTag, nil
+		}
+
+		t := pass.TypesInfo.Types[sw.Tag]
+		if !t.IsValue() {
+			return true, resultTagNotValue, nil
+		}
+
+		tagType, ok := t.Type.(*types.Named)
+		if !ok {
+			return true, resultTagNotNamed, nil
+		}
+
+		tagPkg := tagType.Obj().Pkg()
+		if tagPkg == nil {
+			// The Go documentation says: nil for labels and objects in the Universe scope.
+			// This happens for the `error` type, for example.
+			// Continuing would mean that pass.ImportPackageFact panics.
+			return true, resultTagNoPkg, nil
+		}
+
+		var enums enumsFact
+		if !pass.ImportPackageFact(tagPkg, &enums) {
+			return true, resultPassImportFailed, fmt.Errorf("pass.ImportPackageFact returned false for %s", tagPkg)
+		}
+
+		em, isEnum := enums.Enums[tagType.Obj().Name()]
+		if !isEnum {
+			// switch tag's type is not a known enum type.
+			return true, resultTagNotEnum, nil
+		}
+
+		if _, ok := comments[file]; !ok {
+			comments[file] = ast.NewCommentMap(pass.Fset, file, file.Comments)
+		}
+		if containsIgnoreDirective(comments[file].Filter(sw).Comments()) {
+			// skip checking due to ignore directive
+			return true, resultSwitchIgnoreComment, nil
+		}
+
+		samePkg := tagPkg == pass.Pkg // do the switch statement and the switch tag type (i.e. enum type) live in the same package?
+		checkUnexported := samePkg    // we want to include unexported members in the exhaustiveness check only if we're in the same package
+		hitlist := makeHitlist(em, tagPkg, checkUnexported, cfg.ignoreEnumMembers)
+
+		hasDefaultCase := analyzeSwitchClauses(sw, pass.TypesInfo, samePkg, func(memberName string) {
+			hitlist.found(memberName, cfg.checkingStrategy)
+		})
+
+		if len(hitlist.remaining()) == 0 {
+			// All enum members accounted for.
+			// Nothing to report.
+			return true, resultEnumMembersAccounted, nil
+		}
+		if hasDefaultCase && cfg.defaultSignifiesExhaustive {
+			// Though enum members are not accounted for,
+			// the existence of the default case signifies exhaustiveness.
+			// So don't report.
+			return true, resultDefaultCaseSuffices, nil
+		}
+		pass.Report(makeDiagnostic(sw, samePkg, tagType, em, toSlice(hitlist.remaining()), cfg.checkingStrategy))
+		return true, resultReportedDiagnostic, nil
+	}
 }
 
-func isPackageNameIdentifier(typesInfo *types.Info, ident *ast.Ident) bool {
+// config is configuration for checkSwitchStatements.
+type config struct {
+	defaultSignifiesExhaustive bool
+	checkGeneratedFiles        bool
+	ignoreEnumMembers          *regexp.Regexp
+	checkingStrategy           checkingStrategy
+}
+
+// checkSwitchStatements checks exhaustiveness of enum switch statements for the supplied
+// pass. It reports switch statements that are not exhaustive via pass.Report.
+func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, cfg config) error {
+	f := switchStmtChecker(pass, cfg)
+
+	var firstErr error
+	setErr := func(err error) {
+		if firstErr == nil {
+			firstErr = err
+		}
+	}
+
+	inspect.WithStack([]ast.Node{&ast.SwitchStmt{}}, func(n ast.Node, push bool, stack []ast.Node) bool {
+		proceed, _, err := f(n, push, stack)
+		if err != nil {
+			setErr(err)
+		}
+		return proceed
+	})
+
+	return firstErr
+}
+
+func isDefaultCase(c *ast.CaseClause) bool {
+	return c.List == nil // see doc comment on List field
+}
+
+// isPackageNameIdent returns whether ident represents an imported Go package.
+func isPackageNameIdent(ident *ast.Ident, typesInfo *types.Info) bool {
 	obj := typesInfo.ObjectOf(ident)
 	if obj == nil {
 		return false
@@ -29,282 +185,130 @@ func isPackageNameIdentifier(typesInfo *types.Info, ident *ast.Ident) bool {
 	return ok
 }
 
-func enumTypeName(e *types.Named, samePkg bool) string {
+// analyzeSwitchClauses analyzes the clauses in the supplied switch statement.
+//
+// The typesInfo param should typically be pass.TypesInfo. The samePkg param
+// indicates whether the switch tag type and the switch statement live in the
+// same package. The found function is called for each enum member name found in
+// the switch statement.
+//
+// The hasDefaultCase return value indicates whether the switch statement has a
+// default clause.
+func analyzeSwitchClauses(sw *ast.SwitchStmt, typesInfo *types.Info, samePkg bool, found func(identName string)) (hasDefaultCase bool) {
+	for _, stmt := range sw.Body.List {
+		caseCl := stmt.(*ast.CaseClause)
+		if isDefaultCase(caseCl) {
+			hasDefaultCase = true
+			continue // nothing more to do if it's the default case
+		}
+		for _, expr := range caseCl.List {
+			analyzeCaseClauseExpr(expr, typesInfo, samePkg, found)
+		}
+	}
+	return hasDefaultCase
+}
+
+// Helper for analyzeSwitchClauses. See docs there.
+func analyzeCaseClauseExpr(e ast.Expr, typesInfo *types.Info, samePkg bool, found func(identName string)) {
+	e = astutil.Unparen(e)
+
 	if samePkg {
-		return e.Obj().Name()
-	}
-	return e.Obj().Pkg().Name() + "." + e.Obj().Name()
-}
-
-func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, strategy hitlistStrategy) error {
-	return checkSwitchStatements_(
-		pass, inspect, strategy,
-		make(map[*ast.File]ast.CommentMap), // CommentMap per package file, lazily populated by reference
-		make(map[*ast.File]bool),
-	)
-}
-
-func checkSwitchStatements_(pass *analysis.Pass, inspect *inspector.Inspector, strategy hitlistStrategy, comments map[*ast.File]ast.CommentMap, generated map[*ast.File]bool) error {
-	inspect.WithStack([]ast.Node{&ast.SwitchStmt{}}, func(n ast.Node, push bool, stack []ast.Node) bool {
-		if !push {
-			return true
-		}
-
-		file := stack[0].(*ast.File)
-
-		// Determine if file is a generated file, based on https://golang.org/s/generatedcode.
-		// If generated, don't check this file.
-		var isGenerated bool
-		if gen, ok := generated[file]; ok {
-			isGenerated = gen
-		} else {
-			isGenerated = isGeneratedFile(file)
-			generated[file] = isGenerated
-		}
-		if isGenerated && !fCheckGeneratedFiles {
-			// don't check
-			return true
-		}
-
-		sw := n.(*ast.SwitchStmt)
-		if sw.Tag == nil {
-			return true
-		}
-		t := pass.TypesInfo.Types[sw.Tag]
-		if !t.IsValue() {
-			return true
-		}
-		tagType, ok := t.Type.(*types.Named)
+		ident, ok := e.(*ast.Ident)
 		if !ok {
-			return true
+			return
 		}
+		found(ident.Name)
+		return
+	}
 
-		tagPkg := tagType.Obj().Pkg()
-		if tagPkg == nil {
-			// Doc comment: nil for labels and objects in the Universe scope.
-			// This happens for the `error` type, for example.
-			// Continuing would mean that ImportPackageFact panics.
-			return true
-		}
+	selExpr, ok := e.(*ast.SelectorExpr)
+	if !ok {
+		return
+	}
 
-		var enums enumsFact
-		if !pass.ImportPackageFact(tagPkg, &enums) {
-			// Can't do anything further.
-			// TODO(nishanth): Either return an error or panic instead of the current "quiet" behavior.
-			return true
-		}
+	// Check that X (which is everything except the rightmost *ast.Ident, or
+	// the Sel) is also an *ast.Ident, and particularly that it is a package
+	// name identifier.
+	x := astutil.Unparen(selExpr.X)
+	ident, ok := x.(*ast.Ident)
+	if !ok {
+		return
+	}
 
-		em, isEnum := enums.Enums[tagType.Obj().Name()]
-		if !isEnum {
-			// Tag's type is not a known enum.
-			return true
-		}
+	if !isPackageNameIdent(ident, typesInfo) {
+		return
+	}
 
-		// Get comment map.
-		var allComments ast.CommentMap
-		if cm, ok := comments[file]; ok {
-			allComments = cm
-		} else {
-			allComments = ast.NewCommentMap(pass.Fset, file, file.Comments)
-			comments[file] = allComments
-		}
+	// TODO: ident represents a package at this point; check if it represents
+	// the enum package? (Is this additional check necessary? Wouldn't the type
+	// checker have already failed if this wasn't the case?)
+	// This may need additional thought for type aliases, too.
 
-		specificComments := allComments.Filter(sw)
-		for _, group := range specificComments.Comments() {
-			if containsIgnoreDirective(group.List) {
-				return true // skip checking due to ignore directive
-			}
-		}
-
-		samePkg := tagPkg == pass.Pkg
-		checkUnexported := samePkg
-
-		hitlist := makeHitlist(em, tagPkg, checkUnexported, fIgnorePattern.Get().(*regexp.Regexp))
-		if len(hitlist.remaining()) == 0 {
-			return true
-		}
-
-		var defaultCase *ast.CaseClause
-		for _, stmt := range sw.Body.List {
-			caseCl := stmt.(*ast.CaseClause)
-			if isDefaultCase(caseCl) {
-				defaultCase = caseCl
-				continue // nothing more to do if it's the default case
-			}
-			for _, e := range caseCl.List {
-				e = astutil.Unparen(e)
-				if samePkg {
-					ident, ok := e.(*ast.Ident)
-					if !ok {
-						continue
-					}
-					hitlist.found(ident.Name, strategy)
-				} else {
-					selExpr, ok := e.(*ast.SelectorExpr)
-					if !ok {
-						continue
-					}
-
-					// ensure X is package identifier
-					ident, ok := selExpr.X.(*ast.Ident)
-					if !ok {
-						continue
-					}
-					if !isPackageNameIdentifier(pass.TypesInfo, ident) {
-						continue
-					}
-
-					hitlist.found(selExpr.Sel.Name, strategy)
-				}
-			}
-		}
-
-		defaultSuffices := fDefaultSignifiesExhaustive && defaultCase != nil
-		shouldReport := len(hitlist.remaining()) != 0 && !defaultSuffices
-
-		if shouldReport {
-			reportSwitch(pass, sw, defaultCase, samePkg, tagType, em, hitlist.remaining(), file)
-		}
-		return true
-	})
-
-	return nil
+	found(selExpr.Sel.Name)
 }
 
-func missingCasesOutput(missingMembers map[string]struct{}, em *enumMembers) []string {
-	constValMembers := make(map[string][]string) // constant value -> member name
-	var otherMembers []string                    // non-constant value member names
+// diagnosticMissingMembers constructs the list of missing enum members,
+// suitable for use in a reported diagnostic message.
+func diagnosticMissingMembers(missingMembers []string, em *enumMembers, strategy checkingStrategy) []string {
+	switch strategy {
+	case strategyValue:
+		var out []string
 
-	for m := range missingMembers {
-		if constVal, ok := em.NameToValue[m]; ok {
-			constValMembers[constVal] = append(constValMembers[constVal], m)
-		} else {
-			otherMembers = append(otherMembers, m)
-		}
-	}
+		constValMembers := make(map[string][]string) // constant value -> member names
+		var otherMembers []string                    // non-constant value member names
 
-	ret := make([]string, 0, len(constValMembers)+len(otherMembers))
-	for _, names := range constValMembers {
-		sort.Strings(names)
-		ret = append(ret, strings.Join(names, "|"))
-	}
-	ret = append(ret, otherMembers...)
-	sort.Strings(ret)
-	return ret
-}
-
-func reportSwitch(
-	pass *analysis.Pass,
-	sw *ast.SwitchStmt,
-	defaultCase *ast.CaseClause,
-	samePkg bool,
-	enumType *types.Named,
-	em *enumMembers,
-	missingMembers map[string]struct{},
-	f *ast.File,
-) {
-	missingOutput := missingCasesOutput(missingMembers, em)
-
-	var fixes []analysis.SuggestedFix
-	if fix, ok := computeFix(pass, pass.Fset, f, sw, defaultCase, enumType, samePkg, missingMembers); ok {
-		fixes = append(fixes, fix)
-	}
-
-	pass.Report(analysis.Diagnostic{
-		Pos:            sw.Pos(),
-		End:            sw.End(),
-		Message:        fmt.Sprintf("missing cases in switch of type %s: %s", enumTypeName(enumType, samePkg), strings.Join(missingOutput, ", ")),
-		SuggestedFixes: fixes,
-	})
-}
-
-func computeFix(pass *analysis.Pass, fset *token.FileSet, f *ast.File, sw *ast.SwitchStmt, defaultCase *ast.CaseClause, enumType *types.Named, samePkg bool, missingMembers map[string]struct{}) (analysis.SuggestedFix, bool) {
-	// Function and method calls may be mutative, so we don't want to reuse the
-	// call expression in the about-to-be-inserted case clause body. So we just
-	// don't suggest a fix in such situations.
-	//
-	// However, we need to make an exception for type conversions, which are
-	// also call expressions in the AST.
-	//
-	// We'll need to lookup type information for this, and can't rely solely
-	// on the AST.
-	if containsFuncCall(pass.TypesInfo, sw.Tag) {
-		return analysis.SuggestedFix{}, false
-	}
-
-	textEdits := []analysis.TextEdit{missingCasesTextEdit(fset, f, samePkg, sw, defaultCase, enumType, missingMembers)}
-
-	// need to add "fmt" import if "fmt" import doesn't already exist
-	if !hasImportWithPath(flattenImportSpec(astutil.Imports(fset, f)), `"fmt"`) {
-		textEdits = append(textEdits, fmtImportTextEdit(fset, f))
-	}
-
-	missing := make([]string, 0, len(missingMembers))
-	for m := range missingMembers {
-		missing = append(missing, m)
-	}
-	sort.Strings(missing)
-
-	return analysis.SuggestedFix{
-		Message:   fmt.Sprintf("add case clause for: %s", strings.Join(missing, ", ")),
-		TextEdits: textEdits,
-	}, true
-}
-
-func missingCasesTextEdit(fset *token.FileSet, f *ast.File, samePkg bool, sw *ast.SwitchStmt, defaultCase *ast.CaseClause, enumType *types.Named, missingMembers map[string]struct{}) analysis.TextEdit {
-	// ... Construct insertion text for case clause and its body ...
-
-	var tag bytes.Buffer
-	printer.Fprint(&tag, fset, sw.Tag)
-
-	// If possible and if necessary, determine the package identifier based on
-	// the AST of other `case` clauses.
-	var pkgIdent *ast.Ident
-	if !samePkg {
-		for _, stmt := range sw.Body.List {
-			caseCl := stmt.(*ast.CaseClause)
-			if len(caseCl.List) != 0 { // guard against default case
-				if sel, ok := caseCl.List[0].(*ast.SelectorExpr); ok {
-					pkgIdent = sel.X.(*ast.Ident)
-					break
-				}
-			}
-		}
-	}
-
-	missing := make([]string, 0, len(missingMembers))
-	for m := range missingMembers {
-		if !samePkg {
-			if pkgIdent != nil {
-				// we were able to determine package identifier
-				missing = append(missing, pkgIdent.Name+"."+m)
+		for _, m := range missingMembers {
+			if constVal, ok := em.NameToValue[m]; ok {
+				constValMembers[constVal] = append(constValMembers[constVal], m)
 			} else {
-				// use the package name (may not be correct always)
-				//
-				// TODO: May need to also add import if the package isn't imported
-				// elsewhere. This (ie, a switch with zero case clauses) should
-				// happen rarely, so don't implement this for now.
-				missing = append(missing, enumType.Obj().Pkg().Name()+"."+m)
+				otherMembers = append(otherMembers, m)
 			}
-		} else {
-			missing = append(missing, m)
 		}
+
+		for _, names := range constValMembers {
+			sort.Strings(names)
+			out = append(out, strings.Join(names, "|"))
+		}
+		out = append(out, otherMembers...)
+		sort.Strings(out)
+		return out
+
+	case strategyName:
+		out := make([]string, len(missingMembers))
+		copy(out, missingMembers)
+		sort.Strings(out)
+		return out
+
+	default:
+		panic(fmt.Sprintf("unknown strategy %v", strategy))
 	}
-	sort.Strings(missing)
+}
 
-	insert := `case ` + strings.Join(missing, ", ") + `:
-	panic(fmt.Sprintf("unhandled value: %v",` + tag.String() + `))`
-
-	// ... Create the text edit ...
-
-	pos := sw.Body.Rbrace - 1 // put it as last case
-	if defaultCase != nil {
-		pos = defaultCase.Case - 2 // put it before the default case (why -2?)
+// diagnosticEnumTypeName returns a string representation of an enum type for
+// use in reported diagnostics.
+func diagnosticEnumTypeName(enumType *types.Named, samePkg bool) string {
+	if samePkg {
+		return enumType.Obj().Name()
 	}
+	return enumType.Obj().Pkg().Name() + "." + enumType.Obj().Name()
+}
 
-	return analysis.TextEdit{
-		Pos:     pos,
-		End:     pos,
-		NewText: []byte(insert),
+func makeDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumType *types.Named, allMembers *enumMembers, missingMembers []string, strategy checkingStrategy) analysis.Diagnostic {
+	message := fmt.Sprintf("missing cases in switch of type %s: %s",
+		diagnosticEnumTypeName(enumType, samePkg),
+		strings.Join(diagnosticMissingMembers(missingMembers, allMembers, strategy), ", "))
+
+	return analysis.Diagnostic{
+		Pos:     sw.Pos(),
+		End:     sw.End(),
+		Message: message,
 	}
+}
+
+func toSlice(m map[string]struct{}) []string {
+	var out []string
+	for k := range m {
+		out = append(out, k)
+	}
+	return out
 }

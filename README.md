@@ -1,39 +1,39 @@
-## exhaustive [![Godoc][godoc-status]][godoc] [![Build Status][build-status]][build]
+# exhaustive [![Godoc][godoc-status]][godoc] [![Build Status][build-status]][build]
 
 The `exhaustive` package and the related command line program
 (`cmd/exhaustive`) can be used to check exhaustiveness of enum switch
 statements in Go code.
 
 An enum switch statement is exhaustive if it has cases for each of the
-enum type's members. See godoc for the definition of enum used by this
+enum's members. See Godoc for the definition of enum used by this
 package.
 
-### Install
+## Docs
 
-Install the command line program (with Go 1.16 or higher):
+https://godoc.org/github.com/nishanths/exhaustive
+
+## Known issues
+
+The package may not correctly handle enums that are [type
+aliases][4]. See issue [#13][5].
+
+## Install
+
+Install latest tagged release:
 
 ```
 go install github.com/nishanths/exhaustive/cmd/exhaustive@latest
 ```
 
-Install the package:
+Install latest `master`:
 
 ```
-go get github.com/nishanths/exhaustive
+go install github.com/nishanths/exhaustive/cmd/exhaustive@master
 ```
 
-### Known issues
+## Example
 
-The package may not correctly handle enum types that are [type
-aliases][4]. See issue [#13][5].
-
-### Docs
-
-https://godoc.org/github.com/nishanths/exhaustive
-
-### Example
-
-Given this enum type:
+Given this enum:
 
 ```diff
 package token
@@ -68,7 +68,7 @@ func processToken(t token.Token) {
 }
 ```
 
-Running the `exhaustive` command will print:
+Running the `exhaustive` command on the `calc` package will print:
 
 ```
 calc.go:6:2: missing cases in switch of type token.Token: Quotient, Remainder
@@ -76,19 +76,14 @@ calc.go:6:2: missing cases in switch of type token.Token: Quotient, Remainder
 
 Enums can also be defined using explicit constant values instead of `iota`.
 
-### Integrate with analyzer driver programs
+## Integrate with analyzer driver programs
 
-The `exhaustive` package provides an `Analyzer` type that follows the
+The `exhaustive` package provides an `Analyzer` that follows the
 guidelines described in the [go/analysis][3] package; this should make
 it possible to integrate `exhaustive` into analysis driver
 programs.
 
-### Contributing
-
-Pull requests are welcome! But please create a new issue or comment on
-an existing issue before making a pull request for a new feature.
-
-### License
+## License
 
 BSD 2-Clause
 

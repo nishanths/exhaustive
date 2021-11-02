@@ -95,7 +95,7 @@ func TestFindEnums(t *testing.T) {
 	checkEnums(t, result)
 }
 
-// shared by TestFindEnumMembers and TestFindEnums.
+// shared utility for TestFindEnumMembers and TestFindEnums.
 func checkEnums(t *testing.T, got map[string]*enumMembers) {
 	t.Helper()
 

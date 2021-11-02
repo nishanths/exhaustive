@@ -1,10 +1,6 @@
 /*
 Package exhaustive provides an analyzer that checks exhaustiveness of enum
-switch statements.
-
-The analyzer also provides fixes to make the offending
-switch statements exhaustive (see "Fixes" section).
-See "cmd/exhaustive" subpackage for the related command line program.
+switch statements in Go code.
 
 Definition of enum
 
@@ -15,8 +11,10 @@ a string type. An enum type must have associated with it one or more
 package-level variables of the named type in the package. These variables
 constitute the enum's members.
 
-In the code snippet below, Biome is an enum type with 3 members. (You may
-also use iota instead of explicitly specifying values.)
+In the code snippet below, Biome is an enum type with 3 members. Enum values may
+be specified using iota (they don't have to be explicit values, like in the
+snippet), and enum members don't necessarily have to all be defined in the same
+var or const block.
 
   type Biome int
 
@@ -32,51 +30,62 @@ An enum switch statement is exhaustive if it has cases for each of the enum's
 members.
 
 For an enum type defined in the same package as the switch statement, both
-exported and unexported enum members must be present in order to consider
-the switch exhaustive. On the other hand, for an enum type defined
-in an external package it is sufficient for just exported enum members
-to be present in order to consider the switch exhaustive.
+exported and unexported enum members must be present in order to consider the
+switch exhaustive. For an enum type defined in an external package it is
+sufficient for just the exported enum members to be present in order to consider
+the switch exhaustive.
 
-Flags
+There are two strategies for checking exhaustiveness: the "value" strategy
+(which is the default) and the "name" strategy. The "value" strategy requires
+that each independent enum value is listed in a switch statement to satisfy
+exhaustiveness. The "name" strategy requires that each independent enum member
+name is listed in a switch statement to satisfy exhaustiveness.
 
-The analyzer accepts the following flags.(The analysis package provides
-additional flags, such as -fix.)
+To illustrate the difference between the strategies, consider the following enum
+type and switch statement. The switch statement is not exhaustive when using the
+"name" strategy (because the name AccessDefault is not listed). But it is
+exhaustive when using the "value" strategy (because AccessDefault and AccessAll
+have the same value).
 
-The -default-signifies-exhaustive boolean flag indicates to the analyzer
-whether switch statements are to be considered exhaustive as long as a
-'default' case is present (even if all enum members aren't listed in the
-switch statements cases). The default value is false.
+  type AccessControl string
 
-The -check-generated boolean flag indicates whether to check switch
-statements in generated Go source files. The default value is false.
+  const (
+      AccessAll     AccessControl = "all"
+      AccessAny     AccessControl = "any"
+      AccessDefault AccessControl = All
+  )
 
-The -ignore-pattern flag specifies a regular expression. Member names
-in enum definitions that match the regular expression do not require a case
-clause to satisfy exhaustiveness. The regular expression is matched against
-enum member names inclusive of the import path, e.g. of the
-form "github.com/foo/bar.Tundra", where "github.com/foo/bar" is the import path
-and "Tundra" is the enum member name.
+  func example(v AccessControl) {
+      switch v {
+          case AccessAll:
+          case AccessAny:
+      }
+  }
 
-Fixes
+The exhaustiveness checking strategy can be controlled by the
+"-checking-strategy" flag described in the next section.
 
-The analyzer suggests fixes for a switch statement if it is not exhaustive.
-The suggested fix always adds a single case clause for the missing enum member
-values.
+Notable flags
 
-  case MissingA, MissingB, MissingC:
-      panic(fmt.Sprintf("unhandled value: %v", v))
+The "-default-signifies-exhaustive" boolean flag indicates to the analyzer
+whether switch statements are to be considered exhaustive—even if all enum
+members aren't listed in the switch statements cases—as long as a 'default' case
+is present. The default value for the flag is false.
 
-where v is the expression in the switch statement's tag (in other words, the
-value being switched upon). If the switch statement's tag is a function or a
-method call the analyzer does not suggest a fix, as reusing the call expression
-in the panic/fmt.Sprintf call could be mutative.
+The "-check-generated" boolean flag indicates whether to check switch statements
+in generated Go source files. The default value for the flag is false.
 
-The rationale for the fix using panic is that it might be better to fail loudly
-on existing unhandled or impossible cases than to let them slip by quietly
-unnoticed. An even better fix may, of course, be to manually inspect the sites
-reported by the package and handle the missing cases if necessary.
+The "-ignore-enum-members" flag specifies a regular expression. Enum members
+that match the regular expression do need to be listed in switch statements in
+order for switch statements to be considered exhaustive. The supplied
+regular expression is matched against the enum package's import path and the
+enum member name combined in the following format: <import path>.<enum member
+name>. For example: "github.com/foo/bar.Tundra", where the enum package's import
+path is "github.com/foo/bar" and the enum member name is "Tundra".
 
-Imports will be adjusted automatically to account for the "fmt" dependency.
+The "-checking-strategy" flag specifies the checking strategy to use. The flag
+value must be either "value" (which is the default) or "name". See discussion
+in the "Defintion of exhaustiveness" section for more details.
 
 Skipping analysis
 
@@ -84,13 +93,17 @@ If the following directive comment:
 
   //exhaustive:ignore
 
-is associated with a switch statement, the analyzer skips
-checking of the switch statement and no diagnostics are reported.
+is associated with a switch statement, the analyzer skips checking of the switch
+statement and no diagnostics are reported. Note the lack of whitespace between
+the comment marker ("//") and the comment text.
 
-No diagnostics are reported for switch statements in
-generated files (see https://golang.org/s/generatedcode for definition of
-generated file), unless the -check-generated flag is enabled.
+Additionally, no diagnostics are reported for switch statements in generated
+files unless the "-check-generated" flag is enabled. (See
+https://golang.org/s/generatedcode for definition of generated file).
 
-Additionally, see the -ignore-pattern flag.
+Additionally, see the "-ignore-enum-members" flag.
 */
 package exhaustive
+
+// TODO: add docs for upcoming -by-name flag.
+// TODO: add docs to "Definition of exhaustiveness" section for by value vs. by name checking.
