@@ -52,7 +52,7 @@ have the same value).
   const (
       AccessAll     AccessControl = "all"
       AccessAny     AccessControl = "any"
-      AccessDefault AccessControl = All
+      AccessDefault AccessControl = AccessAll
   )
 
   func example(v AccessControl) {
