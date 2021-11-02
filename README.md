@@ -17,18 +17,18 @@ https://godoc.org/github.com/nishanths/exhaustive
 The package may not correctly handle enums that are [type
 aliases][4]. See issue [#13][5].
 
-## Install
+## Install command line program
 
-Install the command line program (with Go 1.16 or higher):
+Install latest tagged release:
 
 ```
 go install github.com/nishanths/exhaustive/cmd/exhaustive@latest
 ```
 
-Install the package:
+Install latest `master`:
 
 ```
-go get github.com/nishanths/exhaustive
+go install github.com/nishanths/exhaustive/cmd/exhaustive@master
 ```
 
 ## Example
