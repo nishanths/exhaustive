@@ -13,31 +13,45 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
-// config is configuration for the checkSwitchStatements function.
-type config struct {
-	defaultSignifiesExhaustive bool
-	checkGeneratedFiles        bool
-	ignoreMembers              *regexp.Regexp
-	hitlistStrategy            hitlistStrategy
-}
+// nodeVisitor is similar to the visitor function used by inspect.WithStack,
+// except that it returns two additional values: a short string representing
+// the result of this node visit, and an error.
+//
+// The result is typically useful in debugging or in unit tests to check
+// that the nodeVisitor function took the expected code path.
+//
+// A returned non-nil error does not stop further calls to the visitor; that is
+// solely controlled by the proceed value. The error however allows callers the
+// opportunity to e.g., record the errors encountered during the visits.
+type nodeVisitor func(n ast.Node, push bool, stack []ast.Node) (proceed bool, result string, err error)
 
-// checkSwitchStatements checks exhaustiveness of switch statements for the supplied
-// pass. It reports switch statements that are not exhaustiveness via pass.Report.
-func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, cfg config) error {
+// Result values returned by a node visitor constructed via makeSwitchVisitor.
+const (
+	resultNotPush              = "not push"
+	resultGeneratedFile        = "generated file"
+	resultNoSwitchTag          = "no switch tag"
+	resultTagNotValue          = "switch tag not value type"
+	resultTagNotNamed          = "switch tag not named type"
+	resultTagNoPkg             = "switch tag does not belong to regular package"
+	resultPassImportFailed     = "pass.ImportPackageFact failed"
+	resultTagNotEnum           = "switch tag not known enum type"
+	resultSwitchIgnoreComment  = "switch statement has ignore comment"
+	resultEnumMembersAccounted = "requisite enum members accounted for"
+	resultDefaultCaseSuffices  = "default case presence satisfies exhaustiveness"
+	resultReported             = "reported diagnostic"
+)
+
+// makeSwitchVisitor returns a node visitor that checks exhaustiveness checking
+// of switch statements for the supplied pass, and reports diagnostics for
+// switch statements that are non-exhaustive.
+func makeSwitchVisitor(pass *analysis.Pass, inspect *inspector.Inspector, cfg config) nodeVisitor {
 	comments := make(map[*ast.File]ast.CommentMap)
 	generated := make(map[*ast.File]bool)
 
-	var firstErr error
-	setErr := func(err error) {
-		if firstErr == nil {
-			firstErr = err
-		}
-	}
-
-	inspect.WithStack([]ast.Node{&ast.SwitchStmt{}}, func(n ast.Node, push bool, stack []ast.Node) bool {
+	return func(n ast.Node, push bool, stack []ast.Node) (bool, string, error) {
 		if !push {
 			// we only inspect things on the way down, not up.
-			return true
+			return true, resultNotPush, nil
 		}
 
 		file := stack[0].(*ast.File)
@@ -49,23 +63,23 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, cf
 		}
 		if generated[file] && !cfg.checkGeneratedFiles {
 			// don't check this file.
-			return true
+			return true, resultGeneratedFile, nil
 		}
 
 		sw := n.(*ast.SwitchStmt)
 
 		if sw.Tag == nil {
-			return true
+			return true, resultNoSwitchTag, nil
 		}
 
 		t := pass.TypesInfo.Types[sw.Tag]
 		if !t.IsValue() {
-			return true
+			return true, resultTagNotValue, nil
 		}
 
 		tagType, ok := t.Type.(*types.Named)
 		if !ok {
-			return true
+			return true, resultTagNotNamed, nil
 		}
 
 		tagPkg := tagType.Obj().Pkg()
@@ -73,26 +87,26 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, cf
 			// The Go documentation says: nil for labels and objects in the Universe scope.
 			// This happens for the `error` type, for example.
 			// Continuing would mean that pass.ImportPackageFact panics.
-			return true
+			return true, resultTagNoPkg, nil
 		}
 
 		var enums enumsFact
 		if !pass.ImportPackageFact(tagPkg, &enums) {
-			setErr(fmt.Errorf("pass.ImportPackageFact returned false for %s", tagPkg))
-			return true
+			return true, resultPassImportFailed, fmt.Errorf("pass.ImportPackageFact returned false for %s", tagPkg)
 		}
 
 		em, isEnum := enums.Enums[tagType.Obj().Name()]
 		if !isEnum {
 			// switch tag's type is not a known enum type.
-			return true
+			return true, resultTagNotEnum, nil
 		}
 
 		if _, ok := comments[file]; !ok {
 			comments[file] = ast.NewCommentMap(pass.Fset, file, file.Comments)
 		}
 		if containsIgnoreDirectiveGroups(comments[file].Filter(sw).Comments()) {
-			return true // skip checking due to ignore directive
+			// skip checking due to ignore directive
+			return true, resultSwitchIgnoreComment, nil
 		}
 
 		samePkg := tagPkg == pass.Pkg // do the switch statement and the switch tag type (i.e. enum type) live in the same package?
@@ -106,16 +120,45 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, cf
 		if len(hitlist.remaining()) == 0 {
 			// All enum members accounted for.
 			// Nothing to report.
-			return true
+			return true, resultEnumMembersAccounted, nil
 		}
 		if hasDefaultCase && cfg.defaultSignifiesExhaustive {
 			// Though enum members are not accounted for,
 			// the existence of the default case signifies exhaustiveness.
 			// So don't report.
-			return true
+			return true, resultDefaultCaseSuffices, nil
 		}
 		report(pass, sw, samePkg, tagType, em, hitlist.remaining())
-		return true
+		return true, resultReported, nil
+	}
+}
+
+// config is configuration for checkSwitchStatements.
+type config struct {
+	defaultSignifiesExhaustive bool
+	checkGeneratedFiles        bool
+	ignoreMembers              *regexp.Regexp
+	hitlistStrategy            hitlistStrategy
+}
+
+// checkSwitchStatements checks exhaustiveness of switch statements for the supplied
+// pass. It reports switch statements that are not exhaustiveness via pass.Report.
+func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, cfg config) error {
+	f := makeSwitchVisitor(pass, inspect, cfg)
+
+	var firstErr error
+	setErr := func(err error) {
+		if firstErr == nil {
+			firstErr = err
+		}
+	}
+
+	inspect.WithStack([]ast.Node{&ast.SwitchStmt{}}, func(n ast.Node, push bool, stack []ast.Node) bool {
+		proceed, _, err := f(n, push, stack)
+		if err != nil {
+			setErr(err)
+		}
+		return proceed
 	})
 
 	return firstErr
