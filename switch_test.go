@@ -155,6 +155,10 @@ func TestMakeDiagnostic(t *testing.T) {
 	}
 }
 
-func TestAnalyzeCaseClauseExpr(t *testing.T) {}
+func TestAnalyzeCaseClauseExpr(t *testing.T) {
+	// TODO: write this test
+}
 
-func TestAnalyzeSwitchClauses(t *testing.T) {}
+func TestAnalyzeSwitchClauses(t *testing.T) {
+	// TODO: write this test
+}

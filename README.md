@@ -17,7 +17,7 @@ https://godoc.org/github.com/nishanths/exhaustive
 The package may not correctly handle enums that are [type
 aliases][4]. See issue [#13][5].
 
-## Install command line program
+## Install
 
 Install latest tagged release:
 
