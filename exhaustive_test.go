@@ -55,3 +55,36 @@ func TestAnalyzer(t *testing.T) {
 		analysistest.Run(t, analysistest.TestData(), Analyzer, "general/...")
 	})
 }
+
+func TestDetermineCheckingStrategy(t *testing.T) {
+	t.Run("name", func(t *testing.T) {
+		resetFlags()
+		fCheckingStrategy = "name"
+		s, err := determineCheckingStrategy()
+		assertNoError(t, err)
+		if s != byName {
+			t.Errorf("want %v, got %v", byName, s)
+		}
+	})
+
+	t.Run("value", func(t *testing.T) {
+		resetFlags()
+		fCheckingStrategy = "value"
+		s, err := determineCheckingStrategy()
+		assertNoError(t, err)
+		if s != byValue {
+			t.Errorf("want %v, got %v", byValue, s)
+		}
+	})
+
+	t.Run("unknown", func(t *testing.T) {
+		resetFlags()
+		fCheckingStrategy = "xxx"
+		_, err := determineCheckingStrategy()
+		assertError(t, err)
+		want := `bad value "xxx" for flag -checking-strategy`
+		if err.Error() != want {
+			t.Errorf("want %v, got %v", want, err.Error())
+		}
+	})
+}

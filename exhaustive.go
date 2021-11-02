@@ -76,6 +76,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	return nil, err
 }
 
+// Determine the checkingStrategy from flags.
 func determineCheckingStrategy() (checkingStrategy, error) {
 	switch fCheckingStrategy {
 	case "value":
