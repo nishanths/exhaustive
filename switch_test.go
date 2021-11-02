@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"golang.org/x/tools/go/analysis"
+	"golang.org/x/tools/go/packages"
 )
 
 // TODO: write tests that assert on the "result" returned by nodeVisitor.
@@ -155,10 +156,75 @@ func TestMakeDiagnostic(t *testing.T) {
 	}
 }
 
-func TestAnalyzeCaseClauseExpr(t *testing.T) {
-	// TODO: write this test
-}
-
 func TestAnalyzeSwitchClauses(t *testing.T) {
-	// TODO: write this test
+	cfg := &packages.Config{Mode: packages.NeedTypesInfo | packages.NeedTypes | packages.NeedSyntax}
+	pkgs, err := packages.Load(cfg, "./testdata/switchtest/...")
+	assertNoError(t, err)
+
+	switchtest, otherpkg := pkgs[0], pkgs[1]
+	switchtestGoFile, otherpkgGoFile := switchtest.Syntax[1], otherpkg.Syntax[0]
+
+	getFuncName := func(fn ast.Decl) string {
+		funcDecl := fn.(*ast.FuncDecl)
+		return funcDecl.Name.Name
+	}
+
+	getSwitchStatement := func(fn ast.Decl) *ast.SwitchStmt {
+		// the switch statement is always the first statement in the function body
+		funcDecl := fn.(*ast.FuncDecl)
+		return funcDecl.Body.List[0].(*ast.SwitchStmt)
+	}
+
+	assertFoundNames := func(t *testing.T, sw *ast.SwitchStmt, typesInfo *types.Info, samePkg bool, wantNames []string, wantDefaultExists bool) {
+		t.Helper()
+		var gotNames []string
+		gotDefaultExists := analyzeSwitchClauses(sw, typesInfo, samePkg, func(name string) {
+			gotNames = append(gotNames, name)
+		})
+		if !reflect.DeepEqual(wantNames, gotNames) {
+			t.Errorf("want %v, got %v", wantNames, gotNames)
+		}
+		if wantDefaultExists != gotDefaultExists {
+			t.Errorf("want %v, got %v", wantDefaultExists, gotDefaultExists)
+		}
+	}
+
+	type testSpec struct {
+		declIdx int // func decl index
+
+		samePkg bool
+		file    *ast.File
+		pkg     *packages.Package
+
+		// what to expect at the decl index:
+
+		funcName      string
+		memberNames   []string
+		defaultExists bool
+	}
+
+	cases := []testSpec{
+		// same package
+		{1, true, switchtestGoFile, switchtest, "switchWithDefault", []string{"Tundra", "Desert"}, true},
+		{2, true, switchtestGoFile, switchtest, "switchWithoutDefault", []string{"Tundra", "Desert"}, false},
+		{3, true, switchtestGoFile, switchtest, "switchParen", []string{"Tundra", "Desert"}, false},
+		{4, true, switchtestGoFile, switchtest, "switchNotIdent", []string{"Savanna"}, false},
+
+		// different package
+		{1, false, otherpkgGoFile, otherpkg, "switchParen", []string{"Tundra", "Desert"}, false},
+		{2, false, otherpkgGoFile, otherpkg, "switchNotSelExpr", []string{"Tundra"}, false},
+		{4, false, otherpkgGoFile, otherpkg, "switchNotExpectedSelExpr", []string{"Desert"}, false},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.funcName, func(t *testing.T) {
+			fn := tt.file.Decls[tt.declIdx]
+			if getFuncName(fn) != tt.funcName {
+				t.Errorf("want func name %q, got %q", tt.funcName, getFuncName(fn))
+				return
+			}
+			sw := getSwitchStatement(fn)
+			assertFoundNames(t, sw, tt.pkg.TypesInfo, tt.samePkg, tt.memberNames, tt.defaultExists)
+		})
+	}
 }

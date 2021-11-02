@@ -24,5 +24,14 @@ func switchWithoutDefault(b Biome) {
 
 func switchParen(b Biome) {
 	switch b {
+	case ((Tundra)), (Desert):
+	}
+}
+
+func switchNotIdent(b Biome) {
+	switch b {
+	case 1, 2:
+	case 3:
+	case Savanna:
 	}
 }
