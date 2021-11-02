@@ -4,7 +4,7 @@ import (
 	"duplicateenumvalue"
 )
 
-// Compare to ../byvalue/by_value.go
+// Compare to ../strategyvalue/value.go
 
 func _p() {
 	var r duplicateenumvalue.River

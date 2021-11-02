@@ -27,12 +27,25 @@ func TestExhaustive(t *testing.T) {
 	t.Run("duplicate enum value", func(t *testing.T) {
 		t.Run("strategy value", func(t *testing.T) {
 			resetFlags()
-			analysistest.Run(t, analysistest.TestData(), Analyzer, "duplicateenumvalue/byvalue/...")
+			analysistest.Run(t, analysistest.TestData(), Analyzer, "duplicateenumvalue/strategyvalue/...")
 		})
 		t.Run("strategy name", func(t *testing.T) {
 			resetFlags()
 			fCheckingStrategy = "name"
-			analysistest.Run(t, analysistest.TestData(), Analyzer, "duplicateenumvalue/byname/...")
+			analysistest.Run(t, analysistest.TestData(), Analyzer, "duplicateenumvalue/strategyname/...")
+		})
+	})
+
+	t.Run("default signifies exhaustive", func(t *testing.T) {
+		resetFlags()
+		fDefaultSignifiesExhaustive = true
+
+		t.Run("default case absent", func(t *testing.T) {
+			analysistest.Run(t, analysistest.TestData(), Analyzer, "defaultsignifiesexhaustive/defaultabsent/...")
+		})
+
+		t.Run("default case present", func(t *testing.T) {
+			analysistest.Run(t, analysistest.TestData(), Analyzer, "defaultsignifiesexhaustive/defaultpresent/...")
 		})
 	})
 
