@@ -41,7 +41,7 @@ func TestDiagnosticEnumTypeName(t *testing.T) {
 
 func TestDiagnosticMissingMembers(t *testing.T) {
 	t.Run("strategy: value", func(t *testing.T) {
-		strategy := byValue
+		strategy := strategyValue
 		em := &enumMembers{
 			Names: []string{"Ganga", "Yamuna", "Kaveri", "Unspecified"},
 			NameToValue: map[string]string{
@@ -85,8 +85,8 @@ func TestDiagnosticMissingMembers(t *testing.T) {
 		})
 	})
 
-	t.Run("strategy: by name", func(t *testing.T) {
-		strategy := byName
+	t.Run("strategy: name", func(t *testing.T) {
+		strategy := strategyName
 		em := &enumMembers{
 			Names: []string{"Ganga", "Yamuna", "Kaveri", "Unspecified"},
 			NameToValue: map[string]string{
@@ -148,7 +148,7 @@ func TestMakeDiagnostic(t *testing.T) {
 	)
 	allMembers := &enumMembers{Names: []string{"Tundra", "Savanna", "Desert"}}
 	missingMembers := []string{"Savanna", "Desert"}
-	strategy := byValue
+	strategy := strategyValue
 
 	got := makeDiagnostic(sw, samePkg, enumType, allMembers, missingMembers, strategy)
 	want := analysis.Diagnostic{

@@ -58,7 +58,7 @@ func TestHitlist(t *testing.T) {
 			"G": {},
 		})
 
-		hitlist.found("A", byValue)
+		hitlist.found("A", strategyValue)
 		checkRemaining(t, hitlist, map[string]struct{}{
 			"B": {},
 			"C": {},
@@ -68,7 +68,7 @@ func TestHitlist(t *testing.T) {
 			"G": {},
 		})
 
-		hitlist.found("B", byName)
+		hitlist.found("B", strategyName)
 		checkRemaining(t, hitlist, map[string]struct{}{
 			"C": {},
 			"D": {},
@@ -78,7 +78,7 @@ func TestHitlist(t *testing.T) {
 		})
 
 		// repeated call should be a no-op.
-		hitlist.found("B", byName)
+		hitlist.found("B", strategyName)
 		checkRemaining(t, hitlist, map[string]struct{}{
 			"C": {},
 			"D": {},
@@ -87,20 +87,20 @@ func TestHitlist(t *testing.T) {
 			"G": {},
 		})
 
-		hitlist.found("F", byValue)
+		hitlist.found("F", strategyValue)
 		checkRemaining(t, hitlist, map[string]struct{}{
 			"C": {},
 			"E": {},
 			"G": {},
 		})
 
-		hitlist.found("C", byValue)
+		hitlist.found("C", strategyValue)
 		checkRemaining(t, hitlist, map[string]struct{}{
 			"E": {},
 			"G": {},
 		})
 
-		hitlist.found("E", byName)
+		hitlist.found("E", strategyName)
 		checkRemaining(t, hitlist, map[string]struct{}{
 			"G": {},
 		})

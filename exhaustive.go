@@ -80,9 +80,9 @@ func run(pass *analysis.Pass) (interface{}, error) {
 func determineCheckingStrategy() (checkingStrategy, error) {
 	switch fCheckingStrategy {
 	case "value":
-		return byValue, nil
+		return strategyValue, nil
 	case "name":
-		return byName, nil
+		return strategyName, nil
 	default:
 		return 0, fmt.Errorf("bad value %q for flag -%s", fCheckingStrategy, CheckingStrategyFlag)
 	}

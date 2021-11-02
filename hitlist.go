@@ -7,13 +7,6 @@ import (
 	"regexp"
 )
 
-type checkingStrategy int
-
-const (
-	byValue checkingStrategy = iota
-	byName
-)
-
 // A hitlist is the set of enum member names that should be listed in a switch
 // statement's case clauses in order for the switch to be exhaustive. The found
 // method marks a member as being listed in the switch, so, in usage, a hitlist
@@ -54,7 +47,7 @@ func makeHitlist(em *enumMembers, enumPkg *types.Package, includeUnexported bool
 
 func (h *hitlist) found(memberName string, strategy checkingStrategy) {
 	switch strategy {
-	case byValue:
+	case strategyValue:
 		if constVal, ok := h.em.NameToValue[memberName]; ok {
 			// delete all of the same-valued names
 			for _, n := range h.em.ValueToNames[constVal] {
@@ -65,7 +58,7 @@ func (h *hitlist) found(memberName string, strategy checkingStrategy) {
 			delete(h.m, memberName)
 		}
 
-	case byName:
+	case strategyName:
 		// delete the given name alone
 		delete(h.m, memberName)
 

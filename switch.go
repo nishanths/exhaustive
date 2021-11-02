@@ -13,6 +13,13 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
+type checkingStrategy int
+
+const (
+	strategyValue checkingStrategy = iota
+	strategyName
+)
+
 // nodeVisitor is similar to the visitor function used by Inspector.WithStack,
 // except that it returns two additional values: a short description of
 // the result of this node visit, and an error.
@@ -244,7 +251,7 @@ func analyzeCaseClauseExpr(e ast.Expr, typesInfo *types.Info, samePkg bool, foun
 // suitable for use in a reported diagnostic message.
 func diagnosticMissingMembers(missingMembers []string, em *enumMembers, strategy checkingStrategy) []string {
 	switch strategy {
-	case byValue:
+	case strategyValue:
 		var out []string
 
 		constValMembers := make(map[string][]string) // constant value -> member name
@@ -266,7 +273,7 @@ func diagnosticMissingMembers(missingMembers []string, em *enumMembers, strategy
 		sort.Strings(out)
 		return out
 
-	case byName:
+	case strategyName:
 		out := make([]string, len(missingMembers))
 		copy(out, missingMembers)
 		sort.Strings(out)

@@ -62,8 +62,8 @@ func TestDetermineCheckingStrategy(t *testing.T) {
 		fCheckingStrategy = "name"
 		s, err := determineCheckingStrategy()
 		assertNoError(t, err)
-		if s != byName {
-			t.Errorf("want %v, got %v", byName, s)
+		if s != strategyName {
+			t.Errorf("want %v, got %v", strategyName, s)
 		}
 	})
 
@@ -72,8 +72,8 @@ func TestDetermineCheckingStrategy(t *testing.T) {
 		fCheckingStrategy = "value"
 		s, err := determineCheckingStrategy()
 		assertNoError(t, err)
-		if s != byValue {
-			t.Errorf("want %v, got %v", byValue, s)
+		if s != strategyValue {
+			t.Errorf("want %v, got %v", strategyValue, s)
 		}
 	})
 
