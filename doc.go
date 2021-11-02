@@ -11,9 +11,10 @@ a string type. An enum type must have associated with it one or more
 package-level variables of the named type in the package. These variables
 constitute the enum's members.
 
-In the code snippet below, Biome is an enum type with 3 members. You may
-also use iota instead of explicitly specifying values, and enum members
-don't necessarily have to be all defined in the same var/const block.
+In the code snippet below, Biome is an enum type with 3 members. Enum values may
+be specified using iota (they don't have to be explicit values, like in the
+snippet), and enum members don't necessarily have to all be defined in the same
+var or const block.
 
   type Biome int
 
@@ -34,6 +35,36 @@ switch exhaustive. For an enum type defined in an external package it is
 sufficient for just the exported enum members to be present in order to consider
 the switch exhaustive.
 
+There are two strategies for checking exhaustiveness: the "value" strategy
+(which is the default) and the "name" strategy. The "value" strategy requires
+that each independent enum value is listed in a switch statement to satisfy
+exhaustiveness. The "name" strategy requires that each independent enum member
+name is listed in a switch statement to satisfy exhaustiveness.
+
+To illustrate the difference between the strategies, consider the following enum
+type and switch statement. The switch statement is not exhaustive when using the
+"name" strategy (because the name AccessDefault is not listed). But it is
+exhaustive when using the "value" strategy (because AccessDefault and AccessAll
+have the same value).
+
+  type AccessControl string
+
+  const (
+      AccessAll     AccessControl = "all"
+      AccessAny     AccessControl = "any"
+      AccessDefault AccessControl = All
+  )
+
+  func example(v AccessControl) {
+      switch v {
+          case AccessAll:
+          case AccessAny:
+      }
+  }
+
+The exhaustiveness checking strategy can be controlled by the
+"-checking-strategy" flag described in the next section.
+
 Notable flags
 
 The "-default-signifies-exhaustive" boolean flag indicates to the analyzer
@@ -51,6 +82,10 @@ regular expression is matched against the enum package's import path and the
 enum member name combined in the following format: <import path>.<enum member
 name>. For example: "github.com/foo/bar.Tundra", where the enum package's import
 path is "github.com/foo/bar" and the enum member name is "Tundra".
+
+The "-checking-strategy" flag specifies the checking strategy to use. The flag
+value must be either "value" (which is the default) or "name". See discussion
+in the "Defintion of exhaustiveness" section for more details.
 
 Skipping analysis
 
