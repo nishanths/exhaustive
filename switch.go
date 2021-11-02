@@ -235,6 +235,7 @@ func analyzeCaseClauseExpr(e ast.Expr, typesInfo *types.Info, samePkg bool, foun
 	// TODO: ident represents some package at this point; check if it represents
 	// the enum package? (Is this additional check necessary? Wouldn't the type
 	// checker have already failed if this wasn't the case?)
+	// This may need additional thought for type aliases, too.
 
 	found(selExpr.Sel.Name)
 }
