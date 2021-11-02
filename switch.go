@@ -21,11 +21,11 @@ import (
 // that the nodeVisitor function took the expected code path.
 //
 // A returned non-nil error does not stop further calls to the visitor; that is
-// solely controlled by the proceed value. The error however allows callers the
-// opportunity to e.g., record the errors encountered during the visits.
+// solely controlled by the proceed value. The error however allows users the
+// opportunity to e.g. record errors encountered during visits.
 type nodeVisitor func(n ast.Node, push bool, stack []ast.Node) (proceed bool, result string, err error)
 
-// Result values returned by a node visitor constructed via makeSwitchVisitor.
+// Result values returned by a node visitor constructed via switchStmtChecker.
 const (
 	resultNotPush              = "not push"
 	resultGeneratedFile        = "generated file"
@@ -41,10 +41,10 @@ const (
 	resultReported             = "reported diagnostic"
 )
 
-// makeSwitchVisitor returns a node visitor that checks exhaustiveness checking
+// switchStmtChecker returns a node visitor that checks exhaustiveness
 // of switch statements for the supplied pass, and reports diagnostics for
 // switch statements that are non-exhaustive.
-func makeSwitchVisitor(pass *analysis.Pass, inspect *inspector.Inspector, cfg config) nodeVisitor {
+func switchStmtChecker(pass *analysis.Pass, inspect *inspector.Inspector, cfg config) nodeVisitor {
 	comments := make(map[*ast.File]ast.CommentMap)
 	generated := make(map[*ast.File]bool)
 
@@ -144,7 +144,7 @@ type config struct {
 // checkSwitchStatements checks exhaustiveness of switch statements for the supplied
 // pass. It reports switch statements that are not exhaustiveness via pass.Report.
 func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, cfg config) error {
-	f := makeSwitchVisitor(pass, inspect, cfg)
+	f := switchStmtChecker(pass, inspect, cfg)
 
 	var firstErr error
 	setErr := func(err error) {
