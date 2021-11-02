@@ -8,7 +8,7 @@ import (
 )
 
 // Integration-style tests using the analysistest package.
-func TestAnalyzer(t *testing.T) {
+func TestExhaustive(t *testing.T) {
 	// Enum discovery.
 	t.Run("enum", func(t *testing.T) {
 		resetFlags()
@@ -25,11 +25,11 @@ func TestAnalyzer(t *testing.T) {
 	// For an enum switch to be exhaustive, it is sufficient for each unique enum
 	// value to be listed, not each unique member by name.
 	t.Run("duplicate enum value", func(t *testing.T) {
-		t.Run("strategy: by value", func(t *testing.T) {
+		t.Run("strategy value", func(t *testing.T) {
 			resetFlags()
 			analysistest.Run(t, analysistest.TestData(), Analyzer, "duplicateenumvalue/byvalue/...")
 		})
-		t.Run("strategy: by name", func(t *testing.T) {
+		t.Run("strategy name", func(t *testing.T) {
 			resetFlags()
 			fCheckingStrategy = "name"
 			analysistest.Run(t, analysistest.TestData(), Analyzer, "duplicateenumvalue/byname/...")

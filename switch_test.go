@@ -71,7 +71,7 @@ func TestDiagnosticMissingMembers(t *testing.T) {
 		})
 	})
 
-	t.Run("missing some: unique/unknown values", func(t *testing.T) {
+	t.Run("missing some: unique or unknown values", func(t *testing.T) {
 		t.Run("strategy value", func(t *testing.T) {
 			got := diagnosticMissingMembers([]string{"Yamuna", "Kaveri"}, em, strategyValue)
 			want := []string{"Kaveri", "Yamuna"}
