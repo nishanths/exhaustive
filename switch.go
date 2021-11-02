@@ -13,74 +13,6 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
-func isDefaultCase(c *ast.CaseClause) bool {
-	return c.List == nil // see doc comment on field
-}
-
-func isPackageNameIdentifier(typesInfo *types.Info, ident *ast.Ident) bool {
-	obj := typesInfo.ObjectOf(ident)
-	if obj == nil {
-		return false
-	}
-	_, ok := obj.(*types.PkgName)
-	return ok
-}
-
-func enumTypeName(e *types.Named, samePkg bool) string {
-	if samePkg {
-		return e.Obj().Name()
-	}
-	return e.Obj().Pkg().Name() + "." + e.Obj().Name()
-}
-
-func analyzeSwitchClauses(sw *ast.SwitchStmt, typesInfo *types.Info, samePkg bool, found func(identName string)) (defaultCase *ast.CaseClause) {
-	for _, stmt := range sw.Body.List {
-		caseCl := stmt.(*ast.CaseClause)
-		if isDefaultCase(caseCl) {
-			defaultCase = caseCl
-			continue // nothing more to do if it's the default case
-		}
-		for _, e := range caseCl.List {
-			analyzeCaseClauseExpr(e, typesInfo, samePkg, found)
-		}
-	}
-	return defaultCase
-}
-
-func analyzeCaseClauseExpr(e ast.Expr, typesInfo *types.Info, samePkg bool, found func(identName string)) {
-	e = astutil.Unparen(e)
-
-	if samePkg {
-		ident, ok := e.(*ast.Ident)
-		if !ok {
-			return
-		}
-		found(ident.Name)
-		return
-	}
-
-	selExpr, ok := e.(*ast.SelectorExpr)
-	if !ok {
-		return
-	}
-
-	// Check that X (which is everything except the rightmost *ast.Ident, or
-	// the Sel) is also an *ast.Ident, and particularly that it is a package
-	// name identifier.
-	x := astutil.Unparen(selExpr.X)
-	ident, ok := x.(*ast.Ident)
-	if !ok {
-		return
-	}
-
-	if !isPackageNameIdentifier(typesInfo, ident) {
-		return
-	}
-	// TODO(next): possible to check if ident is the package name of the enum package name?
-
-	found(selExpr.Sel.Name)
-}
-
 type config struct {
 	defaultSignifiesExhaustive bool
 	checkGeneratedFiles        bool
@@ -152,28 +84,107 @@ func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, cf
 			return true // skip checking due to ignore directive
 		}
 
-		samePkg := tagPkg == pass.Pkg
-		checkUnexported := samePkg
-
+		samePkg := tagPkg == pass.Pkg // do the switch statement and the switch tag type (i.e. enum type) live in the same package?
+		checkUnexported := samePkg    // we want to include unexported members in the exhaustiveness check only if we're in the same package
 		hitlist := makeHitlist(em, tagPkg, checkUnexported, cfg.ignoreMembers)
 
-		defaultCase := analyzeSwitchClauses(sw, pass.TypesInfo, samePkg, func(name string) {
-			hitlist.found(name, cfg.hitlistStrategy)
+		hasDefaultCase := analyzeSwitchClauses(sw, pass.TypesInfo, samePkg, func(memberName string) {
+			hitlist.found(memberName, cfg.hitlistStrategy)
 		})
 
-		defaultSuffices := cfg.defaultSignifiesExhaustive && defaultCase != nil
-		shouldReport := len(hitlist.remaining()) != 0 && !defaultSuffices
-
-		if shouldReport {
-			report(pass, sw, samePkg, tagType, em, hitlist.remaining())
+		if len(hitlist.remaining()) == 0 {
+			// All enum members accounted for.
+			// Nothing to report.
+			return true
 		}
+		if hasDefaultCase && cfg.defaultSignifiesExhaustive {
+			// Though enum members are not accounted for,
+			// the existence of the default case signifies exhaustiveness.
+			// So don't report.
+			return true
+		}
+		report(pass, sw, samePkg, tagType, em, hitlist.remaining())
 		return true
 	})
 
 	return nil
 }
 
+func isDefaultCase(c *ast.CaseClause) bool {
+	return c.List == nil // see doc comment on List field
+}
+
+// isPackageNameIdent returns whether ident represents an imported Go package.
+func isPackageNameIdent(ident *ast.Ident, typesInfo *types.Info) bool {
+	obj := typesInfo.ObjectOf(ident)
+	if obj == nil {
+		return false
+	}
+	_, ok := obj.(*types.PkgName)
+	return ok
+}
+
+// analyzeSwitchClauses analyzes the clauses in the supplied switch statement.
+//
+// The typesInfo param should typically be pass.TypesInfo. The samePkg param
+// indicates whether the switch tag type and the switch statement live in the
+// same package. The found function is called for each enum member name found in
+// the switch statement.
+//
+// The hasDefaultCase return value indicates whether the switch statement has a
+// default clause.
+func analyzeSwitchClauses(sw *ast.SwitchStmt, typesInfo *types.Info, samePkg bool, found func(identName string)) (hasDefaultCase bool) {
+	for _, stmt := range sw.Body.List {
+		caseCl := stmt.(*ast.CaseClause)
+		if isDefaultCase(caseCl) {
+			hasDefaultCase = true
+			continue // nothing more to do if it's the default case
+		}
+		for _, e := range caseCl.List {
+			analyzeCaseClauseExpr(e, typesInfo, samePkg, found)
+		}
+	}
+	return hasDefaultCase
+}
+
+// Helper for analyzeSwitchClauses. See docs there.
+func analyzeCaseClauseExpr(e ast.Expr, typesInfo *types.Info, samePkg bool, found func(identName string)) {
+	e = astutil.Unparen(e)
+
+	if samePkg {
+		ident, ok := e.(*ast.Ident)
+		if !ok {
+			return
+		}
+		found(ident.Name)
+		return
+	}
+
+	selExpr, ok := e.(*ast.SelectorExpr)
+	if !ok {
+		return
+	}
+
+	// Check that X (which is everything except the rightmost *ast.Ident, or
+	// the Sel) is also an *ast.Ident, and particularly that it is a package
+	// name identifier.
+	x := astutil.Unparen(selExpr.X)
+	ident, ok := x.(*ast.Ident)
+	if !ok {
+		return
+	}
+
+	if !isPackageNameIdent(ident, typesInfo) {
+		return
+	}
+	// TODO(next): possible to check if ident is the package name of the enum package name?
+
+	found(selExpr.Sel.Name)
+}
+
 func missingCasesOutput(missingMembers map[string]struct{}, em *enumMembers) []string {
+	// TODO: this has to be updated to account for byValue vs. byName.
+
 	constValMembers := make(map[string][]string) // constant value -> member name
 	var otherMembers []string                    // non-constant value member names
 
@@ -195,16 +206,18 @@ func missingCasesOutput(missingMembers map[string]struct{}, em *enumMembers) []s
 	return ret
 }
 
-func report(
-	pass *analysis.Pass,
-	sw *ast.SwitchStmt,
-	samePkg bool,
-	enumType *types.Named,
-	em *enumMembers,
-	missingMembers map[string]struct{},
-) {
+// diagnosticEnumTypeName returns a string representation of an enum type for
+// use in reported diagnostics.
+func diagnosticEnumTypeName(enumType *types.Named, samePkg bool) string {
+	if samePkg {
+		return enumType.Obj().Name()
+	}
+	return enumType.Obj().Pkg().Name() + "." + enumType.Obj().Name()
+}
+
+func report(pass *analysis.Pass, sw *ast.SwitchStmt, samePkg bool, enumType *types.Named, em *enumMembers, missingMembers map[string]struct{}) {
 	message := fmt.Sprintf("missing cases in switch of type %s: %s",
-		enumTypeName(enumType, samePkg),
+		diagnosticEnumTypeName(enumType, samePkg),
 		strings.Join(missingCasesOutput(missingMembers, em), ", "))
 
 	pass.Report(analysis.Diagnostic{
