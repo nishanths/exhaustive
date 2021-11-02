@@ -5,10 +5,12 @@ import (
 	"regexp"
 )
 
-var _ interface {
+type flagValueGetter interface {
 	flag.Value
 	flag.Getter
-} = (*regexpFlag)(nil)
+}
+
+var _ flagValueGetter = (*regexpFlag)(nil)
 
 // regexpFlag implements the flag.Value and flag.Getter interfaces for parsing
 // regular expression flag values.

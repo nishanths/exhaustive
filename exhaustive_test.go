@@ -49,31 +49,31 @@ func TestAnalyzer(t *testing.T) {
 	})
 }
 
-func TestCheckAndAdjustFlags(t *testing.T) {
-	t.Run("setting both "+IgnorePatternFlag+" and "+IgnoreEnumMembersFlag+"is an error", func(t *testing.T) {
-		resetFlags()
-		fIgnorePattern = regexpFlag{regexp.MustCompile("a")}
-		fIgnoreEnumMembers = regexpFlag{regexp.MustCompile("b")}
+// func TestCheckAndAdjustFlags(t *testing.T) {
+// 	t.Run("setting both "+IgnorePatternFlag+" and "+IgnoreEnumMembersFlag+"is an error", func(t *testing.T) {
+// 		resetFlags()
+// 		fIgnorePattern = regexpFlag{regexp.MustCompile("a")}
+// 		fIgnoreEnumMembers = regexpFlag{regexp.MustCompile("b")}
 
-		err := checkAndAdjustFlags()
+// 		err := checkAndAdjustFlags()
 
-		assertError(t, err)
-		got := err.Error()
-		want := "cannot specify both -ignore-pattern and -ignore-enum-members"
-		if got != want {
-			t.Errorf("want %q, got %q", want, got)
-		}
-	})
+// 		assertError(t, err)
+// 		got := err.Error()
+// 		want := "cannot specify both -ignore-pattern and -ignore-enum-members"
+// 		if got != want {
+// 			t.Errorf("want %q, got %q", want, got)
+// 		}
+// 	})
 
-	t.Run(IgnorePatternFlag+" value is copied to "+IgnoreEnumMembersFlag, func(t *testing.T) {
-		resetFlags()
-		fIgnorePattern = regexpFlag{regexp.MustCompile("a")}
+// 	t.Run(IgnorePatternFlag+" value is copied to "+IgnoreEnumMembersFlag, func(t *testing.T) {
+// 		resetFlags()
+// 		fIgnorePattern = regexpFlag{regexp.MustCompile("a")}
 
-		err := checkAndAdjustFlags()
+// 		err := checkAndAdjustFlags()
 
-		assertNoError(t, err)
-		if fIgnorePattern.r.String() != fIgnoreEnumMembers.r.String() {
-			t.Errorf("wrong flag value")
-		}
-	})
-}
+// 		assertNoError(t, err)
+// 		if fIgnorePattern.r.String() != fIgnoreEnumMembers.r.String() {
+// 			t.Errorf("wrong flag value")
+// 		}
+// 	})
+// }
