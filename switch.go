@@ -254,7 +254,7 @@ func diagnosticMissingMembers(missingMembers []string, em *enumMembers, strategy
 	case strategyValue:
 		var out []string
 
-		constValMembers := make(map[string][]string) // constant value -> member name
+		constValMembers := make(map[string][]string) // constant value -> member names
 		var otherMembers []string                    // non-constant value member names
 
 		for _, m := range missingMembers {
