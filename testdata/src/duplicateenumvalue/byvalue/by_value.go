@@ -22,7 +22,7 @@ func _q() {
 	var s duplicateenumvalue.State
 
 	// value-based checks not available for iota enums (implementation detail: since
-	// we cannot determine a constant.Value from type information).
+	// we cannot determine a constant.Value from AST/type information).
 
 	switch s { // want "^missing cases in switch of type duplicateenumvalue.State: DefaultState$"
 	case duplicateenumvalue.TamilNadu, duplicateenumvalue.Kerala, duplicateenumvalue.Karnataka:

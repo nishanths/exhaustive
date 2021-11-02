@@ -194,8 +194,8 @@ func analyzeSwitchClauses(sw *ast.SwitchStmt, typesInfo *types.Info, samePkg boo
 			hasDefaultCase = true
 			continue // nothing more to do if it's the default case
 		}
-		for _, e := range caseCl.List {
-			analyzeCaseClauseExpr(e, typesInfo, samePkg, found)
+		for _, expr := range caseCl.List {
+			analyzeCaseClauseExpr(expr, typesInfo, samePkg, found)
 		}
 	}
 	return hasDefaultCase
@@ -241,7 +241,7 @@ func analyzeCaseClauseExpr(e ast.Expr, typesInfo *types.Info, samePkg bool, foun
 }
 
 // diagnosticMissingMembersOutput constructs the list of missing enum members,
-// suitable for use in diagnostic message.
+// suitable for use in a reported diagnostic message.
 func diagnosticMissingMembersOutput(missingMembers []string, em *enumMembers, strategy hitlistStrategy) []string {
 	switch strategy {
 	case byValue:

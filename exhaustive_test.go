@@ -27,12 +27,12 @@ func TestAnalyzer(t *testing.T) {
 	t.Run("duplicate enum value", func(t *testing.T) {
 		t.Run("strategy: by value", func(t *testing.T) {
 			resetFlags()
-			analysistest.Run(t, analysistest.TestData(), Analyzer, "duplicateenumvalue/byvalue")
+			analysistest.Run(t, analysistest.TestData(), Analyzer, "duplicateenumvalue/byvalue/...")
 		})
 		t.Run("strategy: by name", func(t *testing.T) {
 			resetFlags()
 			fByName = true
-			analysistest.Run(t, analysistest.TestData(), Analyzer, "duplicateenumvalue/byname")
+			analysistest.Run(t, analysistest.TestData(), Analyzer, "duplicateenumvalue/byname/...")
 		})
 	})
 
