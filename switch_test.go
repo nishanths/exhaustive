@@ -40,18 +40,21 @@ func TestDiagnosticEnumTypeName(t *testing.T) {
 }
 
 func TestDiagnosticMissingMembers(t *testing.T) {
+	em := &enumMembers{
+		Names: []string{"Ganga", "Yamuna", "Kaveri", "Unspecified"},
+		NameToValue: map[string]string{
+			"Unspecified": "0",
+			"Ganga":       "0",
+			"Yamuna":      "2",
+		},
+		ValueToNames: map[string][]string{
+			"0": {"Unspecified", "Ganga"},
+			"2": {"Yamuna"},
+		},
+	}
+
 	t.Run("strategy: value", func(t *testing.T) {
 		strategy := strategyValue
-		em := &enumMembers{
-			Names: []string{"Ganga", "Yamuna", "Kaveri", "Unspecified"},
-			NameToValue: map[string]string{
-				"Unspecified": "0",
-				"Ganga":       "0",
-			},
-			ValueToNames: map[string][]string{
-				"0": {"Unspecified", "Ganga"},
-			},
-		}
 
 		t.Run("missing some: same-valued", func(t *testing.T) {
 			got := diagnosticMissingMembers([]string{"Ganga", "Unspecified", "Kaveri"}, em, strategy)
@@ -61,7 +64,7 @@ func TestDiagnosticMissingMembers(t *testing.T) {
 			}
 		})
 
-		t.Run("missing some: all unique values", func(t *testing.T) {
+		t.Run("missing some: all unique/unknown values", func(t *testing.T) {
 			got := diagnosticMissingMembers([]string{"Yamuna", "Kaveri"}, em, strategy)
 			want := []string{"Kaveri", "Yamuna"}
 			if !reflect.DeepEqual(want, got) {
@@ -87,16 +90,6 @@ func TestDiagnosticMissingMembers(t *testing.T) {
 
 	t.Run("strategy: name", func(t *testing.T) {
 		strategy := strategyName
-		em := &enumMembers{
-			Names: []string{"Ganga", "Yamuna", "Kaveri", "Unspecified"},
-			NameToValue: map[string]string{
-				"Unspecified": "0",
-				"Ganga":       "0",
-			},
-			ValueToNames: map[string][]string{
-				"0": {"Unspecified", "Ganga"},
-			},
-		}
 
 		t.Run("missing some: same-valued", func(t *testing.T) {
 			got := diagnosticMissingMembers([]string{"Ganga", "Unspecified", "Kaveri"}, em, strategy)
@@ -106,7 +99,7 @@ func TestDiagnosticMissingMembers(t *testing.T) {
 			}
 		})
 
-		t.Run("missing some: all unique values", func(t *testing.T) {
+		t.Run("missing some: all unique/unknown values", func(t *testing.T) {
 			got := diagnosticMissingMembers([]string{"Yamuna", "Kaveri"}, em, strategy)
 			want := []string{"Kaveri", "Yamuna"}
 			if !reflect.DeepEqual(want, got) {
