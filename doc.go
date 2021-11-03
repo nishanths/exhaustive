@@ -88,7 +88,7 @@ Specifies a regular expression; enum members matching the regular expression are
 ignored. Ignored enum members don't have to be present in switch statements to
 satisfy exhaustiveness. The regular expression is matched against enum member
 names inclusive of the enum package import path, e.g.
-"github.com/foo/bar.Tundra" where the enum package import path is
+"github.com/foo/bar.Tundra", where the enum package import path is
 "github.com/foo/bar" and the enum member name is "Tundra".
 
   -checking-strategy <strategy>

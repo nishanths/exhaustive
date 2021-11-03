@@ -1,24 +1,28 @@
-# exhaustive [![Godoc][godoc-status]][godoc]
+## exhaustive [![Godoc][2]][1]
 
 The `exhaustive` package and the related command line program (found in
 `cmd/exhaustive`) can be used to check exhaustiveness of enum switch
-statements in Go code. An enum switch statement is exhaustive if all of
-the enum's members are listed in the switch statement's cases.
+statements in Go code.
+
+Install the command:
 
 ```
 go install github.com/nishanths/exhaustive/cmd/exhaustive@latest
 ```
 
-See [pkg.go.dev](https://pkg.go.dev/github.com/nishanths/exhaustive#section-documentation)
-for the flags, the definition of enum, and the definition of exhaustiveness
-used by this package.
+See [pkg.go.dev][6] for the flags, the definition of enum, and the
+definition of exhaustiveness used by this package.
 
-## Known issues
+The `exhaustive` package provides an `Analzyer` that follows the
+guidelines in the [`go/analysis`][3] package; this should make
+it possible to integrate with external analysis driver programs.
 
-The package may not correctly handle enums that are [type
+### Known issues
+
+The package may not correctly handle enum types that are [type
 aliases][4]. See issue [#13][5].
 
-## Example
+### Example
 
 Given the enum
 
@@ -45,12 +49,9 @@ import "token"
 
 func processToken(t token.Token) {
 	switch t {
-	case token.Add:
-		...
-	case token.Subtract:
-		...
-	case token.Multiply:
-		...
+	case token.Add: ...
+	case token.Subtract: ...
+	case token.Multiply: ...
 	}
 }
 ```
@@ -67,7 +68,9 @@ will print
 calc.go:6:2: missing cases in switch of type token.Token: Quotient, Remainder
 ```
 
-[godoc]: https://godoc.org/github.com/nishanths/exhaustive
-[godoc-status]: https://godoc.org/github.com/nishanths/exhaustive?status.svg
+[1]: https://godoc.org/github.com/nishanths/exhaustive
+[2]: https://godoc.org/github.com/nishanths/exhaustive?status.svg
+[3]: https://pkg.go.dev/golang.org/x/tools/go/analysis
 [4]: https://go.googlesource.com/proposal/+/master/design/18130-type-alias.md
 [5]: https://github.com/nishanths/exhaustive/issues/13
+[6]: https://pkg.go.dev/github.com/nishanths/exhaustive#section-documentation
