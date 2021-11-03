@@ -27,11 +27,11 @@ func assertPanic(t *testing.T, f func(), wantPanicVal interface{}) {
 	defer func() {
 		r := recover()
 		if r == nil {
-			t.Errorf("expected panic, but did not")
+			t.Errorf("expected panic, but no panic occurred")
 			return
 		}
 		if !reflect.DeepEqual(r, wantPanicVal) {
-			t.Errorf("wanted panic with: %+v, got panic with: %v", wantPanicVal, r)
+			t.Errorf("want panic with: %+v, got panic with: %v", wantPanicVal, r)
 			return
 		}
 	}()
