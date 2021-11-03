@@ -3,6 +3,7 @@ package exhaustive
 import (
 	"bytes"
 	"encoding/gob"
+	"go/ast"
 	"reflect"
 	"testing"
 
@@ -117,6 +118,9 @@ func assertTypeFields(t *testing.T, typ reflect.Type, wantFields []wantField) {
 
 	for i := 0; i < typ.NumField(); i++ {
 		field := typ.Field(i)
+		if !ast.IsExported(field.Name) {
+			t.Errorf("field %q not exported", field.Name)
+		}
 		if wantFields[i].name != field.Name {
 			t.Errorf("want %q, got %q", wantFields[i].name, field.Name)
 		}
