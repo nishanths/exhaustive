@@ -1,8 +1,5 @@
 on: [push, pull_request]
 name: test and analyze
-concurrency:
-  group: ${{ github.head_ref }}
-  cancel-in-progress: true
 jobs:
   main:
     strategy:
