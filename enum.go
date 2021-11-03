@@ -84,7 +84,7 @@ func findPossibleEnumTypes(files []*ast.File, typesInfo *types.Info, found func(
 			}
 			for _, s := range gen.Specs {
 				// Must be TypeSpec since we've filtered on token.TYPE.
-				t, ok := s.(*ast.TypeSpec)
+				t := s.(*ast.TypeSpec)
 				obj := typesInfo.Defs[t.Name]
 				if obj == nil {
 					continue

@@ -1,5 +1,5 @@
 on: [push, pull_request]
-name: test and analyze
+name: test and vet
 jobs:
   main:
     strategy:
@@ -15,17 +15,10 @@ jobs:
     - name: checkout code
       uses: actions/checkout@v2
     - name: test
-      run: go test -cover ./...
-    - name: install analyzers
+      run: make test
+    - name: install vet tools
       if: matrix.go-version >= '1.16'
-      run: |
-        go install github.com/nishanths/exhaustive/cmd/exhaustive@latest
-        go install github.com/gordonklaus/ineffassign@latest
-        go install github.com/kisielk/errcheck@latest
-    - name: analyze
+      run: make install-vet
+    - name: vet
       if: matrix.go-version >= '1.16'
-      run: |
-        go vet ./...
-        exhaustive -checking-strategy name ./...
-        ineffassign ./...
-        errcheck ./...
+      run: make vet
