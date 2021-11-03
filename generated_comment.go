@@ -2,7 +2,7 @@ package exhaustive
 
 import (
 	"go/ast"
-	"strings"
+	"regexp"
 )
 
 // Adapted from https://gotools.org/dmitri.shuralyov.com/go/generated
@@ -24,11 +24,7 @@ func isGeneratedFile(file *ast.File) bool {
 }
 
 func isGeneratedFileComment(s string) bool {
-	return strings.HasPrefix(s, genCommentPrefix) &&
-		strings.HasSuffix(s, genCommentSuffix)
+	return generatedCodeRx.MatchString(s)
 }
 
-const (
-	genCommentPrefix = "// Code generated "
-	genCommentSuffix = " DO NOT EDIT."
-)
+var generatedCodeRx = regexp.MustCompile(`^// Code generated .* DO NOT EDIT\.$`)

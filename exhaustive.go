@@ -14,7 +14,7 @@ import (
 const (
 	DefaultSignifiesExhaustiveFlag = "default-signifies-exhaustive"
 	CheckGeneratedFlag             = "check-generated"
-	IgnorePatternFlag              = "ignore-pattern" // Deprecated. See IgnoreEnumMembersFlag instead.
+	IgnorePatternFlag              = "ignore-pattern" // Deprecated: see IgnoreEnumMembersFlag instead.
 	IgnoreEnumMembersFlag          = "ignore-enum-members"
 	CheckingStrategyFlag           = "checking-strategy"
 )
@@ -22,7 +22,7 @@ const (
 var (
 	fDefaultSignifiesExhaustive bool
 	fCheckGeneratedFiles        bool
-	fDeprecatedIgnorePattern    string // Deprecated.
+	fDeprecatedIgnorePattern    string // Deprecated: see fIgnoreEnumMembers instead.
 	fIgnoreEnumMembers          regexpFlag
 	fCheckingStrategy           string
 )
