@@ -26,8 +26,8 @@ var or const block.
 
 Definition of exhaustiveness
 
-An enum switch statement is exhaustive if it has cases for each of the enum's
-members.
+An enum switch statement is exhaustive if all of the enum's members are listed
+in the switch statement's cases.
 
 For an enum type defined in the same package as the switch statement, both
 exported and unexported enum members must be present in order to consider the
@@ -35,17 +35,18 @@ switch exhaustive. For an enum type defined in an external package it is
 sufficient for just the exported enum members to be present in order to consider
 the switch exhaustive.
 
+Exhaustiveness checking strategies
+
 There are two strategies for checking exhaustiveness: the "value" strategy
 (which is the default) and the "name" strategy. The "value" strategy requires
 that each independent enum value is listed in a switch statement to satisfy
 exhaustiveness. The "name" strategy requires that each independent enum member
-name is listed in a switch statement to satisfy exhaustiveness.
+name is listed in a switch statement to satisfy exhaustiveness. The desired
+exhaustiveness checking strategy can be specified using the "-checking-strategy"
+flag.
 
 To illustrate the difference between the strategies, consider the following enum
-and switch statement. The switch statement is not exhaustive when using the
-"name" strategy (because the name AccessDefault is not listed), but it is
-exhaustive when using the "value" strategy (because AccessDefault and AccessAll
-have the same value).
+and switch statement.
 
   type AccessControl string
 
@@ -62,8 +63,9 @@ have the same value).
       }
   }
 
-The exhaustiveness checking strategy can be controlled by the
-"-checking-strategy" flag described in the next section.
+The switch statement is not exhaustive when using the "name" strategy (because
+the name AccessDefault is not listed), but it is exhaustive when using the
+"value" strategy (because AccessDefault and AccessAll have the same value).
 
 Notable flags
 
