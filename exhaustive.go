@@ -32,7 +32,7 @@ func init() {
 	Analyzer.Flags.BoolVar(&fCheckGeneratedFiles, CheckGeneratedFlag, false, "check switch statements in generated files")
 	Analyzer.Flags.StringVar(&fDeprecatedIgnorePattern, IgnorePatternFlag, "", "no effect (deprecated); see -"+IgnoreEnumMembersFlag+" instead")
 	Analyzer.Flags.Var(&fIgnoreEnumMembers, IgnoreEnumMembersFlag, "enum members matching `regex` do not have to be listed in switch statements to satisfy exhaustiveness")
-	Analyzer.Flags.StringVar(&fCheckingStrategy, CheckingStrategyFlag, "value", "`strategy` to use when checking exhaustiveness of switch statements; one of: \"value\", \"name\"")
+	Analyzer.Flags.StringVar(&fCheckingStrategy, CheckingStrategyFlag, "value", "`strategy` to use when checking exhaustiveness of switch statements; one of: \"name\", \"value\"")
 }
 
 // resetFlags resets the flag variables to their default values.
