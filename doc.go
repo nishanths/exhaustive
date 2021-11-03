@@ -51,16 +51,14 @@ enum and the switch statement in the code snippet below.
   type AccessControl string
 
   const (
-      AccessPublic   AccessControl = "public"
-      AccessUnlisted AccessControl = "unlisted"
-      AccessPrivate  AccessControl = "private"
-      AccessDefault  AccessControl = AccessPublic
+      AccessPublic  AccessControl = "public"
+      AccessPrivate AccessControl = "private"
+      AccessDefault AccessControl = AccessPublic
   )
 
   func example(v AccessControl) {
       switch v {
           case AccessPublic:
-          case AccessUnlisted:
           case AccessPrivate:
       }
   }
