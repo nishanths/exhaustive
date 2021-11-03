@@ -38,8 +38,8 @@ consider the switch statement exhaustive.
 
 Exhaustiveness checking strategies
 
-There are two strategies for checking exhaustiveness: the 'name' strategy and
-the 'value' strategy (which is the default). The name strategy requires that
+There are two strategies for checking exhaustiveness: the "name" strategy and
+the "value" strategy (which is the default). The name strategy requires that
 each independent enum member name is listed in a switch statement to satisfy
 exhaustiveness. On the other hand, the value strategy only requires that each
 independent enum value is listed in a switch statement to satisfy
@@ -70,30 +70,31 @@ it suffices that one of them is listed in the switch).
 
 Notable flags
 
+The notable flags used by the analyzer are:
+
   -default-signifies-exhaustive
 
-  If enabled, the presence of a 'default' case in switch statements satisfies
-  exhaustiveness, even if all enum members are not listed.
+If enabled, the presence of a "default" case in switch statements satisfies
+exhaustiveness, even if all enum members are not listed.
 
   -check-generated
 
-  If enabled, switch statements in generated Go source files are also checked.
-  Otherwise switch statements in generated files are ignored by default.
+If enabled, switch statements in generated Go source files are also checked.
+Otherwise switch statements in generated files are ignored by default.
 
   -ignore-enum-members <regex>
 
-  Specifies a regular expression; enum members matching the regular expression
-  are ignored. Ignored enum members don't have to be present in switch
-  statements to satisfy exhaustiveness. The regular expression is matched
-  against enum member names inclusive of the enum package's import path, e.g.
-  'github.com/foo/bar.Tundra' where the enum package's import path is
-  'github.com/foo/bar' and the enum member name is 'Tundra'.
+Specifies a regular expression; enum members matching the regular expression are
+ignored. Ignored enum members don't have to be present in switch statements to
+satisfy exhaustiveness. The regular expression is matched against enum member
+names inclusive of the enum package import path, e.g.
+"github.com/foo/bar.Tundra" where the enum package import path is
+"github.com/foo/bar" and the enum member name is "Tundra".
 
   -checking-strategy <strategy>
 
-  Specifies the exhaustiveness checking strategy, which must be one of 'name' or
-  'value' (default). For details see section: Exhaustiveness checking
-  strategies.
+Specifies the exhaustiveness checking strategy, which must be one of "name" or
+"value" (default). For details see section: Exhaustiveness checking strategies.
 
 Skipping analysis
 
