@@ -1,4 +1,4 @@
-.PHONY: default build test install-vet vet
+.PHONY: default build test install-vet vet upgrade-deps
 
 default: build
 
@@ -18,3 +18,7 @@ vet:
 	exhaustive -checking-strategy name ./...
 	ineffassign ./...
 	errcheck ./...
+
+upgrade-deps:
+	go get golang.org/x/tools
+	go mod tidy
