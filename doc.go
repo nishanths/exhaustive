@@ -51,22 +51,24 @@ enum and the switch statement in the code snippet below.
   type AccessControl string
 
   const (
-      AccessAll     AccessControl = "all"
-      AccessAny     AccessControl = "any"
-      AccessDefault AccessControl = AccessAll
+      AccessPublic   AccessControl = "public"
+      AccessUnlisted AccessControl = "unlisted"
+      AccessPrivate  AccessControl = "private"
+      AccessDefault  AccessControl = AccessPublic
   )
 
   func example(v AccessControl) {
       switch v {
-          case AccessAll:
-          case AccessAny:
+          case AccessPublic:
+          case AccessUnlisted:
+          case AccessPrivate:
       }
   }
 
 The switch statement is not exhaustive when using the name strategy (because the
 name AccessDefault is not listed in the switch), but it is exhaustive when using
-the value strategy (because AccessDefault and AccessAll have the same value, and
-it suffices that one of them is listed in the switch).
+the value strategy (because AccessDefault and AccessPublic have the same value,
+and it suffices that one of them is listed in the switch).
 
 Notable flags
 
