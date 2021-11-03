@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// Adapated from https://gotools.org/dmitri.shuralyov.com/go/generated
+// Adapted from https://gotools.org/dmitri.shuralyov.com/go/generated
 
 func isGeneratedFile(file *ast.File) bool {
 	for _, c := range file.Comments {
