@@ -52,7 +52,7 @@ func TestExhaustive(t *testing.T) {
 	// No diagnostics for missing enum members that match the supplied regular expression.
 	t.Run("ignore enum member", func(t *testing.T) {
 		resetFlags()
-		fIgnoreEnumMembers = regexpFlag{regexp.MustCompile("_UNSPECIFIED$|^general/y.Echinodermata$")}
+		fIgnoreEnumMembers = regexpFlag{regexp.MustCompile(`_UNSPECIFIED$|^general/y\.Echinodermata$`)}
 		analysistest.Run(t, analysistest.TestData(), Analyzer, "ignoreenummember/...")
 	})
 
