@@ -21,16 +21,12 @@ const (
 )
 
 // nodeVisitor is similar to the visitor function used by Inspector.WithStack,
-// except that it returns two additional values: a short description of
-// the result of this node visit, and an error.
+// except that it returns an additional value: a short description of
+// the result of this node visit.
 //
 // The result is typically useful in debugging or in unit tests to check
 // that the nodeVisitor function took the expected code path.
-//
-// A returned non-nil error does not stop further calls to the visitor; this is
-// solely controlled by the proceed value. The error however allows callers
-// to e.g. record errors encountered during visits.
-type nodeVisitor func(n ast.Node, push bool, stack []ast.Node) (proceed bool, result string, err error)
+type nodeVisitor func(n ast.Node, push bool, stack []ast.Node) (proceed bool, result string)
 
 // Result values returned by a node visitor constructed via switchStmtChecker.
 const (
@@ -40,7 +36,7 @@ const (
 	resultTagNotValue          = "switch tag not value type"
 	resultTagNotNamed          = "switch tag not named type"
 	resultTagNoPkg             = "switch tag does not belong to regular package"
-	resultPassImportFailed     = "pass.ImportPackageFact failed"
+	resultPassImportFalse      = "pass.ImportPackageFact returned false"
 	resultTagNotEnum           = "switch tag not known enum type"
 	resultSwitchIgnoreComment  = "switch statement has ignore comment"
 	resultEnumMembersAccounted = "requisite enum members accounted for"
@@ -55,10 +51,10 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 	comments := make(map[*ast.File]ast.CommentMap)
 	generated := make(map[*ast.File]bool)
 
-	return func(n ast.Node, push bool, stack []ast.Node) (bool, string, error) {
+	return func(n ast.Node, push bool, stack []ast.Node) (bool, string) {
 		if !push {
 			// we only inspect things on the way down, not up.
-			return true, resultNotPush, nil
+			return true, resultNotPush
 		}
 
 		file := stack[0].(*ast.File)
@@ -70,23 +66,23 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 		}
 		if generated[file] && !cfg.checkGeneratedFiles {
 			// don't check this file.
-			return true, resultGeneratedFile, nil
+			return true, resultGeneratedFile
 		}
 
 		sw := n.(*ast.SwitchStmt)
 
 		if sw.Tag == nil {
-			return true, resultNoSwitchTag, nil
+			return true, resultNoSwitchTag
 		}
 
 		t := pass.TypesInfo.Types[sw.Tag]
 		if !t.IsValue() {
-			return true, resultTagNotValue, nil
+			return true, resultTagNotValue
 		}
 
 		tagType, ok := t.Type.(*types.Named)
 		if !ok {
-			return true, resultTagNotNamed, nil
+			return true, resultTagNotNamed
 		}
 
 		tagPkg := tagType.Obj().Pkg()
@@ -94,18 +90,20 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 			// The Go documentation says: nil for labels and objects in the Universe scope.
 			// This happens for the `error` type, for example.
 			// Continuing would mean that pass.ImportPackageFact panics.
-			return true, resultTagNoPkg, nil
+			return true, resultTagNoPkg
 		}
 
 		var enums enumsFact
 		if !pass.ImportPackageFact(tagPkg, &enums) {
-			return true, resultPassImportFailed, fmt.Errorf("pass.ImportPackageFact returned false for %s", tagPkg)
+			pass.Report(makePassImportFalseDiagnostic(sw, tagPkg))
+			// cannot do anything meaningful further.
+			return true, resultPassImportFalse
 		}
 
 		em, isEnum := enums.Enums[tagType.Obj().Name()]
 		if !isEnum {
 			// switch tag's type is not a known enum type.
-			return true, resultTagNotEnum, nil
+			return true, resultTagNotEnum
 		}
 
 		if _, ok := comments[file]; !ok {
@@ -113,7 +111,7 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 		}
 		if containsIgnoreDirective(comments[file].Filter(sw).Comments()) {
 			// skip checking due to ignore directive
-			return true, resultSwitchIgnoreComment, nil
+			return true, resultSwitchIgnoreComment
 		}
 
 		samePkg := tagPkg == pass.Pkg // do the switch statement and the switch tag type (i.e. enum type) live in the same package?
@@ -127,16 +125,16 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 		if len(hitlist.remaining()) == 0 {
 			// All enum members accounted for.
 			// Nothing to report.
-			return true, resultEnumMembersAccounted, nil
+			return true, resultEnumMembersAccounted
 		}
 		if hasDefaultCase && cfg.defaultSignifiesExhaustive {
 			// Though enum members are not accounted for,
 			// the existence of the default case signifies exhaustiveness.
 			// So don't report.
-			return true, resultDefaultCaseSuffices, nil
+			return true, resultDefaultCaseSuffices
 		}
 		pass.Report(makeDiagnostic(sw, samePkg, tagType, em, toSlice(hitlist.remaining()), cfg.checkingStrategy))
-		return true, resultReportedDiagnostic, nil
+		return true, resultReportedDiagnostic
 	}
 }
 
@@ -150,25 +148,13 @@ type config struct {
 
 // checkSwitchStatements checks exhaustiveness of enum switch statements for the supplied
 // pass. It reports switch statements that are not exhaustive via pass.Report.
-func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, cfg config) error {
+func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, cfg config) {
 	f := switchStmtChecker(pass, cfg)
 
-	var firstErr error
-	setErr := func(err error) {
-		if firstErr == nil {
-			firstErr = err
-		}
-	}
-
 	inspect.WithStack([]ast.Node{&ast.SwitchStmt{}}, func(n ast.Node, push bool, stack []ast.Node) bool {
-		proceed, _, err := f(n, push, stack)
-		if err != nil {
-			setErr(err)
-		}
+		proceed, _ := f(n, push, stack)
 		return proceed
 	})
-
-	return firstErr
 }
 
 func isDefaultCase(c *ast.CaseClause) bool {
@@ -302,6 +288,14 @@ func makeDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumType *types.Named, all
 		Pos:     sw.Pos(),
 		End:     sw.End(),
 		Message: message,
+	}
+}
+
+func makePassImportFalseDiagnostic(sw *ast.SwitchStmt, importedPkg *types.Package) analysis.Diagnostic {
+	return analysis.Diagnostic{
+		Pos:     sw.Pos(),
+		End:     sw.End(),
+		Message: fmt.Sprintf("pass.ImportPackageFact returned false for %s", importedPkg),
 	}
 }
 

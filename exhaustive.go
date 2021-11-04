@@ -72,8 +72,8 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		checkingStrategy:           strategy,
 	}
 
-	err = checkSwitchStatements(pass, inspect, cfg)
-	return nil, err
+	checkSwitchStatements(pass, inspect, cfg)
+	return nil, nil
 }
 
 // Determine the checkingStrategy from flags.
