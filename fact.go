@@ -17,16 +17,16 @@ func (e *enumsFact) AFact() {}
 
 func (e *enumsFact) String() string {
 	// sort for stability (required for testing)
-	var sortedKeys []string
-	for k := range e.Enums {
-		sortedKeys = append(sortedKeys, k)
+	var sorted []enumType
+	for enumTyp := range e.Enums {
+		sorted = append(sorted, enumTyp)
 	}
-	sort.Strings(sortedKeys)
+	sort.Slice(sorted, func(i, j int) bool { return sorted[i].Name < sorted[j].Name })
 
 	var buf strings.Builder
-	for i, k := range sortedKeys {
-		v := e.Enums[k]
-		buf.WriteString(k)
+	for i, enumTyp := range sorted {
+		v := e.Enums[enumTyp]
+		buf.WriteString(enumTyp.Name)
 		buf.WriteString(":")
 
 		for j, vv := range v.Names {
@@ -37,7 +37,7 @@ func (e *enumsFact) String() string {
 			}
 		}
 		// add semicolon separator between each enum type
-		if i != len(sortedKeys)-1 {
+		if i != len(sorted)-1 {
 			buf.WriteString("; ")
 		}
 	}

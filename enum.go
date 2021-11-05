@@ -1,6 +1,7 @@
 package exhaustive
 
 import (
+	"fmt"
 	"go/ast"
 	"go/token"
 	"go/types"
@@ -9,8 +10,18 @@ import (
 // constantValue is a constant.Value.ExactString().
 type constantValue string
 
-// enums holds the enum types and their members defined in a single package.
-type enums map[string]*enumMembers // enum type name -> enum members
+// %p fmt formatted string of an address.
+type addr string
+
+// enums contains the enum types and their members for a single package.
+type enums map[enumType]*enumMembers
+
+// enumType is represents an enum type. It is the key type for the enums type.
+// It is designed to be gob-coding compatible.
+type enumType struct {
+	Name string
+	Addr addr // *types.Named addr
+}
 
 // enumMembers is the members for a single enum type.
 // The zero value is ready to use.
@@ -34,30 +45,34 @@ func (em *enumMembers) add(name string, val constantValue) {
 	em.ValueToNames[val] = append(em.ValueToNames[val], name)
 }
 
+func typesNamedAddr(t *types.Named) addr {
+	return addr(fmt.Sprintf("%p", t))
+}
+
 // Find the enums for the files in a package. The files is typically obtained from
 // pass.Files and typesInfo is obtained from pass.TypesInfo.
 func findEnums(files []*ast.File, typesInfo *types.Info) enums {
-	possibleEnumTypes := make(map[string]struct{})
+	possibleEnumTypes := make(map[enumType]struct{})
 
 	// Gather possible enum types.
-	findPossibleEnumTypes(files, typesInfo, func(name string) {
-		possibleEnumTypes[name] = struct{}{}
+	findPossibleEnumTypes(files, typesInfo, func(enumTyp enumType) {
+		possibleEnumTypes[enumTyp] = struct{}{}
 	})
 
 	pkgEnums := make(enums)
 
 	// Gather enum members.
-	findEnumMembers(files, typesInfo, possibleEnumTypes, func(memberName, typeName string, val constantValue) {
-		if _, ok := pkgEnums[typeName]; !ok {
-			pkgEnums[typeName] = &enumMembers{}
+	findEnumMembers(files, typesInfo, possibleEnumTypes, func(memberName string, enumTyp enumType, val constantValue) {
+		if _, ok := pkgEnums[enumTyp]; !ok {
+			pkgEnums[enumTyp] = &enumMembers{}
 		}
-		pkgEnums[typeName].add(memberName, val)
+		pkgEnums[enumTyp].add(memberName, val)
 	})
 
 	return pkgEnums
 }
 
-func findPossibleEnumTypes(files []*ast.File, typesInfo *types.Info, found func(name string)) {
+func findPossibleEnumTypes(files []*ast.File, typesInfo *types.Info, found func(enumTyp enumType)) {
 	for _, f := range files {
 		for _, decl := range f.Decls {
 			gen, ok := decl.(*ast.GenDecl)
@@ -86,14 +101,14 @@ func findPossibleEnumTypes(files []*ast.File, typesInfo *types.Info, found func(
 
 				switch i := basic.Info(); {
 				case i&types.IsInteger != 0, i&types.IsFloat != 0, i&types.IsString != 0:
-					found(named.Obj().Name())
+					found(enumType{named.Obj().Name(), typesNamedAddr(named)})
 				}
 			}
 		}
 	}
 }
 
-func findEnumMembers(files []*ast.File, typesInfo *types.Info, knownEnumTypes map[string]struct{}, found func(memberName, typeName string, val constantValue)) {
+func findEnumMembers(files []*ast.File, typesInfo *types.Info, possibleEnumTypes map[enumType]struct{}, found func(memberName string, enumTyp enumType, val constantValue)) {
 	for _, f := range files {
 		for _, decl := range f.Decls {
 			gen, ok := decl.(*ast.GenDecl)
@@ -112,10 +127,11 @@ func findEnumMembers(files []*ast.File, typesInfo *types.Info, knownEnumTypes ma
 					if !ok {
 						continue
 					}
-					if _, ok := knownEnumTypes[namedType.Obj().Name()]; !ok {
+					enumTyp := enumType{namedType.Obj().Name(), typesNamedAddr(namedType)}
+					if _, ok := possibleEnumTypes[enumTyp]; !ok {
 						continue
 					}
-					found(obj.Name(), namedType.Obj().Name(), determineConstVal(name, typesInfo))
+					found(obj.Name(), enumTyp, determineConstVal(name, typesInfo))
 				}
 			}
 		}

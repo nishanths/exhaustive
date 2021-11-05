@@ -86,7 +86,7 @@ func checkTypeEnumsFact(t *testing.T, enumsFactType reflect.Type) {
 		return
 	}
 	keyType, elemType := f.Type.Key(), f.Type.Elem()
-	if keyType.String() != "string" {
+	if keyType.String() != "exhaustive.enumType" {
 		t.Errorf("want key type string, got %v", keyType.String())
 		return
 	}
@@ -95,8 +95,20 @@ func checkTypeEnumsFact(t *testing.T, enumsFactType reflect.Type) {
 		return
 	}
 
+	enumTypeType := keyType
+	checkTypeEnumType(t, enumTypeType)
+
 	enumMembersType := elemType.Elem() // call Elem() on pointer type to get value type
 	checkTypeEnumMembers(t, enumMembersType)
+}
+
+func checkTypeEnumType(t *testing.T, enumTypeType reflect.Type) {
+	t.Helper()
+	assertTypeFields(t, enumTypeType, []wantField{
+		{"Name", "string"},
+		{"Addr", "exhaustive.addr"},
+	})
+	// TODO: need to assert that exhaustive.addr is a basic type / has no unexported fields.
 }
 
 func checkTypeEnumMembers(t *testing.T, enumMembersType reflect.Type) {
@@ -106,6 +118,7 @@ func checkTypeEnumMembers(t *testing.T, enumMembersType reflect.Type) {
 		{"NameToValue", "map[string]exhaustive.constantValue"},
 		{"ValueToNames", "map[exhaustive.constantValue][]string"},
 	})
+	// TODO: need to assert that exhaustive.constantValue is a basic type / has no unexported fields.
 }
 
 func assertTypeFields(t *testing.T, typ reflect.Type, wantFields []wantField) {

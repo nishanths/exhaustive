@@ -53,8 +53,8 @@ var enumpkg = func() *packages.Package {
 
 func TestFindPossibleEnumTypes(t *testing.T) {
 	var got []string
-	findPossibleEnumTypes(enumpkg.Syntax, enumpkg.TypesInfo, func(name string) {
-		got = append(got, name)
+	findPossibleEnumTypes(enumpkg.Syntax, enumpkg.TypesInfo, func(enumTyp enumType) {
+		got = append(got, enumTyp.Name)
 	})
 	want := []string{
 		"VarMember",
@@ -80,17 +80,17 @@ func TestFindPossibleEnumTypes(t *testing.T) {
 }
 
 func TestFindEnumMembers(t *testing.T) {
-	knownEnumTypes := make(map[string]struct{})
-	findPossibleEnumTypes(enumpkg.Syntax, enumpkg.TypesInfo, func(name string) {
-		knownEnumTypes[name] = struct{}{}
+	possibleEnumTypes := make(map[enumType]struct{})
+	findPossibleEnumTypes(enumpkg.Syntax, enumpkg.TypesInfo, func(enumTyp enumType) {
+		possibleEnumTypes[enumTyp] = struct{}{}
 	})
 
 	got := make(map[string]*enumMembers)
-	findEnumMembers(enumpkg.Syntax, enumpkg.TypesInfo, knownEnumTypes, func(memberName, typeName string, val constantValue) {
-		if _, ok := got[typeName]; !ok {
-			got[typeName] = &enumMembers{}
+	findEnumMembers(enumpkg.Syntax, enumpkg.TypesInfo, possibleEnumTypes, func(memberName string, enumTyp enumType, val constantValue) {
+		if _, ok := got[enumTyp.Name]; !ok {
+			got[enumTyp.Name] = &enumMembers{}
 		}
-		got[typeName].add(memberName, val)
+		got[enumTyp.Name].add(memberName, val)
 	})
 
 	checkEnums(t, got)
@@ -98,14 +98,23 @@ func TestFindEnumMembers(t *testing.T) {
 
 func TestFindEnums(t *testing.T) {
 	result := findEnums(enumpkg.Syntax, enumpkg.TypesInfo)
-	checkEnums(t, result)
+
+	transformForChecking := func(in map[enumType]*enumMembers) map[string]*enumMembers {
+		out := make(map[string]*enumMembers)
+		for typ, mem := range in {
+			out[typ.Name] = mem
+		}
+		return out
+	}
+
+	checkEnums(t, transformForChecking(result))
 }
 
 // shared utility for TestFindEnumMembers and TestFindEnums.
 func checkEnums(t *testing.T, got map[string]*enumMembers) {
 	t.Helper()
 
-	want := enums{
+	want := map[string]*enumMembers{
 		"VarConstMixed": {
 			[]string{"VCMixedB"},
 			map[string]constantValue{

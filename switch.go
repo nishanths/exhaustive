@@ -93,7 +93,7 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 			return true, resultPassImportFalse
 		}
 
-		em, isEnum := enums.Enums[tagType.Obj().Name()]
+		em, isEnum := enums.Enums[enumType{tagType.Obj().Name(), typesNamedAddr(tagType)}]
 		if !isEnum {
 			// switch tag's type is not a known enum type.
 			return true, resultTagNotEnum
