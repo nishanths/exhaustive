@@ -29,7 +29,7 @@ aliases][4]. See issue [#13][5].
 
 Given the enum
 
-```
+```diff
 package token
 
 type Token int
@@ -38,8 +38,8 @@ const (
 	Add Token = iota
 	Subtract
 	Multiply
-	Quotient
-	Remainder
++	Quotient
++	Remainder
 )
 ```
 
