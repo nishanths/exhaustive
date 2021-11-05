@@ -10,11 +10,11 @@ import (
 func TestEnumMembers_add(t *testing.T) {
 	t.Run("basic", func(t *testing.T) {
 		var v enumMembers
-		v.add("foo", nil)
-		v.add("z", ptrString("X"))
-		v.add("bar", nil)
-		v.add("y", ptrString("Y"))
-		v.add("x", ptrString("X"))
+		v.add("foo")
+		v.addWithConstVal("z", "X")
+		v.add("bar")
+		v.addWithConstVal("y", "Y")
+		v.addWithConstVal("x", "X")
 
 		if want, got := []string{"foo", "z", "bar", "y", "x"}, v.Names; !reflect.DeepEqual(want, got) {
 			t.Errorf("want %v, got %v", want, got)
@@ -81,11 +81,15 @@ func TestFindEnumMembers(t *testing.T) {
 	})
 
 	got := make(map[string]*enumMembers)
-	findEnumMembers(enumpkg.Syntax, enumpkg.TypesInfo, knownEnumTypes, func(memberName, typeName string, constVal *string) {
+	findEnumMembers(enumpkg.Syntax, enumpkg.TypesInfo, knownEnumTypes, func(memberName, typeName string, constVal string, constValOk bool) {
 		if _, ok := got[typeName]; !ok {
 			got[typeName] = &enumMembers{}
 		}
-		got[typeName].add(memberName, constVal)
+		if constValOk {
+			got[typeName].addWithConstVal(memberName, constVal)
+		} else {
+			got[typeName].add(memberName)
+		}
 	})
 
 	checkEnums(t, got)
@@ -109,10 +113,12 @@ func checkEnums(t *testing.T, got map[string]*enumMembers) {
 		"IotaEnum": {
 			[]string{"IotaA", "IotaB"},
 			map[string]string{
-				"IotaA": `2`,
+				"IotaA": `0`,
+				"IotaB": `2`,
 			},
 			map[string][]string{
-				`2`: {"IotaA"},
+				`0`: {"IotaA"},
+				`2`: {"IotaB"},
 			},
 		},
 		"RepeatedValue": {
@@ -216,10 +222,12 @@ func checkEnums(t *testing.T, got map[string]*enumMembers) {
 		"Float64Enum": {
 			[]string{"Float64A", "Float64B"},
 			map[string]string{
-				"Float64A": `1`,
+				"Float64A": `0`,
+				"Float64B": `1`,
 			},
 			map[string][]string{
-				`1`: {"Float64A"},
+				`0`: {"Float64A"},
+				`1`: {"Float64B"},
 			},
 		},
 	}

@@ -16,7 +16,7 @@ func TestHitlist(t *testing.T) {
 		NameToValue: map[string]string{
 			"A": "1",
 			"B": "2",
-			// C has no AST value
+			// C has no constVal
 			"D": "2",
 			"E": "3",
 			"F": "2",
