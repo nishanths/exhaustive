@@ -60,7 +60,7 @@ func processToken(t token.Token) {
 }
 ```
 
-running `exhaustive` will print
+running `exhaustive`
 
 ```
 exhaustive ./calc/...
