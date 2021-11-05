@@ -21,10 +21,8 @@ func _p() {
 func _q() {
 	var s duplicateenumvalue.State
 
-	// value-based checks not available for iota enums (implementation detail: since
-	// we cannot determine a constant.Value from AST/type information).
-
-	switch s { // want "^missing cases in switch of type duplicateenumvalue.State: DefaultState$"
+	// should not report missing DefaultState, since it has same value as TamilNadu
+	switch s {
 	case duplicateenumvalue.TamilNadu, duplicateenumvalue.Kerala, duplicateenumvalue.Karnataka:
 	}
 }
@@ -32,14 +30,14 @@ func _q() {
 func _r() {
 	// should report correctly (in union '|' form) when same-valued names are
 	// missing.
+
 	var r duplicateenumvalue.River
 	switch r { // want "^missing cases in switch of type duplicateenumvalue.River: DefaultRiver|Ganga, Kaveri$"
 	case duplicateenumvalue.Yamuna:
 	}
 
-	// reporting should work correctly when constant.Values are not present also.
 	var s duplicateenumvalue.State
-	switch s { // want "^missing cases in switch of type duplicateenumvalue.State: DefaultState, Kerala, TamilNadu$"
+	switch s { // want "^missing cases in switch of type duplicateenumvalue.State: DefaultState|TamilNadu, Kerala$"
 	case duplicateenumvalue.Karnataka:
 	}
 }
