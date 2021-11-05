@@ -1,4 +1,4 @@
-// want package:"^AcrossBlocksDeclsFiles:Here,Separate,There; ByteEnum:ByteA; Float64Enum:Float64A,Float64B; Int32Enum:Int32A,Int32B; IotaEnum:IotaA,IotaB; RepeatedValue:RepeatedValueA,RepeatedValueB; RuneEnum:RuneA; StringEnum:StringA,StringB,StringC; UIntEnum:UIntA,UIntB; UnexportedMembers:unexportedMembersA,unexportedMembersB; VarMembers:VarMemberA$"
+// want package:"^AcrossBlocksDeclsFiles:Here,Separate,There; ByteEnum:ByteA; Float64Enum:Float64A,Float64B; Int32Enum:Int32A,Int32B; IotaEnum:IotaA,IotaB; ParenVal:ParenVal0,ParenVal1; RepeatedValue:RepeatedValueA,RepeatedValueB; RuneEnum:RuneA; StringEnum:StringA,StringB,StringC; UIntEnum:UIntA,UIntB; UnexportedMembers:unexportedMembersA,unexportedMembersB; VarMembers:VarMemberA$"
 
 package enum
 
@@ -63,3 +63,10 @@ func _nonTopLevel() {
 		B NonTopLevel = 1
 	)
 }
+
+type ParenVal int
+
+const (
+	ParenVal0 ParenVal = 0
+	ParenVal1 ParenVal = (1)
+)

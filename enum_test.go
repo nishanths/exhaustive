@@ -60,6 +60,7 @@ func TestFindPossibleEnumTypes(t *testing.T) {
 		"AcrossBlocksDeclsFiles",
 		"UnexportedMembers",
 		"NonTopLevel",
+		"ParenVal",
 		"UIntEnum",
 		"StringEnum",
 		"RuneEnum",
@@ -146,6 +147,17 @@ func checkEnums(t *testing.T, got map[string]*enumMembers) {
 			map[string][]string{
 				`1`: {"unexportedMembersA"},
 				`2`: {"unexportedMembersB"},
+			},
+		},
+		"ParenVal": {
+			[]string{"ParenVal0", "ParenVal1"},
+			map[string]string{
+				"ParenVal0": `0`,
+				"ParenVal1": `1`,
+			},
+			map[string][]string{
+				`0`: {"ParenVal0"},
+				`1`: {"ParenVal1"},
 			},
 		},
 		"UIntEnum": {
