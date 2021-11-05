@@ -10,7 +10,7 @@ import (
 // constantValue is a constant.Value.ExactString().
 type constantValue string
 
-// %p fmt formatted string of an address.
+// %p-fmt formatted string of an address.
 type addr string
 
 // enums contains the enum types and their members for a single package.
@@ -45,9 +45,7 @@ func (em *enumMembers) add(name string, val constantValue) {
 	em.ValueToNames[val] = append(em.ValueToNames[val], name)
 }
 
-func typesNamedAddr(t *types.Named) addr {
-	return addr(fmt.Sprintf("%p", t))
-}
+func typesNamedAddr(t *types.Named) addr { return addr(fmt.Sprintf("%p", t)) }
 
 // Find the enums for the files in a package. The files is typically obtained from
 // pass.Files and typesInfo is obtained from pass.TypesInfo.
