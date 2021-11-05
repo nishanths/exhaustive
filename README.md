@@ -21,14 +21,14 @@ it possible to integrate with external analysis driver programs.
 
 ### Known issues
 
-The package may not correctly handle enum types that are [type
+The package's behavior is undefined for enum types that are [type
 aliases][4]. See issue [#13][5].
 
 ### Example
 
 Given the enum
 
-```diff
+```
 package token
 
 type Token int
@@ -37,8 +37,8 @@ const (
 	Add Token = iota
 	Subtract
 	Multiply
-+	Quotient
-+	Remainder
+	Quotient
+	Remainder
 )
 ```
 
