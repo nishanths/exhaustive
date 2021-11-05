@@ -13,6 +13,8 @@ go install github.com/nishanths/exhaustive/cmd/exhaustive@latest
 See [pkg.go.dev][6] for the flags, the definition of enum, and the
 definition of exhaustiveness used by this package.
 
+For changelog, see [CHANGELOG][changelog] in the wiki.
+
 The `exhaustive` package provides an `Analzyer` that follows the
 guidelines in the [`go/analysis`][3] package; this should make
 it possible to integrate with external analysis driver programs.
@@ -74,3 +76,4 @@ calc.go:6:2: missing cases in switch of type token.Token: Quotient, Remainder
 [4]: https://go.googlesource.com/proposal/+/master/design/18130-type-alias.md
 [5]: https://github.com/nishanths/exhaustive/issues/13
 [6]: https://pkg.go.dev/github.com/nishanths/exhaustive#section-documentation
+[changelog]: https://github.com/nishanths/exhaustive/wiki/CHANGELOG
