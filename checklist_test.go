@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestHitlist(t *testing.T) {
+func TestChecklist(t *testing.T) {
 	enumPkg := types.NewPackage("github.com/example/bar-go", "bar")
 
 	em := &enumMembers{
@@ -16,7 +16,7 @@ func TestHitlist(t *testing.T) {
 		NameToValue: map[string]string{
 			"A": "1",
 			"B": "2",
-			// C has no constVal
+			"C": "5",
 			"D": "2",
 			"E": "3",
 			"F": "2",
@@ -27,10 +27,11 @@ func TestHitlist(t *testing.T) {
 			"2": {"B", "D", "F"},
 			"3": {"E"},
 			"4": {"G"},
+			"5": {"C"},
 		},
 	}
 
-	checkRemaining := func(t *testing.T, h *hitlist, want map[string]struct{}) {
+	checkRemaining := func(t *testing.T, h *checklist, want map[string]struct{}) {
 		t.Helper()
 		rem := h.remaining()
 		if !reflect.DeepEqual(want, rem) {
@@ -39,16 +40,16 @@ func TestHitlist(t *testing.T) {
 	}
 
 	t.Run("panics on unknown strategy", func(t *testing.T) {
-		hitlist := makeHitlist(em, enumPkg, false, nil)
+		checklist := makeChecklist(em, enumPkg, false, nil)
 		f := func() {
-			hitlist.found("A", checkingStrategy(8238))
+			checklist.found("A", checkingStrategy(8238))
 		}
 		assertPanic(t, f, fmt.Sprintf("unknown strategy %v", checkingStrategy(8238)))
 	})
 
 	t.Run("main operations", func(t *testing.T) {
-		hitlist := makeHitlist(em, enumPkg, false, nil)
-		checkRemaining(t, hitlist, map[string]struct{}{
+		checklist := makeChecklist(em, enumPkg, false, nil)
+		checkRemaining(t, checklist, map[string]struct{}{
 			"A": {},
 			"B": {},
 			"C": {},
@@ -58,8 +59,8 @@ func TestHitlist(t *testing.T) {
 			"G": {},
 		})
 
-		hitlist.found("A", strategyValue)
-		checkRemaining(t, hitlist, map[string]struct{}{
+		checklist.found("A", strategyValue)
+		checkRemaining(t, checklist, map[string]struct{}{
 			"B": {},
 			"C": {},
 			"D": {},
@@ -68,8 +69,8 @@ func TestHitlist(t *testing.T) {
 			"G": {},
 		})
 
-		hitlist.found("B", strategyName)
-		checkRemaining(t, hitlist, map[string]struct{}{
+		checklist.found("B", strategyName)
+		checkRemaining(t, checklist, map[string]struct{}{
 			"C": {},
 			"D": {},
 			"E": {},
@@ -78,8 +79,8 @@ func TestHitlist(t *testing.T) {
 		})
 
 		// repeated call should be a no-op.
-		hitlist.found("B", strategyName)
-		checkRemaining(t, hitlist, map[string]struct{}{
+		checklist.found("B", strategyName)
+		checkRemaining(t, checklist, map[string]struct{}{
 			"C": {},
 			"D": {},
 			"E": {},
@@ -87,29 +88,29 @@ func TestHitlist(t *testing.T) {
 			"G": {},
 		})
 
-		hitlist.found("F", strategyValue)
-		checkRemaining(t, hitlist, map[string]struct{}{
+		checklist.found("F", strategyValue)
+		checkRemaining(t, checklist, map[string]struct{}{
 			"C": {},
 			"E": {},
 			"G": {},
 		})
 
-		hitlist.found("C", strategyValue)
-		checkRemaining(t, hitlist, map[string]struct{}{
+		checklist.found("C", strategyValue)
+		checkRemaining(t, checklist, map[string]struct{}{
 			"E": {},
 			"G": {},
 		})
 
-		hitlist.found("E", strategyName)
-		checkRemaining(t, hitlist, map[string]struct{}{
+		checklist.found("E", strategyName)
+		checkRemaining(t, checklist, map[string]struct{}{
 			"G": {},
 		})
 	})
 
 	t.Run("ignore regexp", func(t *testing.T) {
 		t.Run("nil means no filtering", func(t *testing.T) {
-			hitlist := makeHitlist(em, enumPkg, false, nil)
-			checkRemaining(t, hitlist, map[string]struct{}{
+			checklist := makeChecklist(em, enumPkg, false, nil)
+			checkRemaining(t, checklist, map[string]struct{}{
 				"A": {},
 				"B": {},
 				"C": {},
@@ -121,8 +122,8 @@ func TestHitlist(t *testing.T) {
 		})
 
 		t.Run("basic", func(t *testing.T) {
-			hitlist := makeHitlist(em, enumPkg, false, regexp.MustCompile(`^github.com/example/bar-go.G$`))
-			checkRemaining(t, hitlist, map[string]struct{}{
+			checklist := makeChecklist(em, enumPkg, false, regexp.MustCompile(`^github.com/example/bar-go.G$`))
+			checkRemaining(t, checklist, map[string]struct{}{
 				"A": {},
 				"B": {},
 				"C": {},
@@ -133,13 +134,13 @@ func TestHitlist(t *testing.T) {
 		})
 
 		t.Run("matches multiple", func(t *testing.T) {
-			hitlist := makeHitlist(em, enumPkg, false, regexp.MustCompile(`^github.com/example/bar-go`))
-			checkRemaining(t, hitlist, map[string]struct{}{})
+			checklist := makeChecklist(em, enumPkg, false, regexp.MustCompile(`^github.com/example/bar-go`))
+			checkRemaining(t, checklist, map[string]struct{}{})
 		})
 
 		t.Run("uses package path, not package name", func(t *testing.T) {
-			hitlist := makeHitlist(em, enumPkg, false, regexp.MustCompile(`bar.G`))
-			checkRemaining(t, hitlist, map[string]struct{}{
+			checklist := makeChecklist(em, enumPkg, false, regexp.MustCompile(`bar.G`))
+			checkRemaining(t, checklist, map[string]struct{}{
 				"A": {},
 				"B": {},
 				"C": {},
@@ -156,8 +157,8 @@ func TestHitlist(t *testing.T) {
 		em.Names = append([]string{}, em.Names...)
 		em.Names = append(em.Names, "_")
 
-		hitlist := makeHitlist(&em, enumPkg, true, nil)
-		checkRemaining(t, hitlist, map[string]struct{}{
+		checklist := makeChecklist(&em, enumPkg, true, nil)
+		checkRemaining(t, checklist, map[string]struct{}{
 			"A": {},
 			"B": {},
 			"C": {},
@@ -174,8 +175,8 @@ func TestHitlist(t *testing.T) {
 		em.Names = append(em.Names, "lowercase")
 
 		t.Run("include", func(t *testing.T) {
-			hitlist := makeHitlist(&em, enumPkg, true, nil)
-			checkRemaining(t, hitlist, map[string]struct{}{
+			checklist := makeChecklist(&em, enumPkg, true, nil)
+			checkRemaining(t, checklist, map[string]struct{}{
 				"A":         {},
 				"B":         {},
 				"C":         {},
@@ -188,8 +189,8 @@ func TestHitlist(t *testing.T) {
 		})
 
 		t.Run("don't include", func(t *testing.T) {
-			hitlist := makeHitlist(&em, enumPkg, false, nil)
-			checkRemaining(t, hitlist, map[string]struct{}{
+			checklist := makeChecklist(&em, enumPkg, false, nil)
+			checkRemaining(t, checklist, map[string]struct{}{
 				"A": {},
 				"B": {},
 				"C": {},

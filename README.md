@@ -10,19 +10,19 @@ Install the command:
 go install github.com/nishanths/exhaustive/cmd/exhaustive@latest
 ```
 
-For documentation, see [pkg.go.dev][6]. It describes the flags, the
-definition of enum, and the definition of exhaustiveness used by this
-package.
+For documentation, see the package comment at [pkg.go.dev][6]. It
+describes the flags, the definition of enum, and the definition of
+exhaustiveness used by this package.
 
-For changelog, see [CHANGELOG][changelog] in the wiki.
+For the changelog, see [CHANGELOG][changelog] in the wiki.
 
-The `exhaustive` package provides an `Analzyer` that follows the
-guidelines in the [`go/analysis`][3] package; this should make
-it possible to integrate with external analysis driver programs.
+The package provides an `Analyzer` that follows the guidelines in the
+[`go/analysis`][3] package; this should make it possible to integrate
+with external analysis driver programs.
 
 ### Known issues
 
-The package's behavior is undefined for enum types that are [type
+The analyzer's behavior is undefined for enum types that are [type
 aliases][4]. See issue [#13][5].
 
 ### Example

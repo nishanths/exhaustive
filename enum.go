@@ -25,12 +25,8 @@ type enumMembers struct {
 	ValueToNames map[string][]string
 }
 
-func (em *enumMembers) add(name string, constVal string, constValOk bool) {
+func (em *enumMembers) add(name string, constVal string) {
 	em.Names = append(em.Names, name)
-
-	if !constValOk {
-		return
-	}
 
 	if em.NameToValue == nil {
 		em.NameToValue = make(map[string]string)
@@ -56,11 +52,11 @@ func findEnums(files []*ast.File, typesInfo *types.Info) enums {
 	pkgEnums := make(enums)
 
 	// Gather enum members.
-	findEnumMembers(files, typesInfo, possibleEnumTypes, func(memberName, typeName string, constVal string, constValOk bool) {
+	findEnumMembers(files, typesInfo, possibleEnumTypes, func(memberName, typeName string, constVal string) {
 		if _, ok := pkgEnums[typeName]; !ok {
 			pkgEnums[typeName] = &enumMembers{}
 		}
-		pkgEnums[typeName].add(memberName, constVal, constValOk)
+		pkgEnums[typeName].add(memberName, constVal)
 	})
 
 	return pkgEnums
@@ -102,7 +98,7 @@ func findPossibleEnumTypes(files []*ast.File, typesInfo *types.Info, found func(
 	}
 }
 
-func findEnumMembers(files []*ast.File, typesInfo *types.Info, knownEnumTypes map[string]struct{}, found func(memberName, typeName string, constVal string, constValOk bool)) {
+func findEnumMembers(files []*ast.File, typesInfo *types.Info, knownEnumTypes map[string]struct{}, found func(memberName, typeName string, constVal string)) {
 	for _, f := range files {
 		for _, decl := range f.Decls {
 			gen, ok := decl.(*ast.GenDecl)
@@ -117,43 +113,21 @@ func findEnumMembers(files []*ast.File, typesInfo *types.Info, knownEnumTypes ma
 				v := s.(*ast.ValueSpec)
 				for _, name := range v.Names {
 					obj := typesInfo.Defs[name]
-					if obj == nil {
-						continue
-					}
-
-					named, ok := obj.Type().(*types.Named)
+					namedType, ok := obj.Type().(*types.Named)
 					if !ok {
 						continue
 					}
-
-					if _, ok := knownEnumTypes[named.Obj().Name()]; !ok {
+					if _, ok := knownEnumTypes[namedType.Obj().Name()]; !ok {
 						continue
 					}
-
-					cv, ok := determineConstVal(name, typesInfo)
-					found(obj.Name(), named.Obj().Name(), cv, ok)
+					found(obj.Name(), namedType.Obj().Name(), determineConstVal(name, typesInfo))
 				}
 			}
 		}
 	}
 }
 
-func determineConstVal(name *ast.Ident, typesInfo *types.Info) (string, bool) {
-	return determineConstValFromName(name, typesInfo)
-}
-
-func determineConstValFromName(name *ast.Ident, typesInfo *types.Info) (string, bool) {
-	nameObj := typesInfo.Defs[name]
-	if nameObj == nil {
-		return "", false
-	}
-
-	c, ok := nameObj.(*types.Const)
-	if !ok {
-		return "", false
-	}
-	if c.Val() == nil {
-		return "", false
-	}
-	return c.Val().ExactString(), true
+func determineConstVal(name *ast.Ident, typesInfo *types.Info) string {
+	c := typesInfo.Defs[name].(*types.Const)
+	return c.Val().ExactString()
 }

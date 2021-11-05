@@ -7,18 +7,18 @@ import (
 	"regexp"
 )
 
-// A hitlist is the set of enum member names that should be listed in a switch
+// A checklist is the set of enum member names that should be listed in a switch
 // statement's case clauses in order for the switch to be exhaustive. The found
-// method marks a member as being listed in the switch, so, in usage, a hitlist
+// method marks a member as being listed in the switch, so, in usage, a checklist
 // is the set of yet unsatisfied enum members.
 //
 // Only interact via its methods. It is not safe for concurrent use.
-type hitlist struct {
+type checklist struct {
 	em *enumMembers
 	m  map[string]struct{} // remaining unsatisfied member names
 }
 
-func makeHitlist(em *enumMembers, enumPkg *types.Package, includeUnexported bool, ignore *regexp.Regexp) *hitlist {
+func makeChecklist(em *enumMembers, enumPkg *types.Package, includeUnexported bool, ignore *regexp.Regexp) *checklist {
 	m := make(map[string]struct{})
 
 	add := func(memberName string) {
@@ -39,34 +39,30 @@ func makeHitlist(em *enumMembers, enumPkg *types.Package, includeUnexported bool
 		add(name)
 	}
 
-	return &hitlist{
+	return &checklist{
 		em: em,
 		m:  m,
 	}
 }
 
-func (h *hitlist) found(memberName string, strategy checkingStrategy) {
+func (c *checklist) found(memberName string, strategy checkingStrategy) {
 	switch strategy {
 	case strategyValue:
-		if constVal, ok := h.em.NameToValue[memberName]; ok {
-			// delete all of the same-valued names
-			for _, n := range h.em.ValueToNames[constVal] {
-				delete(h.m, n)
-			}
-		} else {
-			// delete the name given name alone
-			delete(h.m, memberName)
+		// delete all of the same-valued names
+		constVal := c.em.NameToValue[memberName]
+		for _, n := range c.em.ValueToNames[constVal] {
+			delete(c.m, n)
 		}
 
 	case strategyName:
 		// delete the given name alone
-		delete(h.m, memberName)
+		delete(c.m, memberName)
 
 	default:
 		panic(fmt.Sprintf("unknown strategy %v", strategy))
 	}
 }
 
-func (h *hitlist) remaining() map[string]struct{} {
-	return h.m
+func (c *checklist) remaining() map[string]struct{} {
+	return c.m
 }

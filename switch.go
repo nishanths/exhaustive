@@ -116,13 +116,13 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 
 		samePkg := tagPkg == pass.Pkg // do the switch statement and the switch tag type (i.e. enum type) live in the same package?
 		checkUnexported := samePkg    // we want to include unexported members in the exhaustiveness check only if we're in the same package
-		hitlist := makeHitlist(em, tagPkg, checkUnexported, cfg.ignoreEnumMembers)
+		checklist := makeChecklist(em, tagPkg, checkUnexported, cfg.ignoreEnumMembers)
 
 		hasDefaultCase := analyzeSwitchClauses(sw, pass.TypesInfo, samePkg, func(memberName string) {
-			hitlist.found(memberName, cfg.checkingStrategy)
+			checklist.found(memberName, cfg.checkingStrategy)
 		})
 
-		if len(hitlist.remaining()) == 0 {
+		if len(checklist.remaining()) == 0 {
 			// All enum members accounted for.
 			// Nothing to report.
 			return true, resultEnumMembersAccounted
@@ -133,7 +133,7 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 			// So don't report.
 			return true, resultDefaultCaseSuffices
 		}
-		pass.Report(makeDiagnostic(sw, samePkg, tagType, em, toSlice(hitlist.remaining()), cfg.checkingStrategy))
+		pass.Report(makeDiagnostic(sw, samePkg, tagType, em, toSlice(checklist.remaining()), cfg.checkingStrategy))
 		return true, resultReportedDiagnostic
 	}
 }

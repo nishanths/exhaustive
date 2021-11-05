@@ -10,26 +10,30 @@ import (
 func TestEnumMembers_add(t *testing.T) {
 	t.Run("basic", func(t *testing.T) {
 		var v enumMembers
-		v.add("foo", "", false)
-		v.add("z", "X", true)
-		v.add("bar", "", false)
-		v.add("y", "Y", true)
-		v.add("x", "X", true)
+		v.add("foo", "\"A\"")
+		v.add("z", "X")
+		v.add("bar", "\"B\"")
+		v.add("y", "Y")
+		v.add("x", "X")
 
 		if want, got := []string{"foo", "z", "bar", "y", "x"}, v.Names; !reflect.DeepEqual(want, got) {
 			t.Errorf("want %v, got %v", want, got)
 		}
 		if want, got := map[string]string{
-			"z": "X",
-			"y": "Y",
-			"x": "X",
+			"foo": "\"A\"",
+			"z":   "X",
+			"bar": "\"B\"",
+			"y":   "Y",
+			"x":   "X",
 		}, v.NameToValue; !reflect.DeepEqual(want, got) {
 			t.Errorf("want %v, got %v", want, got)
 		}
 
 		if want, got := map[string][]string{
-			"X": {"z", "x"},
-			"Y": {"y"},
+			"\"A\"": {"foo"},
+			"\"B\"": {"bar"},
+			"X":     {"z", "x"},
+			"Y":     {"y"},
 		}, v.ValueToNames; !reflect.DeepEqual(want, got) {
 			t.Errorf("want %v, got %v", want, got)
 		}
@@ -82,11 +86,11 @@ func TestFindEnumMembers(t *testing.T) {
 	})
 
 	got := make(map[string]*enumMembers)
-	findEnumMembers(enumpkg.Syntax, enumpkg.TypesInfo, knownEnumTypes, func(memberName, typeName string, constVal string, constValOk bool) {
+	findEnumMembers(enumpkg.Syntax, enumpkg.TypesInfo, knownEnumTypes, func(memberName, typeName string, constVal string) {
 		if _, ok := got[typeName]; !ok {
 			got[typeName] = &enumMembers{}
 		}
-		got[typeName].add(memberName, constVal, constValOk)
+		got[typeName].add(memberName, constVal)
 	})
 
 	checkEnums(t, got)
@@ -231,6 +235,14 @@ func checkEnums(t *testing.T, got map[string]*enumMembers) {
 				`1`: {"Float64B"},
 			},
 		},
+	}
+
+	// check the `want` declaration for programmer error.
+	for k, v := range want {
+		if len(v.Names) != len(v.NameToValue) {
+			t.Errorf("%s: wrong lengths (test definition bug)", k)
+			return
+		}
 	}
 
 	if len(want) != len(got) {
