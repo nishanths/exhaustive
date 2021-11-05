@@ -25,15 +25,8 @@ func TestExhaustive(t *testing.T) {
 	// For an enum switch to be exhaustive, it is sufficient for each unique enum
 	// value to be listed, not each unique member by name.
 	t.Run("duplicate enum value", func(t *testing.T) {
-		t.Run("strategy value", func(t *testing.T) {
-			resetFlags()
-			analysistest.Run(t, analysistest.TestData(), Analyzer, "duplicateenumvalue/strategyvalue/...")
-		})
-		t.Run("strategy name", func(t *testing.T) {
-			resetFlags()
-			fCheckingStrategy = "name"
-			analysistest.Run(t, analysistest.TestData(), Analyzer, "duplicateenumvalue/strategyname/...")
-		})
+		resetFlags()
+		analysistest.Run(t, analysistest.TestData(), Analyzer, "duplicateenumvalue/pkg/...")
 	})
 
 	t.Run("default signifies exhaustive", func(t *testing.T) {
@@ -66,38 +59,5 @@ func TestExhaustive(t *testing.T) {
 	t.Run("general", func(t *testing.T) {
 		resetFlags()
 		analysistest.Run(t, analysistest.TestData(), Analyzer, "general/...")
-	})
-}
-
-func TestDetermineCheckingStrategy(t *testing.T) {
-	t.Run("name", func(t *testing.T) {
-		resetFlags()
-		fCheckingStrategy = "name"
-		s, err := determineCheckingStrategy()
-		assertNoError(t, err)
-		if s != strategyName {
-			t.Errorf("want %v, got %v", strategyName, s)
-		}
-	})
-
-	t.Run("value", func(t *testing.T) {
-		resetFlags()
-		fCheckingStrategy = "value"
-		s, err := determineCheckingStrategy()
-		assertNoError(t, err)
-		if s != strategyValue {
-			t.Errorf("want %v, got %v", strategyValue, s)
-		}
-	})
-
-	t.Run("unknown", func(t *testing.T) {
-		resetFlags()
-		fCheckingStrategy = "xxx"
-		_, err := determineCheckingStrategy()
-		assertError(t, err)
-		want := `bad value "xxx" for flag -checking-strategy`
-		if err.Error() != want {
-			t.Errorf("want %v, got %v", want, err.Error())
-		}
 	})
 }

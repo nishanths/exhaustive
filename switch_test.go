@@ -43,86 +43,48 @@ func TestDiagnosticEnumTypeName(t *testing.T) {
 func TestDiagnosticMissingMembers(t *testing.T) {
 	em := &enumMembers{
 		Names: []string{"Ganga", "Yamuna", "Kaveri", "Unspecified"},
-		NameToValue: map[string]string{
+		NameToValue: map[string]constantValue{
 			"Unspecified": "0",
 			"Ganga":       "0",
+			"Kaveri":      "1",
 			"Yamuna":      "2",
 		},
-		ValueToNames: map[string][]string{
+		ValueToNames: map[constantValue][]string{
 			"0": {"Unspecified", "Ganga"},
+			"1": {"Kaveri"},
 			"2": {"Yamuna"},
 		},
 	}
 
 	t.Run("missing some: same-valued", func(t *testing.T) {
-		t.Run("strategy value", func(t *testing.T) {
-			got := diagnosticMissingMembers([]string{"Ganga", "Unspecified", "Kaveri"}, em, strategyValue)
-			want := []string{"Ganga|Unspecified", "Kaveri"}
-			if !reflect.DeepEqual(want, got) {
-				t.Errorf("want %v, got %v", want, got)
-			}
-		})
-
-		t.Run("strategy name", func(t *testing.T) {
-			got := diagnosticMissingMembers([]string{"Ganga", "Unspecified", "Kaveri"}, em, strategyName)
-			want := []string{"Ganga", "Kaveri", "Unspecified"}
-			if !reflect.DeepEqual(want, got) {
-				t.Errorf("want %v, got %v", want, got)
-			}
-		})
+		got := diagnosticMissingMembers([]string{"Ganga", "Unspecified", "Kaveri"}, em)
+		want := []string{"Ganga|Unspecified", "Kaveri"}
+		if !reflect.DeepEqual(want, got) {
+			t.Errorf("want %v, got %v", want, got)
+		}
 	})
 
 	t.Run("missing some: unique or unknown values", func(t *testing.T) {
-		t.Run("strategy value", func(t *testing.T) {
-			got := diagnosticMissingMembers([]string{"Yamuna", "Kaveri"}, em, strategyValue)
-			want := []string{"Kaveri", "Yamuna"}
-			if !reflect.DeepEqual(want, got) {
-				t.Errorf("want %v, got %v", want, got)
-			}
-		})
-
-		t.Run("strategy name", func(t *testing.T) {
-			got := diagnosticMissingMembers([]string{"Yamuna", "Kaveri"}, em, strategyName)
-			want := []string{"Kaveri", "Yamuna"}
-			if !reflect.DeepEqual(want, got) {
-				t.Errorf("want %v, got %v", want, got)
-			}
-		})
-
+		got := diagnosticMissingMembers([]string{"Yamuna", "Kaveri"}, em)
+		want := []string{"Kaveri", "Yamuna"}
+		if !reflect.DeepEqual(want, got) {
+			t.Errorf("want %v, got %v", want, got)
+		}
 	})
 
 	t.Run("missing none", func(t *testing.T) {
-		t.Run("strategy value", func(t *testing.T) {
-			got := diagnosticMissingMembers(nil, em, strategyValue)
-			if len(got) != 0 {
-				t.Errorf("want zero elements, got %d", len(got))
-			}
-		})
-
-		t.Run("strategy name", func(t *testing.T) {
-			got := diagnosticMissingMembers(nil, em, strategyName)
-			if len(got) != 0 {
-				t.Errorf("want zero elements, got %d", len(got))
-			}
-		})
+		got := diagnosticMissingMembers(nil, em)
+		if len(got) != 0 {
+			t.Errorf("want zero elements, got %d", len(got))
+		}
 	})
 
 	t.Run("missing all", func(t *testing.T) {
-		t.Run("strategy value", func(t *testing.T) {
-			got := diagnosticMissingMembers([]string{"Ganga", "Kaveri", "Yamuna", "Unspecified"}, em, strategyValue)
-			want := []string{"Ganga|Unspecified", "Kaveri", "Yamuna"}
-			if !reflect.DeepEqual(want, got) {
-				t.Errorf("want %v, got %v", want, got)
-			}
-		})
-
-		t.Run("strategy name", func(t *testing.T) {
-			got := diagnosticMissingMembers([]string{"Ganga", "Kaveri", "Yamuna", "Unspecified"}, em, strategyName)
-			want := []string{"Ganga", "Kaveri", "Unspecified", "Yamuna"}
-			if !reflect.DeepEqual(want, got) {
-				t.Errorf("want %v, got %v", want, got)
-			}
-		})
+		got := diagnosticMissingMembers([]string{"Ganga", "Kaveri", "Yamuna", "Unspecified"}, em)
+		want := []string{"Ganga|Unspecified", "Kaveri", "Yamuna"}
+		if !reflect.DeepEqual(want, got) {
+			t.Errorf("want %v, got %v", want, got)
+		}
 	})
 }
 
@@ -141,11 +103,22 @@ func TestMakeDiagnostic(t *testing.T) {
 		nil, /* underlying type should not matter */
 		nil,
 	)
-	allMembers := &enumMembers{Names: []string{"Tundra", "Savanna", "Desert"}}
+	allMembers := &enumMembers{
+		Names: []string{"Tundra", "Savanna", "Desert"},
+		NameToValue: map[string]constantValue{
+			"Tundra":  "1",
+			"Savanna": "2",
+			"Desert":  "3",
+		},
+		ValueToNames: map[constantValue][]string{
+			"1": {"Tundra"},
+			"2": {"Savanna"},
+			"3": {"Desert"},
+		},
+	}
 	missingMembers := []string{"Savanna", "Desert"}
-	strategy := strategyValue
 
-	got := makeDiagnostic(sw, samePkg, enumType, allMembers, missingMembers, strategy)
+	got := makeDiagnostic(sw, samePkg, enumType, allMembers, missingMembers)
 	want := analysis.Diagnostic{
 		Pos:     1,
 		End:     11,

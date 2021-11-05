@@ -103,8 +103,8 @@ func checkTypeEnumMembers(t *testing.T, enumMembersType reflect.Type) {
 	t.Helper()
 	assertTypeFields(t, enumMembersType, []wantField{
 		{"Names", "[]string"},
-		{"NameToValue", "map[string]string"},
-		{"ValueToNames", "map[string][]string"},
+		{"NameToValue", "map[string]exhaustive.constantValue"},
+		{"ValueToNames", "map[exhaustive.constantValue][]string"},
 	})
 }
 

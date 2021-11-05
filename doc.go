@@ -36,38 +36,6 @@ switch statement exhaustive. For an enum type defined in an external package, it
 is sufficient for just the exported enum members to be present in order to
 consider the switch statement exhaustive.
 
-Exhaustiveness checking strategies
-
-There are two strategies for checking exhaustiveness: the "name" strategy and
-the "value" strategy (which is the default). The name strategy requires that
-each independent enum member name is listed in a switch statement to satisfy
-exhaustiveness. On the other hand, the value strategy only requires that each
-independent enum value is listed in a switch statement to satisfy
-exhaustiveness.
-
-To illustrate the difference between the two strategies, consider the
-enum and the switch statement in the code snippet below.
-
-  type AccessControl string
-
-  const (
-      AccessPublic  AccessControl = "public"
-      AccessPrivate AccessControl = "private"
-      AccessDefault AccessControl = AccessPublic
-  )
-
-  func example(v AccessControl) {
-      switch v {
-          case AccessPublic:
-          case AccessPrivate:
-      }
-  }
-
-The switch statement is not exhaustive when using the name strategy (because the
-name AccessDefault is not listed in the switch), but it is exhaustive when using
-the value strategy (because AccessDefault and AccessPublic have the same value,
-and it suffices that one of them is listed in the switch).
-
 Notable flags
 
 The notable flags used by the analyzer are:
@@ -90,11 +58,6 @@ satisfy exhaustiveness. The regular expression is matched against enum member
 names inclusive of the enum package import path, e.g.
 "github.com/foo/bar.Tundra", where the enum package import path is
 "github.com/foo/bar" and the enum member name is "Tundra".
-
-  -checking-strategy <strategy>
-
-Specifies the exhaustiveness checking strategy, which must be one of "name" or
-"value" (default). For details see section: Exhaustiveness checking strategies.
 
 Skipping analysis
 

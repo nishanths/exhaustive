@@ -1,4 +1,4 @@
-package byvalue
+package pkg
 
 import (
 	"duplicateenumvalue"

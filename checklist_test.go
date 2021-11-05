@@ -1,7 +1,6 @@
 package exhaustive
 
 import (
-	"fmt"
 	"go/types"
 	"reflect"
 	"regexp"
@@ -13,7 +12,7 @@ func TestChecklist(t *testing.T) {
 
 	em := &enumMembers{
 		Names: []string{"A", "B", "C", "D", "E", "F", "G"},
-		NameToValue: map[string]string{
+		NameToValue: map[string]constantValue{
 			"A": "1",
 			"B": "2",
 			"C": "5",
@@ -22,7 +21,7 @@ func TestChecklist(t *testing.T) {
 			"F": "2",
 			"G": "4",
 		},
-		ValueToNames: map[string][]string{
+		ValueToNames: map[constantValue][]string{
 			"1": {"A"},
 			"2": {"B", "D", "F"},
 			"3": {"E"},
@@ -39,14 +38,6 @@ func TestChecklist(t *testing.T) {
 		}
 	}
 
-	t.Run("panics on unknown strategy", func(t *testing.T) {
-		checklist := makeChecklist(em, enumPkg, false, nil)
-		f := func() {
-			checklist.found("A", checkingStrategy(8238))
-		}
-		assertPanic(t, f, fmt.Sprintf("unknown strategy %v", checkingStrategy(8238)))
-	})
-
 	t.Run("main operations", func(t *testing.T) {
 		checklist := makeChecklist(em, enumPkg, false, nil)
 		checkRemaining(t, checklist, map[string]struct{}{
@@ -59,7 +50,7 @@ func TestChecklist(t *testing.T) {
 			"G": {},
 		})
 
-		checklist.found("A", strategyValue)
+		checklist.found("A")
 		checkRemaining(t, checklist, map[string]struct{}{
 			"B": {},
 			"C": {},
@@ -69,39 +60,35 @@ func TestChecklist(t *testing.T) {
 			"G": {},
 		})
 
-		checklist.found("B", strategyName)
+		checklist.found("B")
 		checkRemaining(t, checklist, map[string]struct{}{
 			"C": {},
-			"D": {},
 			"E": {},
-			"F": {},
 			"G": {},
 		})
 
 		// repeated call should be a no-op.
-		checklist.found("B", strategyName)
-		checkRemaining(t, checklist, map[string]struct{}{
-			"C": {},
-			"D": {},
-			"E": {},
-			"F": {},
-			"G": {},
-		})
-
-		checklist.found("F", strategyValue)
+		checklist.found("B")
 		checkRemaining(t, checklist, map[string]struct{}{
 			"C": {},
 			"E": {},
 			"G": {},
 		})
 
-		checklist.found("C", strategyValue)
+		checklist.found("F")
+		checkRemaining(t, checklist, map[string]struct{}{
+			"C": {},
+			"E": {},
+			"G": {},
+		})
+
+		checklist.found("C")
 		checkRemaining(t, checklist, map[string]struct{}{
 			"E": {},
 			"G": {},
 		})
 
-		checklist.found("E", strategyName)
+		checklist.found("E")
 		checkRemaining(t, checklist, map[string]struct{}{
 			"G": {},
 		})

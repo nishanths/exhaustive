@@ -19,7 +19,7 @@ func TestEnumMembers_add(t *testing.T) {
 		if want, got := []string{"foo", "z", "bar", "y", "x"}, v.Names; !reflect.DeepEqual(want, got) {
 			t.Errorf("want %v, got %v", want, got)
 		}
-		if want, got := map[string]string{
+		if want, got := map[string]constantValue{
 			"foo": "\"A\"",
 			"z":   "X",
 			"bar": "\"B\"",
@@ -29,7 +29,7 @@ func TestEnumMembers_add(t *testing.T) {
 			t.Errorf("want %v, got %v", want, got)
 		}
 
-		if want, got := map[string][]string{
+		if want, got := map[constantValue][]string{
 			"\"A\"": {"foo"},
 			"\"B\"": {"bar"},
 			"X":     {"z", "x"},
@@ -86,11 +86,11 @@ func TestFindEnumMembers(t *testing.T) {
 	})
 
 	got := make(map[string]*enumMembers)
-	findEnumMembers(enumpkg.Syntax, enumpkg.TypesInfo, knownEnumTypes, func(memberName, typeName string, constVal string) {
+	findEnumMembers(enumpkg.Syntax, enumpkg.TypesInfo, knownEnumTypes, func(memberName, typeName string, val constantValue) {
 		if _, ok := got[typeName]; !ok {
 			got[typeName] = &enumMembers{}
 		}
-		got[typeName].add(memberName, constVal)
+		got[typeName].add(memberName, val)
 	})
 
 	checkEnums(t, got)
@@ -108,42 +108,42 @@ func checkEnums(t *testing.T, got map[string]*enumMembers) {
 	want := enums{
 		"VarConstMixed": {
 			[]string{"VCMixedB"},
-			map[string]string{
+			map[string]constantValue{
 				"VCMixedB": `1`,
 			},
-			map[string][]string{
+			map[constantValue][]string{
 				`1`: {"VCMixedB"},
 			},
 		},
 		"IotaEnum": {
 			[]string{"IotaA", "IotaB"},
-			map[string]string{
+			map[string]constantValue{
 				"IotaA": `0`,
 				"IotaB": `2`,
 			},
-			map[string][]string{
+			map[constantValue][]string{
 				`0`: {"IotaA"},
 				`2`: {"IotaB"},
 			},
 		},
 		"RepeatedValue": {
 			[]string{"RepeatedValueA", "RepeatedValueB"},
-			map[string]string{
+			map[string]constantValue{
 				"RepeatedValueA": `1`,
 				"RepeatedValueB": `1`,
 			},
-			map[string][]string{
+			map[constantValue][]string{
 				`1`: {"RepeatedValueA", "RepeatedValueB"},
 			},
 		},
 		"AcrossBlocksDeclsFiles": {
 			[]string{"Here", "Separate", "There"},
-			map[string]string{
+			map[string]constantValue{
 				"Here":     `0`,
 				"Separate": `1`,
 				"There":    `2`,
 			},
-			map[string][]string{
+			map[constantValue][]string{
 				`0`: {"Here"},
 				`1`: {"Separate"},
 				`2`: {"There"},
@@ -151,45 +151,45 @@ func checkEnums(t *testing.T, got map[string]*enumMembers) {
 		},
 		"UnexportedMembers": {
 			[]string{"unexportedMembersA", "unexportedMembersB"},
-			map[string]string{
+			map[string]constantValue{
 				"unexportedMembersA": `1`,
 				"unexportedMembersB": `2`,
 			},
-			map[string][]string{
+			map[constantValue][]string{
 				`1`: {"unexportedMembersA"},
 				`2`: {"unexportedMembersB"},
 			},
 		},
 		"ParenVal": {
 			[]string{"ParenVal0", "ParenVal1"},
-			map[string]string{
+			map[string]constantValue{
 				"ParenVal0": `0`,
 				"ParenVal1": `1`,
 			},
-			map[string][]string{
+			map[constantValue][]string{
 				`0`: {"ParenVal0"},
 				`1`: {"ParenVal1"},
 			},
 		},
 		"UIntEnum": {
 			[]string{"UIntA", "UIntB"},
-			map[string]string{
+			map[string]constantValue{
 				"UIntA": "0",
 				"UIntB": "1",
 			},
-			map[string][]string{
+			map[constantValue][]string{
 				"0": {"UIntA"},
 				"1": {"UIntB"},
 			},
 		},
 		"StringEnum": {
 			[]string{"StringA", "StringB", "StringC"},
-			map[string]string{
+			map[string]constantValue{
 				"StringA": `"stringa"`,
 				"StringB": `"stringb"`,
 				"StringC": `"stringc"`,
 			},
-			map[string][]string{
+			map[constantValue][]string{
 				`"stringa"`: {"StringA"},
 				`"stringb"`: {"StringB"},
 				`"stringc"`: {"StringC"},
@@ -197,40 +197,40 @@ func checkEnums(t *testing.T, got map[string]*enumMembers) {
 		},
 		"RuneEnum": {
 			[]string{"RuneA"},
-			map[string]string{
+			map[string]constantValue{
 				"RuneA": `97`,
 			},
-			map[string][]string{
+			map[constantValue][]string{
 				`97`: {"RuneA"},
 			},
 		},
 		"ByteEnum": {
 			[]string{"ByteA"},
-			map[string]string{
+			map[string]constantValue{
 				"ByteA": `97`,
 			},
-			map[string][]string{
+			map[constantValue][]string{
 				`97`: {"ByteA"},
 			},
 		},
 		"Int32Enum": {
 			[]string{"Int32A", "Int32B"},
-			map[string]string{
+			map[string]constantValue{
 				"Int32A": "0",
 				"Int32B": "1",
 			},
-			map[string][]string{
+			map[constantValue][]string{
 				"0": {"Int32A"},
 				"1": {"Int32B"},
 			},
 		},
 		"Float64Enum": {
 			[]string{"Float64A", "Float64B"},
-			map[string]string{
+			map[string]constantValue{
 				"Float64A": `0`,
 				"Float64B": `1`,
 			},
-			map[string][]string{
+			map[constantValue][]string{
 				`0`: {"Float64A"},
 				`1`: {"Float64B"},
 			},

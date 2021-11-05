@@ -13,13 +13,6 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
-type checkingStrategy int
-
-const (
-	strategyValue checkingStrategy = iota
-	strategyName
-)
-
 // nodeVisitor is similar to the visitor function used by Inspector.WithStack,
 // except that it returns an additional value: a short description of
 // the result of this node visit.
@@ -119,7 +112,7 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 		checklist := makeChecklist(em, tagPkg, checkUnexported, cfg.ignoreEnumMembers)
 
 		hasDefaultCase := analyzeSwitchClauses(sw, pass.TypesInfo, samePkg, func(memberName string) {
-			checklist.found(memberName, cfg.checkingStrategy)
+			checklist.found(memberName)
 		})
 
 		if len(checklist.remaining()) == 0 {
@@ -133,7 +126,7 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 			// So don't report.
 			return true, resultDefaultCaseSuffices
 		}
-		pass.Report(makeDiagnostic(sw, samePkg, tagType, em, toSlice(checklist.remaining()), cfg.checkingStrategy))
+		pass.Report(makeDiagnostic(sw, samePkg, tagType, em, toSlice(checklist.remaining())))
 		return true, resultReportedDiagnostic
 	}
 }
@@ -143,7 +136,6 @@ type config struct {
 	defaultSignifiesExhaustive bool
 	checkGeneratedFiles        bool
 	ignoreEnumMembers          *regexp.Regexp
-	checkingStrategy           checkingStrategy
 }
 
 // checkSwitchStatements checks exhaustiveness of enum switch statements for the supplied
@@ -235,39 +227,20 @@ func analyzeCaseClauseExpr(e ast.Expr, typesInfo *types.Info, samePkg bool, foun
 
 // diagnosticMissingMembers constructs the list of missing enum members,
 // suitable for use in a reported diagnostic message.
-func diagnosticMissingMembers(missingMembers []string, em *enumMembers, strategy checkingStrategy) []string {
-	switch strategy {
-	case strategyValue:
-		var out []string
-
-		constValMembers := make(map[string][]string) // constant value -> member names
-		var otherMembers []string                    // non-constant value member names
-
-		for _, m := range missingMembers {
-			if constVal, ok := em.NameToValue[m]; ok {
-				constValMembers[constVal] = append(constValMembers[constVal], m)
-			} else {
-				otherMembers = append(otherMembers, m)
-			}
-		}
-
-		for _, names := range constValMembers {
-			sort.Strings(names)
-			out = append(out, strings.Join(names, "|"))
-		}
-		out = append(out, otherMembers...)
-		sort.Strings(out)
-		return out
-
-	case strategyName:
-		out := make([]string, len(missingMembers))
-		copy(out, missingMembers)
-		sort.Strings(out)
-		return out
-
-	default:
-		panic(fmt.Sprintf("unknown strategy %v", strategy))
+func diagnosticMissingMembers(missingMembers []string, em *enumMembers) []string {
+	missingByConstVal := make(map[constantValue][]string) // missing members, keyed by constant value.
+	for _, m := range missingMembers {
+		val := em.NameToValue[m]
+		missingByConstVal[val] = append(missingByConstVal[val], m)
 	}
+
+	var out []string
+	for _, names := range missingByConstVal {
+		sort.Strings(names)
+		out = append(out, strings.Join(names, "|"))
+	}
+	sort.Strings(out)
+	return out
 }
 
 // diagnosticEnumTypeName returns a string representation of an enum type for
@@ -279,10 +252,10 @@ func diagnosticEnumTypeName(enumType *types.Named, samePkg bool) string {
 	return enumType.Obj().Pkg().Name() + "." + enumType.Obj().Name()
 }
 
-func makeDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumType *types.Named, allMembers *enumMembers, missingMembers []string, strategy checkingStrategy) analysis.Diagnostic {
+func makeDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumType *types.Named, allMembers *enumMembers, missingMembers []string) analysis.Diagnostic {
 	message := fmt.Sprintf("missing cases in switch of type %s: %s",
 		diagnosticEnumTypeName(enumType, samePkg),
-		strings.Join(diagnosticMissingMembers(missingMembers, allMembers, strategy), ", "))
+		strings.Join(diagnosticMissingMembers(missingMembers, allMembers), ", "))
 
 	return analysis.Diagnostic{
 		Pos:     sw.Pos(),

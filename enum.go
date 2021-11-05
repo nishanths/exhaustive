@@ -6,37 +6,32 @@ import (
 	"go/types"
 )
 
+// constantValue is a constant.Value.ExactString().
+type constantValue string
+
 // enums holds the enum types and their members defined in a single package.
 type enums map[string]*enumMembers // enum type name -> enum members
 
 // enumMembers is the members for a single enum type.
 // The zero value is ready to use.
 type enumMembers struct {
-	// Names is the enum member names,
-	// in the order encountered in the AST.
-	Names []string
-
-	// NameToValue maps member name -> constVal.
-	NameToValue map[string]string
-
-	// ValueToNames maps constVal -> member names.
-	// Note the use of []string for the element type of the map: Multiple
-	// names can have the same value.
-	ValueToNames map[string][]string
+	Names        []string                   // enum member names, AST order
+	NameToValue  map[string]constantValue   // enum member name -> constant value
+	ValueToNames map[constantValue][]string // constant value -> enum member names
 }
 
-func (em *enumMembers) add(name string, constVal string) {
+func (em *enumMembers) add(name string, val constantValue) {
 	em.Names = append(em.Names, name)
 
 	if em.NameToValue == nil {
-		em.NameToValue = make(map[string]string)
+		em.NameToValue = make(map[string]constantValue)
 	}
-	em.NameToValue[name] = constVal
+	em.NameToValue[name] = val
 
 	if em.ValueToNames == nil {
-		em.ValueToNames = make(map[string][]string)
+		em.ValueToNames = make(map[constantValue][]string)
 	}
-	em.ValueToNames[constVal] = append(em.ValueToNames[constVal], name)
+	em.ValueToNames[val] = append(em.ValueToNames[val], name)
 }
 
 // Find the enums for the files in a package. The files is typically obtained from
@@ -52,11 +47,11 @@ func findEnums(files []*ast.File, typesInfo *types.Info) enums {
 	pkgEnums := make(enums)
 
 	// Gather enum members.
-	findEnumMembers(files, typesInfo, possibleEnumTypes, func(memberName, typeName string, constVal string) {
+	findEnumMembers(files, typesInfo, possibleEnumTypes, func(memberName, typeName string, val constantValue) {
 		if _, ok := pkgEnums[typeName]; !ok {
 			pkgEnums[typeName] = &enumMembers{}
 		}
-		pkgEnums[typeName].add(memberName, constVal)
+		pkgEnums[typeName].add(memberName, val)
 	})
 
 	return pkgEnums
@@ -98,7 +93,7 @@ func findPossibleEnumTypes(files []*ast.File, typesInfo *types.Info, found func(
 	}
 }
 
-func findEnumMembers(files []*ast.File, typesInfo *types.Info, knownEnumTypes map[string]struct{}, found func(memberName, typeName string, constVal string)) {
+func findEnumMembers(files []*ast.File, typesInfo *types.Info, knownEnumTypes map[string]struct{}, found func(memberName, typeName string, val constantValue)) {
 	for _, f := range files {
 		for _, decl := range f.Decls {
 			gen, ok := decl.(*ast.GenDecl)
@@ -127,7 +122,7 @@ func findEnumMembers(files []*ast.File, typesInfo *types.Info, knownEnumTypes ma
 	}
 }
 
-func determineConstVal(name *ast.Ident, typesInfo *types.Info) string {
+func determineConstVal(name *ast.Ident, typesInfo *types.Info) constantValue {
 	c := typesInfo.Defs[name].(*types.Const)
-	return c.Val().ExactString()
+	return constantValue(c.Val().ExactString())
 }

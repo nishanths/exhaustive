@@ -1,7 +1,6 @@
 package exhaustive
 
 import (
-	"fmt"
 	"regexp"
 
 	"golang.org/x/tools/go/analysis"
@@ -14,25 +13,28 @@ import (
 const (
 	DefaultSignifiesExhaustiveFlag = "default-signifies-exhaustive"
 	CheckGeneratedFlag             = "check-generated"
-	IgnorePatternFlag              = "ignore-pattern" // Deprecated: see IgnoreEnumMembersFlag instead.
 	IgnoreEnumMembersFlag          = "ignore-enum-members"
-	CheckingStrategyFlag           = "checking-strategy"
+
+	IgnorePatternFlag    = "ignore-pattern"    // Deprecated: see IgnoreEnumMembersFlag instead.
+	CheckingStrategyFlag = "checking-strategy" // Deprecated.
 )
 
 var (
 	fDefaultSignifiesExhaustive bool
 	fCheckGeneratedFiles        bool
-	fDeprecatedIgnorePattern    string // Deprecated: see fIgnoreEnumMembers instead.
 	fIgnoreEnumMembers          regexpFlag
-	fCheckingStrategy           string
+
+	fDeprecatedIgnorePattern    string // Deprecated: see fIgnoreEnumMembers instead.
+	fDeprecatedCheckingStrategy string // Deprecated.
 )
 
 func init() {
 	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, "presence of \"default\" case in switch statements satisfies exhaustiveness, even if all enum members are not listed")
 	Analyzer.Flags.BoolVar(&fCheckGeneratedFiles, CheckGeneratedFlag, false, "check switch statements in generated files")
-	Analyzer.Flags.StringVar(&fDeprecatedIgnorePattern, IgnorePatternFlag, "", "no effect (deprecated); see -"+IgnoreEnumMembersFlag+" instead")
 	Analyzer.Flags.Var(&fIgnoreEnumMembers, IgnoreEnumMembersFlag, "enum members matching `regex` do not have to be listed in switch statements to satisfy exhaustiveness")
-	Analyzer.Flags.StringVar(&fCheckingStrategy, CheckingStrategyFlag, "value", "`strategy` to use when checking exhaustiveness of switch statements; one of: \"name\", \"value\"")
+
+	Analyzer.Flags.StringVar(&fDeprecatedIgnorePattern, IgnorePatternFlag, "", "no effect (deprecated); see -"+IgnoreEnumMembersFlag+" instead")
+	Analyzer.Flags.StringVar(&fDeprecatedCheckingStrategy, CheckingStrategyFlag, "", "no effect (deprecated)")
 }
 
 // resetFlags resets the flag variables to their default values.
@@ -40,9 +42,10 @@ func init() {
 func resetFlags() {
 	fDefaultSignifiesExhaustive = false
 	fCheckGeneratedFiles = false
-	fDeprecatedIgnorePattern = ""
 	fIgnoreEnumMembers = regexpFlag{}
-	fCheckingStrategy = "value"
+
+	fDeprecatedIgnorePattern = ""
+	fDeprecatedCheckingStrategy = ""
 }
 
 var Analyzer = &analysis.Analyzer{
@@ -59,31 +62,13 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		pass.ExportPackageFact(&enumsFact{Enums: e})
 	}
 
-	strategy, err := determineCheckingStrategy()
-	if err != nil {
-		return nil, err
-	}
-
 	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 	cfg := config{
 		defaultSignifiesExhaustive: fDefaultSignifiesExhaustive,
 		checkGeneratedFiles:        fCheckGeneratedFiles,
 		ignoreEnumMembers:          fIgnoreEnumMembers.Get().(*regexp.Regexp),
-		checkingStrategy:           strategy,
 	}
 
 	checkSwitchStatements(pass, inspect, cfg)
 	return nil, nil
-}
-
-// Determine the checkingStrategy from flags.
-func determineCheckingStrategy() (checkingStrategy, error) {
-	switch fCheckingStrategy {
-	case "value":
-		return strategyValue, nil
-	case "name":
-		return strategyName, nil
-	default:
-		return 0, fmt.Errorf("bad value %q for flag -%s", fCheckingStrategy, CheckingStrategyFlag)
-	}
 }
