@@ -10,8 +10,9 @@ Install the command:
 go install github.com/nishanths/exhaustive/cmd/exhaustive@latest
 ```
 
-See [pkg.go.dev][6] for the flags, the definition of enum, and the
-definition of exhaustiveness used by this package.
+For documentation, see [pkg.go.dev][6]. It describes the flags, the
+definition of enum, and the definition of exhaustiveness used by this
+package.
 
 For changelog, see [CHANGELOG][changelog] in the wiki.
 
