@@ -1,13 +1,26 @@
-// want package:"^AcrossBlocksDeclsFiles:Here,Separate,There; ByteEnum:ByteA; Float64Enum:Float64A,Float64B; Int32Enum:Int32A,Int32B; IotaEnum:IotaA,IotaB; ParenVal:ParenVal0,ParenVal1; RepeatedValue:RepeatedValueA,RepeatedValueB; RuneEnum:RuneA; StringEnum:StringA,StringB,StringC; UIntEnum:UIntA,UIntB; UnexportedMembers:unexportedMembersA,unexportedMembersB; VarMembers:VarMemberA$"
+// want package:"^AcrossBlocksDeclsFiles:Here,Separate,There; ByteEnum:ByteA; Float64Enum:Float64A,Float64B; Int32Enum:Int32A,Int32B; IotaEnum:IotaA,IotaB; ParenVal:ParenVal0,ParenVal1; RepeatedValue:RepeatedValueA,RepeatedValueB; RuneEnum:RuneA; StringEnum:StringA,StringB,StringC; UIntEnum:UIntA,UIntB; UnexportedMembers:unexportedMembersA,unexportedMembersB; VarConstMixed:VCMixedB$"
 
 package enum
 
-// Var members (as opposed const members) can be enum members too.
+// Var members (as opposed const members) cannot be enum members.
 
-type VarMembers int
+type VarMember int
 
 var (
-	VarMemberA VarMembers
+	VarMemberA VarMember = 1
+	VarMemberB VarMember = 2
+)
+
+// Mixed var and const declarations (only const are members)
+
+type VarConstMixed int
+
+var (
+	VCMixedA VarConstMixed = 0
+)
+
+const (
+	VCMixedB VarConstMixed = 1
 )
 
 // Basic iota test
@@ -42,7 +55,7 @@ const (
 	Here AcrossBlocksDeclsFiles = 0
 )
 
-var Separate AcrossBlocksDeclsFiles = 1
+const Separate AcrossBlocksDeclsFiles = 1
 
 // Basic test for enum type with all unexported members.
 

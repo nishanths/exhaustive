@@ -8,7 +8,7 @@ The Go language spec does not provide an explicit definition for enums. For the
 purpose of this analyzer, an enum type is a package-level named type whose
 underlying type is an integer (includes byte and rune), a float, or a string
 type. An enum type must have associated with it one or more package-level
-variables of the named type in the same package. These variables constitute the
+constants of the named type in the same package. These constants constitute the
 enum's members.
 
 In the code snippet below, Biome is an enum type with 3 members.
@@ -23,7 +23,7 @@ In the code snippet below, Biome is an enum type with 3 members.
 
 Enum member values may also be specified using iota; they don't necessarily have
 to be explicit values, like in the snippet. Enum members don't necessarily have
-to all be defined in the same var or const block.
+to all be defined in the same const block.
 
 Definition of exhaustiveness
 

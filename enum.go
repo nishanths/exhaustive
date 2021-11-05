@@ -17,19 +17,20 @@ type enumMembers struct {
 	Names []string
 
 	// NameToValue maps member name -> constVal.
-	// If a name is missing in the map, it means that the name does not have a
-	// known constVal.
 	NameToValue map[string]string
 
 	// ValueToNames maps constVal -> member names.
 	// Note the use of []string for the element type of the map: Multiple
 	// names can have the same value.
-	// Names that don't have a constVal will not have a corresponding entry in this map.
 	ValueToNames map[string][]string
 }
 
-func (em *enumMembers) addWithConstVal(name string, constVal string) {
+func (em *enumMembers) add(name string, constVal string, constValOk bool) {
 	em.Names = append(em.Names, name)
+
+	if !constValOk {
+		return
+	}
 
 	if em.NameToValue == nil {
 		em.NameToValue = make(map[string]string)
@@ -42,34 +43,24 @@ func (em *enumMembers) addWithConstVal(name string, constVal string) {
 	em.ValueToNames[constVal] = append(em.ValueToNames[constVal], name)
 }
 
-// add adds an encountered member name. If the constant value for the enum member
-// is known, use addWithConstVal instead.
-func (em *enumMembers) add(name string) {
-	em.Names = append(em.Names, name)
-}
-
 // Find the enums for the files in a package. The files is typically obtained from
 // pass.Files and typesInfo is obtained from pass.TypesInfo.
 func findEnums(files []*ast.File, typesInfo *types.Info) enums {
-	knownEnumTypes := make(map[string]struct{})
+	possibleEnumTypes := make(map[string]struct{})
 
 	// Gather possible enum types.
 	findPossibleEnumTypes(files, typesInfo, func(name string) {
-		knownEnumTypes[name] = struct{}{}
+		possibleEnumTypes[name] = struct{}{}
 	})
 
 	pkgEnums := make(enums)
 
 	// Gather enum members.
-	findEnumMembers(files, typesInfo, knownEnumTypes, func(memberName, typeName string, constVal string, constValOk bool) {
+	findEnumMembers(files, typesInfo, possibleEnumTypes, func(memberName, typeName string, constVal string, constValOk bool) {
 		if _, ok := pkgEnums[typeName]; !ok {
 			pkgEnums[typeName] = &enumMembers{}
 		}
-		if constValOk {
-			pkgEnums[typeName].addWithConstVal(memberName, constVal)
-		} else {
-			pkgEnums[typeName].add(memberName)
-		}
+		pkgEnums[typeName].add(memberName, constVal, constValOk)
 	})
 
 	return pkgEnums
@@ -111,20 +102,20 @@ func findPossibleEnumTypes(files []*ast.File, typesInfo *types.Info, found func(
 	}
 }
 
-func findEnumMembers(files []*ast.File, typesInfo *types.Info, knownEnumTypes map[string]struct{}, found func(memberName, typeName string, constVal string, ok bool)) {
+func findEnumMembers(files []*ast.File, typesInfo *types.Info, knownEnumTypes map[string]struct{}, found func(memberName, typeName string, constVal string, constValOk bool)) {
 	for _, f := range files {
 		for _, decl := range f.Decls {
 			gen, ok := decl.(*ast.GenDecl)
 			if !ok {
 				continue
 			}
-			if gen.Tok != token.CONST && gen.Tok != token.VAR {
+			if gen.Tok != token.CONST {
 				continue
 			}
 			for _, s := range gen.Specs {
-				// Must be ValueSpec since we've filtered on token.CONST, token.VAR.
+				// Must be ValueSpec since we've filtered on token.CONST.
 				v := s.(*ast.ValueSpec)
-				for i, name := range v.Names {
+				for _, name := range v.Names {
 					obj := typesInfo.Defs[name]
 					if obj == nil {
 						continue
@@ -139,12 +130,7 @@ func findEnumMembers(files []*ast.File, typesInfo *types.Info, knownEnumTypes ma
 						continue
 					}
 
-					var value ast.Expr
-					if len(v.Values) > i {
-						value = v.Values[i]
-					}
-
-					cv, ok := determineConstVal(name, value, typesInfo)
+					cv, ok := determineConstVal(name, typesInfo)
 					found(obj.Name(), named.Obj().Name(), cv, ok)
 				}
 			}
@@ -152,14 +138,8 @@ func findEnumMembers(files []*ast.File, typesInfo *types.Info, knownEnumTypes ma
 	}
 }
 
-func determineConstVal(name *ast.Ident, value ast.Expr, typesInfo *types.Info) (string, bool) {
-	if s, ok := determineConstValFromName(name, typesInfo); ok {
-		return s, true
-	}
-	if value != nil {
-		return determineConstValFromValue(value, typesInfo)
-	}
-	return "", false
+func determineConstVal(name *ast.Ident, typesInfo *types.Info) (string, bool) {
+	return determineConstValFromName(name, typesInfo)
 }
 
 func determineConstValFromName(name *ast.Ident, typesInfo *types.Info) (string, bool) {
@@ -176,15 +156,4 @@ func determineConstValFromName(name *ast.Ident, typesInfo *types.Info) (string, 
 		return "", false
 	}
 	return c.Val().ExactString(), true
-}
-
-func determineConstValFromValue(value ast.Expr, typesInfo *types.Info) (string, bool) {
-	con, ok := typesInfo.Types[value]
-	if !ok {
-		return "", false
-	}
-	if con.Value == nil {
-		return "", false
-	}
-	return con.Value.ExactString(), true
 }

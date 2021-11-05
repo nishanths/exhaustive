@@ -10,11 +10,11 @@ import (
 func TestEnumMembers_add(t *testing.T) {
 	t.Run("basic", func(t *testing.T) {
 		var v enumMembers
-		v.add("foo")
-		v.addWithConstVal("z", "X")
-		v.add("bar")
-		v.addWithConstVal("y", "Y")
-		v.addWithConstVal("x", "X")
+		v.add("foo", "", false)
+		v.add("z", "X", true)
+		v.add("bar", "", false)
+		v.add("y", "Y", true)
+		v.add("x", "X", true)
 
 		if want, got := []string{"foo", "z", "bar", "y", "x"}, v.Names; !reflect.DeepEqual(want, got) {
 			t.Errorf("want %v, got %v", want, got)
@@ -53,7 +53,8 @@ func TestFindPossibleEnumTypes(t *testing.T) {
 		got = append(got, name)
 	})
 	want := []string{
-		"VarMembers",
+		"VarMember",
+		"VarConstMixed",
 		"IotaEnum",
 		"MemberlessEnum",
 		"RepeatedValue",
@@ -85,11 +86,7 @@ func TestFindEnumMembers(t *testing.T) {
 		if _, ok := got[typeName]; !ok {
 			got[typeName] = &enumMembers{}
 		}
-		if constValOk {
-			got[typeName].addWithConstVal(memberName, constVal)
-		} else {
-			got[typeName].add(memberName)
-		}
+		got[typeName].add(memberName, constVal, constValOk)
 	})
 
 	checkEnums(t, got)
@@ -105,10 +102,14 @@ func checkEnums(t *testing.T, got map[string]*enumMembers) {
 	t.Helper()
 
 	want := enums{
-		"VarMembers": {
-			[]string{"VarMemberA"},
-			nil,
-			nil,
+		"VarConstMixed": {
+			[]string{"VCMixedB"},
+			map[string]string{
+				"VCMixedB": `1`,
+			},
+			map[string][]string{
+				`1`: {"VCMixedB"},
+			},
 		},
 		"IotaEnum": {
 			[]string{"IotaA", "IotaB"},
@@ -239,8 +240,13 @@ func checkEnums(t *testing.T, got map[string]*enumMembers) {
 
 	// check members for each type.
 	for k := range want {
-		if !reflect.DeepEqual(want[k], got[k]) {
-			t.Errorf("%s: want %v, got %v", k, *want[k], *got[k])
+		g, ok := got[k]
+		if !ok {
+			t.Errorf("missing %q in got", k)
+			return
+		}
+		if !reflect.DeepEqual(want[k], g) {
+			t.Errorf("%s: want %v, got %v", k, *want[k], *g)
 		}
 	}
 }

@@ -4,7 +4,7 @@ package ignorecomment
 
 type Direction int
 
-var (
+const (
 	N                Direction = 1
 	E                Direction = 2
 	S                Direction = 3
