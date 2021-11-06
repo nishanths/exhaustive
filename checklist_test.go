@@ -29,6 +29,7 @@ func TestChecklist(t *testing.T) {
 			"5": {"C"},
 		},
 	}
+	checkEnumMembersLiteral(t, "TestChecklist", em)
 
 	checkRemaining := func(t *testing.T, h *checklist, want map[string]struct{}) {
 		t.Helper()
@@ -140,11 +141,30 @@ func TestChecklist(t *testing.T) {
 	})
 
 	t.Run("blank identifier", func(t *testing.T) {
-		em := *em
-		em.Names = append([]string{}, em.Names...)
-		em.Names = append(em.Names, "_")
+		em := &enumMembers{
+			Names: []string{"A", "B", "C", "D", "E", "F", "G", "_"},
+			NameToValue: map[string]constantValue{
+				"A": "1",
+				"B": "2",
+				"C": "5",
+				"D": "2",
+				"E": "3",
+				"F": "2",
+				"G": "4",
+				"_": "0",
+			},
+			ValueToNames: map[constantValue][]string{
+				"0": {"_"},
+				"1": {"A"},
+				"2": {"B", "D", "F"},
+				"3": {"E"},
+				"4": {"G"},
+				"5": {"C"},
+			},
+		}
+		checkEnumMembersLiteral(t, "TestChecklist blank identifier", em)
 
-		checklist := makeChecklist(&em, enumPkg, true, nil)
+		checklist := makeChecklist(em, enumPkg, true, nil)
 		checkRemaining(t, checklist, map[string]struct{}{
 			"A": {},
 			"B": {},
@@ -157,12 +177,31 @@ func TestChecklist(t *testing.T) {
 	})
 
 	t.Run("include unexported", func(t *testing.T) {
-		em := *em
-		em.Names = append([]string{}, em.Names...)
-		em.Names = append(em.Names, "lowercase")
+		em := &enumMembers{
+			Names: []string{"A", "B", "C", "D", "E", "F", "G", "lowercase"},
+			NameToValue: map[string]constantValue{
+				"A":         "1",
+				"B":         "2",
+				"C":         "5",
+				"D":         "2",
+				"E":         "3",
+				"F":         "2",
+				"G":         "4",
+				"lowercase": "42",
+			},
+			ValueToNames: map[constantValue][]string{
+				"1":  {"A"},
+				"2":  {"B", "D", "F"},
+				"3":  {"E"},
+				"4":  {"G"},
+				"5":  {"C"},
+				"42": {"lowercase"},
+			},
+		}
+		checkEnumMembersLiteral(t, "TestChecklist lowercase", em)
 
 		t.Run("include", func(t *testing.T) {
-			checklist := makeChecklist(&em, enumPkg, true, nil)
+			checklist := makeChecklist(em, enumPkg, true, nil)
 			checkRemaining(t, checklist, map[string]struct{}{
 				"A":         {},
 				"B":         {},
@@ -176,7 +215,7 @@ func TestChecklist(t *testing.T) {
 		})
 
 		t.Run("don't include", func(t *testing.T) {
-			checklist := makeChecklist(&em, enumPkg, false, nil)
+			checklist := makeChecklist(em, enumPkg, false, nil)
 			checkRemaining(t, checklist, map[string]struct{}{
 				"A": {},
 				"B": {},

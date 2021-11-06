@@ -8,6 +8,23 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
+// Asserts that the enumMembers literal is correctly defined.
+func checkEnumMembersLiteral(t *testing.T, id string, v *enumMembers) {
+	t.Helper()
+
+	if len(v.Names) != len(v.NameToValue) {
+		t.Fatalf("%s: wrong lengths: %d != %d  (test definition bug)", id, len(v.Names), len(v.NameToValue))
+	}
+
+	var count int
+	for _, names := range v.ValueToNames {
+		count += len(names)
+	}
+	if len(v.Names) != count {
+		t.Fatalf("%s: wrong lengths: %d != %d (test definition bug)", id, len(v.Names), count)
+	}
+}
+
 func TestEnumMembers_add(t *testing.T) {
 	t.Run("basic", func(t *testing.T) {
 		var v enumMembers
@@ -43,7 +60,7 @@ func TestEnumMembers_add(t *testing.T) {
 	// TODO: add tests for iota, repeated values, ...
 }
 
-var enumpkg = func() *packages.Package {
+var testdataEnumPkg = func() *packages.Package {
 	cfg := &packages.Config{Mode: packages.NeedTypesInfo | packages.NeedTypes | packages.NeedSyntax}
 	pkgs, err := packages.Load(cfg, "./testdata/src/enum")
 	if err != nil {
@@ -54,7 +71,7 @@ var enumpkg = func() *packages.Package {
 
 func TestFindPossibleEnumTypes(t *testing.T) {
 	var got []string
-	findPossibleEnumTypes(enumpkg.Syntax, enumpkg.TypesInfo, func(named *types.Named) {
+	findPossibleEnumTypes(testdataEnumPkg.Syntax, testdataEnumPkg.TypesInfo, func(named *types.Named) {
 		got = append(got, named.Obj().Name())
 	})
 	want := []string{
@@ -67,6 +84,7 @@ func TestFindPossibleEnumTypes(t *testing.T) {
 		"UnexportedMembers",
 		"NonTopLevel",
 		"ParenVal",
+		"T",
 		"UIntEnum",
 		"StringEnum",
 		"RuneEnum",
@@ -82,12 +100,12 @@ func TestFindPossibleEnumTypes(t *testing.T) {
 
 func TestFindEnumMembers(t *testing.T) {
 	possibleEnumTypes := make(map[*types.Named]struct{})
-	findPossibleEnumTypes(enumpkg.Syntax, enumpkg.TypesInfo, func(named *types.Named) {
+	findPossibleEnumTypes(testdataEnumPkg.Syntax, testdataEnumPkg.TypesInfo, func(named *types.Named) {
 		possibleEnumTypes[named] = struct{}{}
 	})
 
 	got := make(map[string]*enumMembers)
-	findEnumMembers(enumpkg.Syntax, enumpkg.TypesInfo, possibleEnumTypes, func(memberName string, enumTyp enumType, val constantValue) {
+	findEnumMembers(testdataEnumPkg.Syntax, testdataEnumPkg.TypesInfo, possibleEnumTypes, func(memberName string, enumTyp enumType, val constantValue) {
 		if _, ok := got[enumTyp.name()]; !ok {
 			got[enumTyp.name()] = &enumMembers{}
 		}
@@ -98,7 +116,7 @@ func TestFindEnumMembers(t *testing.T) {
 }
 
 func TestFindEnums(t *testing.T) {
-	result := findEnums(enumpkg.Syntax, enumpkg.TypesInfo)
+	result := findEnums(testdataEnumPkg.Syntax, testdataEnumPkg.TypesInfo)
 
 	transformForChecking := func(in map[enumType]*enumMembers) map[string]*enumMembers {
 		out := make(map[string]*enumMembers)
@@ -181,6 +199,17 @@ func checkEnums(t *testing.T, got map[string]*enumMembers) {
 				`1`: {"ParenVal1"},
 			},
 		},
+		"T": {
+			[]string{"A", "B"},
+			map[string]constantValue{
+				"A": `0`,
+				"B": `1`,
+			},
+			map[constantValue][]string{
+				`0`: {"A"},
+				`1`: {"B"},
+			},
+		},
 		"UIntEnum": {
 			[]string{"UIntA", "UIntB"},
 			map[string]constantValue{
@@ -249,10 +278,7 @@ func checkEnums(t *testing.T, got map[string]*enumMembers) {
 
 	// check the `want` declaration for programmer error.
 	for k, v := range want {
-		if len(v.Names) != len(v.NameToValue) {
-			t.Errorf("%s: wrong lengths (test definition bug)", k)
-			return
-		}
+		checkEnumMembersLiteral(t, k, v)
 	}
 
 	if len(want) != len(got) {

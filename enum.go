@@ -22,6 +22,11 @@ func (et enumType) object() types.Object { return et.named.Obj() }
 // enumMembers is the members for a single enum type.
 // The zero value is ready to use.
 type enumMembers struct {
+	// TODO: NameToValue doesn't work correctly if there are multiple blank
+	// identifiers ("_"); only one of them can be saved.
+	// There may be a similar issue for same-named type alias enum members,
+	// depending on how we design it.
+
 	Names        []string                   // enum member names, AST order
 	NameToValue  map[string]constantValue   // enum member name -> constant value
 	ValueToNames map[constantValue][]string // constant value -> enum member names
@@ -73,11 +78,9 @@ func findPossibleEnumTypes(files []*ast.File, info *types.Info, found func(named
 				continue
 			}
 			for _, s := range gen.Specs {
-				// Must be TypeSpec since we've filtered on token.TYPE.
-				t := s.(*ast.TypeSpec)
+				t := s.(*ast.TypeSpec) // because gen.Tok == token.TYPE
 				if t.Assign.IsValid() {
 					// TypeSpec is AliasSpec; we don't support it at the moment.
-					//
 					// Additionally:
 					// In type T1 = T2,  info.Defs[t.Name].Type() results in the object on the right-hand side.
 					// In type T1 T2,    info.Defs[t.Name].Type() results in the object of the left-hand side.
@@ -88,14 +91,10 @@ func findPossibleEnumTypes(files []*ast.File, info *types.Info, found func(named
 				if obj == nil {
 					continue
 				}
-				// log.Printf("%v | %v | %#v", t.Name, obj, obj.Type())
-
 				named, ok := obj.Type().(*types.Named)
 				if !ok {
 					continue
 				}
-				// log.Println("name", t.Name, "|", "obj", obj, obj.Pkg(), obj.Type(), "|", "named", named)
-
 				basic, ok := named.Underlying().(*types.Basic)
 				if !ok {
 					continue
@@ -120,8 +119,7 @@ func findEnumMembers(files []*ast.File, info *types.Info, possibleEnumTypes map[
 				continue
 			}
 			for _, s := range gen.Specs {
-				// Must be ValueSpec since we've filtered on token.CONST.
-				v := s.(*ast.ValueSpec)
+				v := s.(*ast.ValueSpec) // because gen.Tok == token.CONST
 				for _, name := range v.Names {
 					obj := info.Defs[name]
 					namedType, ok := obj.Type().(*types.Named)
