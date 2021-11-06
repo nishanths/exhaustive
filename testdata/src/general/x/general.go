@@ -149,28 +149,28 @@ func _p() {
 	}
 }
 
-type PackageScopeT int // want PackageScopeT:"^A,B$"
+type T int // want T:"^A,B$"
 
 const (
-	A PackageScopeT = iota
+	A T = iota
 	B
 )
 
 func _q() { // see issue #23: https://github.com/nishanths/exhaustive/issues/23
-	type SameNamedInnerT int // want SameNamedInnerT:"^C,D$"
+	type T int // want T:"^C,D$"
 
 	const (
-		C SameNamedInnerT = iota
+		C T = iota
 		D
 	)
 
-	var v SameNamedInnerT
+	var v T
 	// must not report diagnostic here
 	switch v {
 	case C, D:
 	}
 
-	switch v { // want "^missing cases in switch of type SameNamedInnerT: D$"
+	switch v { // want "^missing cases in switch of type T: D$"
 	case C:
 	}
 }
