@@ -50,6 +50,7 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 		}
 
 		file := stack[0].(*ast.File)
+		sw := n.(*ast.SwitchStmt)
 
 		// Determine if the file is a generated file, and save the result.
 		// If it is a generated file, don't check the file.
@@ -60,8 +61,6 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 			// don't check this file.
 			return true, resultGeneratedFile
 		}
-
-		sw := n.(*ast.SwitchStmt)
 
 		if _, ok := comments[file]; !ok {
 			comments[file] = ast.NewCommentMap(pass.Fset, file, file.Comments)
