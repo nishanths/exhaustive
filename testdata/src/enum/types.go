@@ -64,3 +64,5 @@ var (
 )
 
 const There AcrossBlocksDeclsFiles = 2
+
+type _ int // blank identifier type
