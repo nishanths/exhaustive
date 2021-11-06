@@ -59,8 +59,17 @@ func TestExhaustive(t *testing.T) {
 
 	// Switch statements using package-scoped and inner-scoped enums.
 	t.Run("scope", func(t *testing.T) {
-		resetFlags()
-		analysistest.Run(t, analysistest.TestData(), Analyzer, "scope/...")
+		t.Run("all scopes", func(t *testing.T) {
+			resetFlags()
+			fPackageScopeOnly = false
+			analysistest.Run(t, analysistest.TestData(), Analyzer, "scope/allscope/...")
+		})
+
+		t.Run("package scope only", func(t *testing.T) {
+			resetFlags()
+			fPackageScopeOnly = true
+			analysistest.Run(t, analysistest.TestData(), Analyzer, "scope/pkgscope/...")
+		})
 	})
 
 	// General tests (a mixture).

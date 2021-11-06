@@ -67,10 +67,10 @@ for example, "example.com/pkg.Tundra" where where the import path is
 "example.com/pkg" and the enum member name is "Tundra".
 
 If the -package-scope-only flag is enabled, the analyzer only finds enums
-defined in package scope, and consequently, only switch statements that switch
+defined in package scope, and consequently only switch statements that switch
 on package-scoped enums will be checked for exhaustiveness. By default, the
-analyzer also finds enums defined in local scopes such as function bodies, and
-also checks switch statements that switch on these local-scoped enums.
+analyzer finds enums defined in all scopes, and checks switch statements that
+switch on all these enums.
 
 Skipping analysis
 
