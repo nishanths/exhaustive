@@ -12,13 +12,13 @@ named type. These constants constitute the enum's members.
 
 In the example below, Biome is an enum type with 3 members.
 
-	type Biome int
+    type Biome int
 
-	const (
-		Tundra  Biome = 1
-		Savanna Biome = 2
-		Desert  Biome = 3
-	)
+    const (
+        Tundra  Biome = 1
+        Savanna Biome = 2
+        Desert  Biome = 3
+    )
 
 For a constant to be an enum member, it must be declared in the same scope as
 the enum type. Enum member constants don't necessarily have to all be declared
@@ -43,11 +43,11 @@ Flags
 The notable flags used by the analyzer are described below.
 All of these flags are optional.
 
-	Flag name						Type	Default value
-	-check-generated				bool	false
-	-default-signifies-exhaustive	bool	false
-	-ignore-enum-members			string	(none)
-	-package-scope-only				bool	false
+    Flag name                       Type    Default value
+    -check-generated                bool    false
+    -default-signifies-exhaustive   bool    false
+    -ignore-enum-members            string  (none)
+    -package-scope-only             bool    false
 
 If the -check-generated flag is enabled, switch statements in generated Go
 source files are also checked. Otherwise switch statements in generated files
@@ -78,7 +78,7 @@ To skip analysis of a specific switch statement, associate the following
 comment with the switch statement. Note the lack of whitespace
 between the comment marker ("//") and the comment text.
 
-	//exhaustive:ignore
+    //exhaustive:ignore
 
 To ignore specific enum members, see the -ignore-enum-members flag.
 
