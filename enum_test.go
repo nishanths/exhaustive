@@ -13,7 +13,7 @@ func checkEnumMembersLiteral(t *testing.T, id string, v *enumMembers) {
 	t.Helper()
 
 	if len(v.Names) != len(v.NameToValue) {
-		t.Fatalf("%s: wrong lengths: %d != %d  (test definition bug)", id, len(v.Names), len(v.NameToValue))
+		t.Fatalf("%s: wrong lengths: %d != %d (test definition bug)", id, len(v.Names), len(v.NameToValue))
 	}
 
 	var count int
