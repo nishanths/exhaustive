@@ -16,7 +16,7 @@ import (
 //  * gob values cannot seem to have nil pointers.
 //  * fields must be exported to survive the encode/decode.
 //
-// The test doesn't cover everything that could go wrong during gob
+// The test likely doesn't cover everything that could go wrong during gob
 // encoding/decoding.
 func TestFactsGobCompatible(t *testing.T) {
 	// The go/analysis package does this internally, but we need to do it
@@ -32,7 +32,7 @@ func TestFactsGobCompatible(t *testing.T) {
 	}
 }
 
-func checkOneFactType(t *testing.T, factType analysis.Fact) {
+func checkOneFactType(t *testing.T, fact analysis.Fact) {
 	t.Helper()
 
 	var buf bytes.Buffer
@@ -40,16 +40,16 @@ func checkOneFactType(t *testing.T, factType analysis.Fact) {
 	dec := gob.NewDecoder(&buf)
 
 	// Should be able to gob-encode.
-	t.Run("encode", func(t *testing.T) {
-		if err := enc.Encode(factType); err != nil {
+	t.Run("gob encode", func(t *testing.T) {
+		if err := enc.Encode(fact); err != nil {
 			t.Errorf("failed to gob-encode: %s", err)
 			return
 		}
 	})
 
 	// Should be able to gob-decode.
-	t.Run("decode", func(t *testing.T) {
-		if err := dec.Decode(factType); err != nil {
+	t.Run("gob decode", func(t *testing.T) {
+		if err := dec.Decode(fact); err != nil {
 			t.Errorf("failed to gob-decode: %s", err)
 			return
 		}
@@ -57,10 +57,10 @@ func checkOneFactType(t *testing.T, factType analysis.Fact) {
 
 	// Fields should all be exported.
 	t.Run("fields exported", func(t *testing.T) {
-		switch v := factType.(type) {
+		switch v := fact.(type) {
 		// NOTE: if there are more fact types, add them here.
-		case *enumsFact:
-			checkTypeEnumsFact(t, reflect.TypeOf(v).Elem())
+		case *enumMembersFact:
+			checkEnumMembersFact(t, reflect.TypeOf(v).Elem())
 		default:
 			t.Errorf("unhandled type %T", v)
 			return
@@ -68,34 +68,20 @@ func checkOneFactType(t *testing.T, factType analysis.Fact) {
 	})
 }
 
-func checkTypeEnumsFact(t *testing.T, enumsFactType reflect.Type) {
+func checkEnumMembersFact(t *testing.T, factType reflect.Type) {
 	t.Helper()
 
-	assertTypeFields(t, enumsFactType, []wantField{
-		{"Enums", "exhaustive.enums"},
+	assertTypeFields(t, factType, []wantField{
+		{"Members", "exhaustive.enumMembers"},
 	})
 
-	// Check underlying type of the "Enums" field.
-	f, ok := enumsFactType.FieldByName("Enums")
+	field, ok := factType.FieldByName("Members")
 	if !ok {
 		t.Errorf("failed to find field")
 		return
 	}
-	if f.Type.Kind() != reflect.Map {
-		t.Errorf("want reflect.Map, got %v (%v)", f.Type.Kind(), f.Type.Kind().String())
-		return
-	}
-	keyType, elemType := f.Type.Key(), f.Type.Elem()
-	if keyType.String() != "string" {
-		t.Errorf("want key type string, got %v", keyType.String())
-		return
-	}
-	if elemType.String() != "*exhaustive.enumMembers" {
-		t.Errorf("want elem type *exhaustive.enumMembers, got %v", elemType.String())
-		return
-	}
 
-	enumMembersType := elemType.Elem() // call Elem() on pointer type to get value type
+	enumMembersType := field.Type
 	checkTypeEnumMembers(t, enumMembersType)
 }
 
@@ -106,6 +92,8 @@ func checkTypeEnumMembers(t *testing.T, enumMembersType reflect.Type) {
 		{"NameToValue", "map[string]exhaustive.constantValue"},
 		{"ValueToNames", "map[exhaustive.constantValue][]string"},
 	})
+	// TODO(testing): need to assert that exhaustive.constantValue is a basic
+	// type / has no unexported fields.
 }
 
 func assertTypeFields(t *testing.T, typ reflect.Type, wantFields []wantField) {

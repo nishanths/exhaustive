@@ -1,8 +1,6 @@
-// want package:"^Direction:N,E,S,W,directionInvalid$"
-
 package ignorecomment
 
-type Direction int
+type Direction int // want Direction:"^N,E,S,W,directionInvalid$"
 
 const (
 	N                Direction = 1

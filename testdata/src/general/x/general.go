@@ -6,7 +6,7 @@ import (
 	barpkg "general/y"
 )
 
-type Direction int
+type Direction int // want Direction:"^N,E,S,W,directionInvalid$"
 
 const (
 	N                Direction = 1
@@ -102,10 +102,10 @@ func _g() {
 	}
 }
 
-type SortDirection int
+type SortDirection int // want SortDirection:"^Asc,Desc$"
 
 const (
-	_ SortDirection = iota // blank identifier need to be listed in switch statement to satisfy exhaustiveness
+	_ SortDirection = iota // blank identifier need not be listed in switch statement to satisfy exhaustiveness
 	Asc
 	Desc
 )

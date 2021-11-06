@@ -10,7 +10,7 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// TODO: write tests that assert on the "result" returned by nodeVisitor.
+// TODO(testing): write tests that assert on the "result" returned by switchStmtChecker.
 
 func TestDiagnosticEnumTypeName(t *testing.T) {
 	t.Run("same package", func(t *testing.T) {
@@ -55,6 +55,7 @@ func TestDiagnosticMissingMembers(t *testing.T) {
 			"2": {"Yamuna"},
 		},
 	}
+	checkEnumMembersLiteral(t, "River", em)
 
 	t.Run("missing some: same-valued", func(t *testing.T) {
 		got := diagnosticMissingMembers([]string{"Ganga", "Unspecified", "Kaveri"}, em)
@@ -98,11 +99,12 @@ func TestMakeDiagnostic(t *testing.T) {
 		// other fields shouldn't matter
 	}
 	samePkg := false
-	enumType := types.NewNamed(
+	named := types.NewNamed(
 		types.NewTypeName(50, types.NewPackage("example.org/enumpkg", "enumpkg"), "Biome", nil),
 		nil, /* underlying type should not matter */
 		nil,
 	)
+	enumTyp := enumType{named}
 	allMembers := &enumMembers{
 		Names: []string{"Tundra", "Savanna", "Desert"},
 		NameToValue: map[string]constantValue{
@@ -116,9 +118,10 @@ func TestMakeDiagnostic(t *testing.T) {
 			"3": {"Desert"},
 		},
 	}
+	checkEnumMembersLiteral(t, "Biome", allMembers)
 	missingMembers := []string{"Savanna", "Desert"}
 
-	got := makeDiagnostic(sw, samePkg, enumType, allMembers, missingMembers)
+	got := makeDiagnostic(sw, samePkg, enumTyp, allMembers, missingMembers)
 	want := analysis.Diagnostic{
 		Pos:     1,
 		End:     11,
@@ -143,7 +146,8 @@ func TestAnalyzeSwitchClauses(t *testing.T) {
 	}
 
 	getSwitchStatement := func(fn ast.Decl) *ast.SwitchStmt {
-		// the switch statement is always the first statement in the function body
+		// in this testdata, the switch statement is always the first statement
+		// in the function body.
 		funcDecl := fn.(*ast.FuncDecl)
 		return funcDecl.Body.List[0].(*ast.SwitchStmt)
 	}

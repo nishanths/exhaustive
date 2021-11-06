@@ -13,7 +13,7 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
-// nodeVisitor is similar to the visitor function used by Inspector.WithStack,
+// nodeVisitor is like the visitor function used by Inspector.WithStack,
 // except that it returns an additional value: a short description of
 // the result of this node visit.
 //
@@ -29,7 +29,6 @@ const (
 	resultTagNotValue          = "switch tag not value type"
 	resultTagNotNamed          = "switch tag not named type"
 	resultTagNoPkg             = "switch tag does not belong to regular package"
-	resultPassImportFalse      = "pass.ImportPackageFact returned false"
 	resultTagNotEnum           = "switch tag not known enum type"
 	resultSwitchIgnoreComment  = "switch statement has ignore comment"
 	resultEnumMembersAccounted = "requisite enum members accounted for"
@@ -46,7 +45,9 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 
 	return func(n ast.Node, push bool, stack []ast.Node) (bool, string) {
 		if !push {
-			// we only inspect things on the way down, not up.
+			// The proceed return value should not matter; it is ignored by
+			// inspector package for pop calls.
+			// Nevertheless, return true to be on the safe side for the future.
 			return true, resultNotPush
 		}
 
@@ -58,11 +59,23 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 			generated[file] = isGeneratedFile(file)
 		}
 		if generated[file] && !cfg.checkGeneratedFiles {
-			// don't check this file.
-			return true, resultGeneratedFile
+			// Don't check this file.
+			// Return false because the children nodes of node `n` don't have to be checked.
+			return false, resultGeneratedFile
 		}
 
 		sw := n.(*ast.SwitchStmt)
+
+		if _, ok := comments[file]; !ok {
+			comments[file] = ast.NewCommentMap(pass.Fset, file, file.Comments)
+		}
+		if containsIgnoreDirective(comments[file].Filter(sw).Comments()) {
+			// Skip checking of *this* switch statement due to ignore directive comment.
+			// Still return true because there may be nested switch statements
+			// that are not to be ignored.
+			// TODO(testing): add a test for this.
+			return true, resultSwitchIgnoreComment
+		}
 
 		if sw.Tag == nil {
 			return true, resultNoSwitchTag
@@ -82,34 +95,20 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 		if tagPkg == nil {
 			// The Go documentation says: nil for labels and objects in the Universe scope.
 			// This happens for the `error` type, for example.
-			// Continuing would mean that pass.ImportPackageFact panics.
 			return true, resultTagNoPkg
 		}
 
-		var enums enumsFact
-		if !pass.ImportPackageFact(tagPkg, &enums) {
-			pass.Report(makePassImportFalseDiagnostic(sw, tagPkg))
-			// cannot do anything meaningful further.
-			return true, resultPassImportFalse
-		}
+		enumTyp := enumType{tagType}
 
-		em, isEnum := enums.Enums[tagType.Obj().Name()]
-		if !isEnum {
+		members, ok := importFact(pass, enumTyp)
+		if !ok {
 			// switch tag's type is not a known enum type.
 			return true, resultTagNotEnum
 		}
 
-		if _, ok := comments[file]; !ok {
-			comments[file] = ast.NewCommentMap(pass.Fset, file, file.Comments)
-		}
-		if containsIgnoreDirective(comments[file].Filter(sw).Comments()) {
-			// skip checking due to ignore directive
-			return true, resultSwitchIgnoreComment
-		}
-
 		samePkg := tagPkg == pass.Pkg // do the switch statement and the switch tag type (i.e. enum type) live in the same package?
 		checkUnexported := samePkg    // we want to include unexported members in the exhaustiveness check only if we're in the same package
-		checklist := makeChecklist(em, tagPkg, checkUnexported, cfg.ignoreEnumMembers)
+		checklist := makeChecklist(members, tagPkg, checkUnexported, cfg.ignoreEnumMembers)
 
 		hasDefaultCase := analyzeSwitchClauses(sw, pass.TypesInfo, samePkg, func(memberName string) {
 			checklist.found(memberName)
@@ -126,7 +125,7 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 			// So don't report.
 			return true, resultDefaultCaseSuffices
 		}
-		pass.Report(makeDiagnostic(sw, samePkg, tagType, em, toSlice(checklist.remaining())))
+		pass.Report(makeDiagnostic(sw, samePkg, enumTyp, members, toSlice(checklist.remaining())))
 		return true, resultReportedDiagnostic
 	}
 }
@@ -135,7 +134,7 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 type config struct {
 	defaultSignifiesExhaustive bool
 	checkGeneratedFiles        bool
-	ignoreEnumMembers          *regexp.Regexp
+	ignoreEnumMembers          *regexp.Regexp // can be nil
 }
 
 // checkSwitchStatements checks exhaustiveness of enum switch statements for the supplied
@@ -154,8 +153,8 @@ func isDefaultCase(c *ast.CaseClause) bool {
 }
 
 // isPackageNameIdent returns whether ident represents an imported Go package.
-func isPackageNameIdent(ident *ast.Ident, typesInfo *types.Info) bool {
-	obj := typesInfo.ObjectOf(ident)
+func isPackageNameIdent(ident *ast.Ident, info *types.Info) bool {
+	obj := info.ObjectOf(ident)
 	if obj == nil {
 		return false
 	}
@@ -165,14 +164,14 @@ func isPackageNameIdent(ident *ast.Ident, typesInfo *types.Info) bool {
 
 // analyzeSwitchClauses analyzes the clauses in the supplied switch statement.
 //
-// The typesInfo param should typically be pass.TypesInfo. The samePkg param
+// The info param should typically be pass.TypesInfo. The samePkg param
 // indicates whether the switch tag type and the switch statement live in the
 // same package. The found function is called for each enum member name found in
 // the switch statement.
 //
 // The hasDefaultCase return value indicates whether the switch statement has a
 // default clause.
-func analyzeSwitchClauses(sw *ast.SwitchStmt, typesInfo *types.Info, samePkg bool, found func(identName string)) (hasDefaultCase bool) {
+func analyzeSwitchClauses(sw *ast.SwitchStmt, info *types.Info, samePkg bool, found func(identName string)) (hasDefaultCase bool) {
 	for _, stmt := range sw.Body.List {
 		caseCl := stmt.(*ast.CaseClause)
 		if isDefaultCase(caseCl) {
@@ -180,14 +179,14 @@ func analyzeSwitchClauses(sw *ast.SwitchStmt, typesInfo *types.Info, samePkg boo
 			continue // nothing more to do if it's the default case
 		}
 		for _, expr := range caseCl.List {
-			analyzeCaseClauseExpr(expr, typesInfo, samePkg, found)
+			analyzeCaseClauseExpr(expr, info, samePkg, found)
 		}
 	}
 	return hasDefaultCase
 }
 
 // Helper for analyzeSwitchClauses. See docs there.
-func analyzeCaseClauseExpr(e ast.Expr, typesInfo *types.Info, samePkg bool, found func(identName string)) {
+func analyzeCaseClauseExpr(e ast.Expr, info *types.Info, samePkg bool, found func(identName string)) {
 	e = astutil.Unparen(e)
 
 	if samePkg {
@@ -213,7 +212,7 @@ func analyzeCaseClauseExpr(e ast.Expr, typesInfo *types.Info, samePkg bool, foun
 		return
 	}
 
-	if !isPackageNameIdent(ident, typesInfo) {
+	if !isPackageNameIdent(ident, info) {
 		return
 	}
 
@@ -252,23 +251,15 @@ func diagnosticEnumTypeName(enumType *types.Named, samePkg bool) string {
 	return enumType.Obj().Pkg().Name() + "." + enumType.Obj().Name()
 }
 
-func makeDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumType *types.Named, allMembers *enumMembers, missingMembers []string) analysis.Diagnostic {
+func makeDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumTyp enumType, allMembers *enumMembers, missingMembers []string) analysis.Diagnostic {
 	message := fmt.Sprintf("missing cases in switch of type %s: %s",
-		diagnosticEnumTypeName(enumType, samePkg),
+		diagnosticEnumTypeName(enumTyp.Named, samePkg),
 		strings.Join(diagnosticMissingMembers(missingMembers, allMembers), ", "))
 
 	return analysis.Diagnostic{
 		Pos:     sw.Pos(),
 		End:     sw.End(),
 		Message: message,
-	}
-}
-
-func makePassImportFalseDiagnostic(sw *ast.SwitchStmt, importedPkg *types.Package) analysis.Diagnostic {
-	return analysis.Diagnostic{
-		Pos:     sw.Pos(),
-		End:     sw.End(),
-		Message: fmt.Sprintf("pass.ImportPackageFact returned false for %s", importedPkg),
 	}
 }
 

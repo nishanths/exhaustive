@@ -26,9 +26,10 @@ func TestExhaustive(t *testing.T) {
 	// value to be listed, not each unique member by name.
 	t.Run("duplicate enum value", func(t *testing.T) {
 		resetFlags()
-		analysistest.Run(t, analysistest.TestData(), Analyzer, "duplicateenumvalue/pkg/...")
+		analysistest.Run(t, analysistest.TestData(), Analyzer, "duplicateenumvalue/...")
 	})
 
+	// Tests for the the default-signifies-exhaustive flag.
 	t.Run("default signifies exhaustive", func(t *testing.T) {
 		resetFlags()
 		fDefaultSignifiesExhaustive = true
@@ -42,7 +43,8 @@ func TestExhaustive(t *testing.T) {
 		})
 	})
 
-	// No diagnostics for missing enum members that match the supplied regular expression.
+	// No diagnostics for missing enum members that match the supplied regular
+	// expression.
 	t.Run("ignore enum member", func(t *testing.T) {
 		resetFlags()
 		fIgnoreEnumMembers = regexpFlag{regexp.MustCompile(`_UNSPECIFIED$|^general/y\.Echinodermata$`)}
@@ -53,6 +55,21 @@ func TestExhaustive(t *testing.T) {
 	t.Run("generated file", func(t *testing.T) {
 		resetFlags()
 		analysistest.Run(t, analysistest.TestData(), Analyzer, "generated/...")
+	})
+
+	// Switch statements using package-scoped and inner-scoped enums.
+	t.Run("scope", func(t *testing.T) {
+		t.Run("all scopes", func(t *testing.T) {
+			resetFlags()
+			fPackageScopeOnly = false
+			analysistest.Run(t, analysistest.TestData(), Analyzer, "scope/allscope/...")
+		})
+
+		t.Run("package scope only", func(t *testing.T) {
+			resetFlags()
+			fPackageScopeOnly = true
+			analysistest.Run(t, analysistest.TestData(), Analyzer, "scope/pkgscope/...")
+		})
 	})
 
 	// General tests (a mixture).

@@ -1,45 +1,44 @@
 package exhaustive
 
 import (
-	"sort"
 	"strings"
 
 	"golang.org/x/tools/go/analysis"
 )
 
-var _ analysis.Fact = (*enumsFact)(nil)
+// NOTE: Fact types must remain gob-coding compatible.
+// See fact_gob_test.go.
 
-type enumsFact struct {
-	Enums enums
-}
+var _ analysis.Fact = (*enumMembersFact)(nil)
 
-func (e *enumsFact) AFact() {}
+type enumMembersFact struct{ Members enumMembers }
 
-func (e *enumsFact) String() string {
-	// sort for stability (required for testing)
-	var sortedKeys []string
-	for k := range e.Enums {
-		sortedKeys = append(sortedKeys, k)
-	}
-	sort.Strings(sortedKeys)
+func (f *enumMembersFact) AFact() {}
 
+func (f *enumMembersFact) String() string {
 	var buf strings.Builder
-	for i, k := range sortedKeys {
-		v := e.Enums[k]
-		buf.WriteString(k)
-		buf.WriteString(":")
-
-		for j, vv := range v.Names {
-			buf.WriteString(vv)
-			// add comma separator between each enum member in an enum type
-			if j != len(v.Names)-1 {
-				buf.WriteString(",")
-			}
-		}
-		// add semicolon separator between each enum type
-		if i != len(sortedKeys)-1 {
-			buf.WriteString("; ")
+	for j, vv := range f.Members.Names {
+		buf.WriteString(vv)
+		// add comma separator between each enum member in an enum type
+		if j != len(f.Members.Names)-1 {
+			buf.WriteString(",")
 		}
 	}
 	return buf.String()
+}
+
+// exportFact exports the enum members for the given enum type.
+func exportFact(pass *analysis.Pass, enumTyp enumType, members *enumMembers) {
+	pass.ExportObjectFact(enumTyp.object(), &enumMembersFact{*members})
+}
+
+// importFact imports the enum members for the given (possible) enum type.
+// An (_, false) return indicates that no members exist for the given type.
+func importFact(pass *analysis.Pass, possibleEnumType enumType) (*enumMembers, bool) {
+	var f enumMembersFact
+	ok := pass.ImportObjectFact(possibleEnumType.object(), &f)
+	if !ok {
+		return nil, false
+	}
+	return &f.Members, true
 }

@@ -1,10 +1,8 @@
-// want package:"^Exchange:Exchange_EXCHANGE_UNSPECIFIED,Exchange_EXCHANGE_BITMEX,Exchange_EXCHANGE_BINANCE$"
-
 package ignoreenummember
 
 import barpkg "general/y"
 
-type Exchange int32
+type Exchange int32 // want Exchange:"^Exchange_EXCHANGE_UNSPECIFIED,Exchange_EXCHANGE_BITMEX,Exchange_EXCHANGE_BINANCE$"
 
 const (
 	Exchange_EXCHANGE_UNSPECIFIED Exchange = 0
