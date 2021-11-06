@@ -5,25 +5,28 @@ switch statements in Go code.
 Definition of enum
 
 The Go language spec does not provide an explicit definition for enums. For the
-purpose of this analyzer, an enum type is a package-level named type whose
+purpose of this analyzer, an enum type is a named (defined) type whose
 underlying type is an integer (includes byte and rune), a float, or a string
-type. An enum type must have associated with it one or more package-level
-constants of the named type in the same package. These constants constitute the
-enum's members.
+type. An enum type must have associated with it one or more constants of the
+named type. These constants constitute the enum's members.
 
-In the code snippet below, Biome is an enum type with 3 members.
+In the example below, Biome is an enum type with 3 members.
 
-  type Biome int
+	type Biome int
 
-  const (
-      Tundra  Biome = 1
-      Savanna Biome = 2
-      Desert  Biome = 3
-  )
+	const (
+			Tundra  Biome = 1
+			Savanna Biome = 2
+			Desert  Biome = 3
+	)
 
-Enum member values may also be specified using iota; they don't necessarily have
-to be explicit values, like in the snippet. Enum members don't necessarily have
-to all be defined in the same const block.
+For a constant to be an enum member, it must be declared in the same scope as
+the enum type. That said, enum member constants don't necessarily have to all be
+declared in the same const block. Enum member constant values may be specified
+using iota or using explicit values (like in the example).
+
+Type aliases are ignored by the analyzer and cannot be enums. This behavior
+may change in the future.
 
 Definition of exhaustiveness
 
@@ -36,44 +39,53 @@ switch statement exhaustive. For an enum type defined in an external package, it
 is sufficient for just the exported enum members to be present in order to
 consider the switch statement exhaustive.
 
-Notable flags
+Flags
 
-The notable flags used by the analyzer are:
+The notable flags used by the analyzer are described below.
+All of these flags are optional.
 
-  -default-signifies-exhaustive
+	Flag name						Type	Default value
+	-check-generated				bool	false
+	-default-signifies-exhaustive	bool	false
+	-ignore-enum-members			string	(none)
+	-package-scope-only				bool	false
 
-If enabled, the presence of a "default" case in switch statements satisfies
-exhaustiveness, even if all enum members are not listed.
 
-  -check-generated
+If the -check-generated flag is enabled, switch statements in generated Go
+source files are also checked. Otherwise switch statements in generated files
+are ignored by default.
 
-If enabled, switch statements in generated Go source files are also checked.
-Otherwise switch statements in generated files are ignored by default.
+If the default-signifies-exhaustive flag is enabled, the presence of a "default"
+case in switch statements satisfies exhaustiveness, even if all enum members are
+not listed. It is recommended that you do not enable this flag unless you're
+sure; enabling it defeats the purpose of exhaustiveness checking.
 
-  -ignore-enum-members <regex>
+The -ignore-enum-members flag specifies a regular expression (in the syntax
+accepted by Go's regexp package). Enum members matching the regular expression
+are ignored, meaning that these enum member names don't have to be listed
+in switch statements to satisfy exhaustiveness. The specified regular expression
+is matched against enum member names inclusive of the enum package import path.
+For example, "example.com/pkg.Tundra" where where the import path is
+"example.com/pkg" and the enum member name is "Tundra".
 
-Specifies a regular expression; enum members matching the regular expression are
-ignored. Ignored enum members don't have to be present in switch statements to
-satisfy exhaustiveness. The regular expression is matched against enum member
-names inclusive of the enum package import path, e.g.
-"github.com/foo/bar.Tundra", where the enum package import path is
-"github.com/foo/bar" and the enum member name is "Tundra".
+If the -package-scope-only flag is enabled, the analyzer only finds enums
+defined in in package scope. Consequently, only switch statements that switch on
+package-scoped enums will be checked for exhaustiveness. By default, the
+analyzer also finds enums defined in local scopes such as function bodies, and
+also checks switch statements that switch on these local-scoped enums.
 
 Skipping analysis
 
-If the following comment:
-
-  //exhaustive:ignore
-
-is associated with a switch statement, the analyzer skips inspection of the
-switch statement and no diagnostics are reported. Note the lack of whitespace
+To skip analysis of a specific switch statement, associate the following
+comment with the switch statement. Note the lack of whitespace
 between the comment marker ("//") and the comment text.
 
-Additionally, no diagnostics are reported for switch statements in generated
-files unless the -check-generated flag is enabled. See
-https://golang.org/s/generatedcode for the definition of generated file.
+	//exhaustive:ignore
 
-Additionally, see the -ignore-enum-members flag, which can be used
-to ignore specific enum members.
+To ignore specific enum members, see the -ignore-enum-members flag.
+
+By default, the analyzer skips analysis of switch statements in generated
+Go source files. Use the -check-generated flag to change this behavior.
+See https://golang.org/s/generatedcode for the definition of generated file.
 */
 package exhaustive
