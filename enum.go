@@ -28,16 +28,15 @@ type enumMembers struct {
 }
 
 func (em *enumMembers) add(name string, val constantValue) {
-	em.Names = append(em.Names, name)
-
 	if em.NameToValue == nil {
 		em.NameToValue = make(map[string]constantValue)
 	}
-	em.NameToValue[name] = val
-
 	if em.ValueToNames == nil {
 		em.ValueToNames = make(map[constantValue][]string)
 	}
+
+	em.Names = append(em.Names, name)
+	em.NameToValue[name] = val
 	em.ValueToNames[val] = append(em.ValueToNames[val], name)
 }
 
