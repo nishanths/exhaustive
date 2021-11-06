@@ -1,8 +1,6 @@
-// want package:"^River:DefaultRiver,Yamuna,Ganga,Kaveri; State:_,TamilNadu,Kerala,Karnataka,DefaultState$"
-
 package duplicateenumvalue
 
-type River string
+type River string // want River:"^DefaultRiver,Yamuna,Ganga,Kaveri$"
 
 const DefaultRiver = Ganga
 
@@ -12,7 +10,7 @@ const (
 	Kaveri River = "Kaveri"
 )
 
-type State int
+type State int // want State:"^_,TamilNadu,Kerala,Karnataka,DefaultState$"
 
 const (
 	_ State = iota

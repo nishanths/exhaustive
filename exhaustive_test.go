@@ -26,7 +26,7 @@ func TestExhaustive(t *testing.T) {
 	// value to be listed, not each unique member by name.
 	t.Run("duplicate enum value", func(t *testing.T) {
 		resetFlags()
-		analysistest.Run(t, analysistest.TestData(), Analyzer, "duplicateenumvalue/pkg/...")
+		analysistest.Run(t, analysistest.TestData(), Analyzer, "duplicateenumvalue/...")
 	})
 
 	t.Run("default signifies exhaustive", func(t *testing.T) {
