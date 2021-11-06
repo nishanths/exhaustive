@@ -64,17 +64,6 @@ const (
 	unexportedMembersB UnexportedMembers = 2
 )
 
-// Only top-level values and types form enums.
-
-type NonTopLevel uint
-
-func _nonTopLevel() {
-	const (
-		A NonTopLevel = 0
-		B NonTopLevel = 1
-	)
-}
-
 type ParenVal int // want ParenVal:"^ParenVal0,ParenVal1$"
 
 const (

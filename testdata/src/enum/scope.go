@@ -48,3 +48,44 @@ func F2() {
 		)
 	}
 }
+
+// Members must be in the same scope.
+
+type PkgRequireSameLevel uint // want PkgRequireSameLevel:"^PA$"
+
+const (
+	_  PkgRequireSameLevel = 100
+	PA PkgRequireSameLevel = 200
+)
+
+func f() {
+	const (
+		_  PkgRequireSameLevel = 42
+		PC PkgRequireSameLevel = 0
+		PD PkgRequireSameLevel = 1
+	)
+}
+
+type PkgRequireSameLevel_2 uint
+
+func g() {
+	const PE PkgRequireSameLevel_2 = 9
+
+	for {
+		type InnerRequireSameLevel uint // want InnerRequireSameLevel:"^IX,IY$"
+
+		const (
+			_  InnerRequireSameLevel = 100
+			IX InnerRequireSameLevel = 200
+			IY InnerRequireSameLevel = 200
+		)
+
+		if true {
+			const (
+				_  InnerRequireSameLevel = 42
+				IM InnerRequireSameLevel = 0
+				IN InnerRequireSameLevel = 1
+			)
+		}
+	}
+}

@@ -148,29 +148,3 @@ func _p() {
 	case ErrFoo:
 	}
 }
-
-type T int // want T:"^A,B$"
-
-const (
-	A T = iota
-	B
-)
-
-func _q() { // see issue #23: https://github.com/nishanths/exhaustive/issues/23
-	type T int // want T:"^C,D$"
-
-	const (
-		C T = iota
-		D
-	)
-
-	var v T
-	// must not report diagnostic here
-	switch v {
-	case C, D:
-	}
-
-	switch v { // want "^missing cases in switch of type T: D$"
-	case C:
-	}
-}
