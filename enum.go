@@ -75,11 +75,20 @@ func findPossibleEnumTypes(files []*ast.File, info *types.Info, found func(named
 			for _, s := range gen.Specs {
 				// Must be TypeSpec since we've filtered on token.TYPE.
 				t := s.(*ast.TypeSpec)
+				if t.Assign.IsValid() {
+					// TypeSpec is AliasSpec; we don't support it at the moment.
+					//
+					// Additionally:
+					// In type T1 = T2,  info.Defs[t.Name] results in the object on the right-hand side.
+					// In type T1 T2,    info.Defs[t.Name] results in the object of the left-hand side.
+					// This needs to be resolved.
+					continue
+				}
+
 				obj := info.Defs[t.Name]
 				if obj == nil {
 					continue
 				}
-
 				named, ok := obj.Type().(*types.Named)
 				if !ok {
 					continue
