@@ -24,8 +24,8 @@ func (et enumType) object() types.Object { return et.named.Obj() }
 type enumMembers struct {
 	// TODO: NameToValue doesn't work correctly if there are multiple blank
 	// identifiers ("_"); only one of them can be saved.
-	// There may be a similar issue for same-named type alias enum members,
-	// depending on how we design it.
+	// There may be a similar issue for same-named type alias enum members, in
+	// the future, depending on how we design type alias analysis.
 
 	Names        []string                   // enum member names, AST order
 	NameToValue  map[string]constantValue   // enum member name -> constant value

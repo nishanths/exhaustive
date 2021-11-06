@@ -10,7 +10,7 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// TODO: write tests that assert on the "result" returned by nodeVisitor.
+// TODO(testing): write tests that assert on the "result" returned by nodeVisitor.
 
 func TestDiagnosticEnumTypeName(t *testing.T) {
 	t.Run("same package", func(t *testing.T) {

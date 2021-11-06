@@ -92,7 +92,8 @@ func checkTypeEnumMembers(t *testing.T, enumMembersType reflect.Type) {
 		{"NameToValue", "map[string]exhaustive.constantValue"},
 		{"ValueToNames", "map[exhaustive.constantValue][]string"},
 	})
-	// TODO: need to assert that exhaustive.constantValue is a basic type / has no unexported fields.
+	// TODO(testing): need to assert that exhaustive.constantValue is a basic
+	// type / has no unexported fields.
 }
 
 func assertTypeFields(t *testing.T, typ reflect.Type, wantFields []wantField) {

@@ -4,7 +4,7 @@ package enum
 // Bool cannot be enum type.
 // Only basic types can be enum types.
 
-// TODO: add test coverage for each type that can be an enum.
+// TODO(testing): add test coverage for each type that can be an enum.
 
 type UIntEnum uint // want UIntEnum:"^UIntA,UIntB$"
 

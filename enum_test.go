@@ -57,7 +57,7 @@ func TestEnumMembers_add(t *testing.T) {
 		}
 	})
 
-	// TODO: add tests for iota, repeated values, ...
+	// TODO(testing): add tests for iota, repeated values, ...
 }
 
 var testdataEnumPkg = func() *packages.Package {
