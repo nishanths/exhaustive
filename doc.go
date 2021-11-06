@@ -21,9 +21,9 @@ In the example below, Biome is an enum type with 3 members.
 	)
 
 For a constant to be an enum member, it must be declared in the same scope as
-the enum type. That said, enum member constants don't necessarily have to all be
-declared in the same const block. Enum member constant values may be specified
-using iota or using explicit values (like in the example).
+the enum type. Enum member constants don't necessarily have to all be declared
+in the same const block. Enum member constant values may be specified using iota
+or using explicit values (like in the example).
 
 The analyzer's behavior is undefined for type aliases. This may change in the
 future.
@@ -67,7 +67,7 @@ for example, "example.com/pkg.Tundra" where where the import path is
 "example.com/pkg" and the enum member name is "Tundra".
 
 If the -package-scope-only flag is enabled, the analyzer only finds enums
-defined in package scope, and consequently only switch statements that switch
+defined in package scopes, and consequently only switch statements that switch
 on package-scoped enums will be checked for exhaustiveness. By default, the
 analyzer finds enums defined in all scopes, and checks switch statements that
 switch on all these enums.
