@@ -15,9 +15,9 @@ In the example below, Biome is an enum type with 3 members.
 	type Biome int
 
 	const (
-			Tundra  Biome = 1
-			Savanna Biome = 2
-			Desert  Biome = 3
+		Tundra  Biome = 1
+		Savanna Biome = 2
+		Desert  Biome = 3
 	)
 
 For a constant to be an enum member, it must be declared in the same scope as
