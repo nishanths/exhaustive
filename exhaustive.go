@@ -59,6 +59,7 @@ var Analyzer = &analysis.Analyzer{
 func run(pass *analysis.Pass) (interface{}, error) {
 	enums := findEnums(pass.Files, pass.TypesInfo)
 	for typ, members := range enums {
+		// log.Println("typ", typ, "|", "members", members)
 		exportFact(pass, typ, members)
 	}
 

@@ -79,25 +79,27 @@ func findPossibleEnumTypes(files []*ast.File, info *types.Info, found func(named
 					// TypeSpec is AliasSpec; we don't support it at the moment.
 					//
 					// Additionally:
-					// In type T1 = T2,  info.Defs[t.Name] results in the object on the right-hand side.
-					// In type T1 T2,    info.Defs[t.Name] results in the object of the left-hand side.
+					// In type T1 = T2,  info.Defs[t.Name].Type() results in the object on the right-hand side.
+					// In type T1 T2,    info.Defs[t.Name].Type() results in the object of the left-hand side.
 					// This needs to be resolved.
 					continue
 				}
-
 				obj := info.Defs[t.Name]
 				if obj == nil {
 					continue
 				}
+				// log.Printf("%v | %v | %#v", t.Name, obj, obj.Type())
+
 				named, ok := obj.Type().(*types.Named)
 				if !ok {
 					continue
 				}
+				// log.Println("name", t.Name, "|", "obj", obj, obj.Pkg(), obj.Type(), "|", "named", named)
+
 				basic, ok := named.Underlying().(*types.Basic)
 				if !ok {
 					continue
 				}
-
 				switch i := basic.Info(); {
 				case i&types.IsInteger != 0, i&types.IsFloat != 0, i&types.IsString != 0:
 					found(named)
