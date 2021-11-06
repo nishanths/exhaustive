@@ -68,12 +68,8 @@ func findEnums(pkgScopeOnly bool, pkg *types.Package, inspect *inspector.Inspect
 		enumTypes[e] = struct{}{}
 	}
 
-	inspect.Nodes([]ast.Node{&ast.GenDecl{}}, func(n ast.Node, push bool) bool {
-		if !push {
-			return true
-		}
+	inspect.Preorder([]ast.Node{&ast.GenDecl{}}, func(n ast.Node) {
 		possibleEnumTypes(n.(*ast.GenDecl), info, f)
-		return true
 	})
 
 	// -- Find enum members --
@@ -85,12 +81,8 @@ func findEnums(pkgScopeOnly bool, pkg *types.Package, inspect *inspector.Inspect
 		out[enumTyp].add(memberName, val)
 	}
 
-	inspect.Nodes([]ast.Node{&ast.GenDecl{}}, func(n ast.Node, push bool) bool {
-		if !push {
-			return true
-		}
+	inspect.Preorder([]ast.Node{&ast.GenDecl{}}, func(n ast.Node) {
 		possibleEnumMembers(n.(*ast.GenDecl), info, enumTypes, g)
-		return true
 	})
 
 	return out
