@@ -102,10 +102,10 @@ func _g() {
 	}
 }
 
-type SortDirection int // want SortDirection:"^_,Asc,Desc$"
+type SortDirection int // want SortDirection:"^Asc,Desc$"
 
 const (
-	_ SortDirection = iota // blank identifier need to be listed in switch statement to satisfy exhaustiveness
+	_ SortDirection = iota // blank identifier need not be listed in switch statement to satisfy exhaustiveness
 	Asc
 	Desc
 )

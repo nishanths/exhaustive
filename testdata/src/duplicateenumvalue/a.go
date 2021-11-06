@@ -10,7 +10,7 @@ const (
 	Kaveri River = "Kaveri"
 )
 
-type State int // want State:"^_,TamilNadu,Kerala,Karnataka,DefaultState$"
+type State int // want State:"^TamilNadu,Kerala,Karnataka,DefaultState$"
 
 const (
 	_ State = iota
