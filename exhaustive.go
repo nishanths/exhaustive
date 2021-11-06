@@ -57,10 +57,10 @@ var Analyzer = &analysis.Analyzer{
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
-	packageScopeOnly := false // TODO: make this configurable by flag
+	pkgScopeOnly := false // TODO: make this configurable by flag
 	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 
-	for typ, members := range findEnums(packageScopeOnly, pass.Pkg, inspect, pass.TypesInfo) {
+	for typ, members := range findEnums(pkgScopeOnly, pass.Pkg, inspect, pass.TypesInfo) {
 		exportFact(pass, typ, members)
 	}
 

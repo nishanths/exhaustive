@@ -47,14 +47,14 @@ func (em *enumMembers) add(name string, val constantValue) {
 	em.ValueToNames[val] = append(em.ValueToNames[val], name)
 }
 
-// NOTE: This type must be usable as a map key.
+// NOTE: This type must be usable as a map key
 // (comparison by '==' must do the right thing)
 type enumTypeAndScope struct {
 	scope *types.Scope
 	typ   enumType
 }
 
-func findEnums(packageScopeOnly bool, pkg *types.Package, inspect *inspector.Inspector, info *types.Info) enums {
+func findEnums(pkgScopeOnly bool, pkg *types.Package, inspect *inspector.Inspector, info *types.Info) enums {
 	var out enums = make(map[enumType]*enumMembers)
 
 	// -- Find possible enum types --
@@ -62,7 +62,7 @@ func findEnums(packageScopeOnly bool, pkg *types.Package, inspect *inspector.Ins
 	enumTypes := make(map[enumTypeAndScope]struct{})
 
 	f := func(named *types.Named, scope *types.Scope) {
-		if scope != pkg.Scope() && packageScopeOnly {
+		if scope != pkg.Scope() && pkgScopeOnly {
 			return
 		}
 		e := enumTypeAndScope{scope, enumType{named}}
