@@ -93,14 +93,6 @@ func findEnums(pkgScopeOnly bool, pkg *types.Package, inspect *inspector.Inspect
 		return true
 	})
 
-	// -- Delete types with no members ---
-
-	for k, v := range out {
-		if len(v.Names) == 0 {
-			delete(out, k)
-		}
-	}
-
 	return out
 }
 
