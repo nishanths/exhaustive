@@ -13,11 +13,11 @@ type constantValue string
 type enums map[enumType]*enumMembers
 
 // Represents an enum type (or sometimes a potential enum type).
-type enumType struct{ named *types.Named }
+type enumType struct{ *types.Named }
 
-func (et enumType) String() string       { return et.named.String() }
-func (et enumType) name() string         { return et.named.Obj().Name() }
-func (et enumType) object() types.Object { return et.named.Obj() }
+func (et enumType) String() string       { return et.Named.String() } // for debugging
+func (et enumType) name() string         { return et.Named.Obj().Name() }
+func (et enumType) object() types.Object { return et.Named.Obj() }
 
 // enumMembers is the members for a single enum type.
 // The zero value is ready to use.

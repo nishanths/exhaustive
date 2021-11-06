@@ -246,7 +246,7 @@ func diagnosticEnumTypeName(enumType *types.Named, samePkg bool) string {
 
 func makeDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumTyp enumType, allMembers *enumMembers, missingMembers []string) analysis.Diagnostic {
 	message := fmt.Sprintf("missing cases in switch of type %s: %s",
-		diagnosticEnumTypeName(enumTyp.named, samePkg),
+		diagnosticEnumTypeName(enumTyp.Named, samePkg),
 		strings.Join(diagnosticMissingMembers(missingMembers, allMembers), ", "))
 
 	return analysis.Diagnostic{
