@@ -46,8 +46,8 @@ func makeChecklist(em *enumMembers, enumPkg *types.Package, includeUnexported bo
 
 func (c *checklist) found(memberName string) {
 	// delete all of the same-valued names
-	constVal := c.em.NameToValue[memberName]
-	for _, n := range c.em.ValueToNames[constVal] {
+	val := c.em.NameToValue[memberName]
+	for _, n := range c.em.ValueToNames[val] {
 		delete(c.m, n)
 	}
 }
