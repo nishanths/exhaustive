@@ -24,10 +24,9 @@ func (et enumType) object() types.Object { return et.Named.Obj() }
 // enumMembers is the members for a single enum type.
 // The zero value is ready to use.
 type enumMembers struct {
-	// TODO: NameToValue doesn't work correctly if there are multiple blank
-	// identifiers ("_"); only one of them can be saved.
-	// There may be a similar issue for same-named type alias enum members, in
-	// the future, depending on how we design type alias analysis.
+	// TODO: In the future, depending on how we design type alias analysis,
+	// NameToValue may not work correctly if there are multiple same-named type
+	// alias enum members; only one of them can be saved in the map.
 
 	Names        []string                   // enum member names, AST order
 	NameToValue  map[string]constantValue   // enum member name -> constant value
