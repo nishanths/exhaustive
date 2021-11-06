@@ -54,7 +54,7 @@ type enumTypeAndScope struct {
 	typ   enumType
 }
 
-func findEnums(packageScopeOnly bool, files []*ast.File, pkg *types.Package, inspect *inspector.Inspector, info *types.Info) enums {
+func findEnums(packageScopeOnly bool, pkg *types.Package, inspect *inspector.Inspector, info *types.Info) enums {
 	var out enums = make(map[enumType]*enumMembers)
 
 	// -- Find possible enum types --

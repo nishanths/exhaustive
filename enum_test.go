@@ -2,8 +2,11 @@ package exhaustive
 
 import (
 	"reflect"
+	"sort"
+	"strconv"
 	"testing"
 
+	"golang.org/x/tools/go/ast/inspector"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -68,232 +71,274 @@ var testdataEnumPkg = func() *packages.Package {
 	return pkgs[0]
 }()
 
-// func TestFindPossibleEnumTypes(t *testing.T) {
-// 	var got []string
-// 	findPossibleEnumTypes(testdataEnumPkg.Syntax, testdataEnumPkg.TypesInfo, func(named *types.Named) {
-// 		got = append(got, named.Obj().Name())
-// 	})
-// 	want := []string{
-// 		"VarMember",
-// 		"VarConstMixed",
-// 		"IotaEnum",
-// 		"MemberlessEnum",
-// 		"RepeatedValue",
-// 		"AcrossBlocksDeclsFiles",
-// 		"UnexportedMembers",
-// 		"NonTopLevel",
-// 		"ParenVal",
-// 		"T",
-// 		"UIntEnum",
-// 		"StringEnum",
-// 		"RuneEnum",
-// 		"ByteEnum",
-// 		"Int32Enum",
-// 		"Float64Enum",
-// 	}
-// 	if !reflect.DeepEqual(got, want) {
-// 		t.Errorf("\nwant %v\ngot  %v", want, got)
-// 		return
-// 	}
-// }
+func TestFindEnums(t *testing.T) {
+	transform := func(in map[enumType]*enumMembers) []checkEnum {
+		var out []checkEnum
+		for typ, mem := range in {
+			out = append(out, checkEnum{typ.name(), mem})
+		}
+		return out
+	}
 
-// func TestFindEnumMembers(t *testing.T) {
-// 	possibleEnumTypes := make(map[*types.Named]struct{})
-// 	findPossibleEnumTypes(testdataEnumPkg.Syntax, testdataEnumPkg.TypesInfo, func(named *types.Named) {
-// 		possibleEnumTypes[named] = struct{}{}
-// 	})
+	inspect := inspector.New(testdataEnumPkg.Syntax)
 
-// 	got := make(map[string]*enumMembers)
-// 	findEnumMembers(testdataEnumPkg.Syntax, testdataEnumPkg.TypesInfo, possibleEnumTypes, func(memberName string, enumTyp enumType, val constantValue) {
-// 		if _, ok := got[enumTyp.name()]; !ok {
-// 			got[enumTyp.name()] = &enumMembers{}
-// 		}
-// 		got[enumTyp.name()].add(memberName, val)
-// 	})
+	for _, pkgOnly := range [...]bool{false, true} {
+		t.Run("package scopes only "+strconv.FormatBool(pkgOnly), func(t *testing.T) {
+			result := findEnums(pkgOnly, testdataEnumPkg.Types, inspect, testdataEnumPkg.TypesInfo)
+			checkEnums(t, transform(result), pkgOnly)
+		})
+	}
+}
 
-// 	checkEnums(t, got)
-// }
+// See checkEnums.
+type checkEnum struct {
+	typeName string
+	members  *enumMembers
+}
 
-// func TestFindEnums(t *testing.T) {
-// 	result := findEnums(testdataEnumPkg.Syntax, testdataEnumPkg.TypesInfo)
+func equalCheckEnum(t *testing.T, want, got checkEnum) {
+	if want.typeName != got.typeName {
+		t.Errorf("want type name %s, got %s", want.typeName, got.typeName)
+	}
+	if !reflect.DeepEqual(*want.members, *got.members) {
+		t.Errorf("type name %s: want members %+v, got %+v", want.typeName, *want.members, *got.members)
+	}
+}
 
-// 	transformForChecking := func(in map[enumType]*enumMembers) map[string]*enumMembers {
-// 		out := make(map[string]*enumMembers)
-// 		for typ, mem := range in {
-// 			out[typ.name()] = mem
-// 		}
-// 		return out
-// 	}
+type byNameAndMembers []checkEnum
 
-// 	checkEnums(t, transformForChecking(result))
-// }
+func (c byNameAndMembers) Len() int      { return len(c) }
+func (c byNameAndMembers) Swap(i, j int) { c[i], c[j] = c[j], c[i] }
+func (c byNameAndMembers) Less(i, j int) bool {
+	if c[i].typeName != c[j].typeName {
+		return c[i].typeName < c[j].typeName
+	}
+	return len(c[i].members.Names) < len(c[j].members.Names)
+}
 
-// // shared utility for TestFindEnumMembers and TestFindEnums.
-// func checkEnums(t *testing.T, got map[string]*enumMembers) {
-// 	t.Helper()
+func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
+	t.Helper()
 
-// 	want := map[string]*enumMembers{
-// 		"VarConstMixed": {
-// 			[]string{"VCMixedB"},
-// 			map[string]constantValue{
-// 				"VCMixedB": `1`,
-// 			},
-// 			map[constantValue][]string{
-// 				`1`: {"VCMixedB"},
-// 			},
-// 		},
-// 		"IotaEnum": {
-// 			[]string{"IotaA", "IotaB"},
-// 			map[string]constantValue{
-// 				"IotaA": `0`,
-// 				"IotaB": `2`,
-// 			},
-// 			map[constantValue][]string{
-// 				`0`: {"IotaA"},
-// 				`2`: {"IotaB"},
-// 			},
-// 		},
-// 		"RepeatedValue": {
-// 			[]string{"RepeatedValueA", "RepeatedValueB"},
-// 			map[string]constantValue{
-// 				"RepeatedValueA": `1`,
-// 				"RepeatedValueB": `1`,
-// 			},
-// 			map[constantValue][]string{
-// 				`1`: {"RepeatedValueA", "RepeatedValueB"},
-// 			},
-// 		},
-// 		"AcrossBlocksDeclsFiles": {
-// 			[]string{"Here", "Separate", "There"},
-// 			map[string]constantValue{
-// 				"Here":     `0`,
-// 				"Separate": `1`,
-// 				"There":    `2`,
-// 			},
-// 			map[constantValue][]string{
-// 				`0`: {"Here"},
-// 				`1`: {"Separate"},
-// 				`2`: {"There"},
-// 			},
-// 		},
-// 		"UnexportedMembers": {
-// 			[]string{"unexportedMembersA", "unexportedMembersB"},
-// 			map[string]constantValue{
-// 				"unexportedMembersA": `1`,
-// 				"unexportedMembersB": `2`,
-// 			},
-// 			map[constantValue][]string{
-// 				`1`: {"unexportedMembersA"},
-// 				`2`: {"unexportedMembersB"},
-// 			},
-// 		},
-// 		"ParenVal": {
-// 			[]string{"ParenVal0", "ParenVal1"},
-// 			map[string]constantValue{
-// 				"ParenVal0": `0`,
-// 				"ParenVal1": `1`,
-// 			},
-// 			map[constantValue][]string{
-// 				`0`: {"ParenVal0"},
-// 				`1`: {"ParenVal1"},
-// 			},
-// 		},
-// 		"T": {
-// 			[]string{"A", "B"},
-// 			map[string]constantValue{
-// 				"A": `0`,
-// 				"B": `1`,
-// 			},
-// 			map[constantValue][]string{
-// 				`0`: {"A"},
-// 				`1`: {"B"},
-// 			},
-// 		},
-// 		"UIntEnum": {
-// 			[]string{"UIntA", "UIntB"},
-// 			map[string]constantValue{
-// 				"UIntA": "0",
-// 				"UIntB": "1",
-// 			},
-// 			map[constantValue][]string{
-// 				"0": {"UIntA"},
-// 				"1": {"UIntB"},
-// 			},
-// 		},
-// 		"StringEnum": {
-// 			[]string{"StringA", "StringB", "StringC"},
-// 			map[string]constantValue{
-// 				"StringA": `"stringa"`,
-// 				"StringB": `"stringb"`,
-// 				"StringC": `"stringc"`,
-// 			},
-// 			map[constantValue][]string{
-// 				`"stringa"`: {"StringA"},
-// 				`"stringb"`: {"StringB"},
-// 				`"stringc"`: {"StringC"},
-// 			},
-// 		},
-// 		"RuneEnum": {
-// 			[]string{"RuneA"},
-// 			map[string]constantValue{
-// 				"RuneA": `97`,
-// 			},
-// 			map[constantValue][]string{
-// 				`97`: {"RuneA"},
-// 			},
-// 		},
-// 		"ByteEnum": {
-// 			[]string{"ByteA"},
-// 			map[string]constantValue{
-// 				"ByteA": `97`,
-// 			},
-// 			map[constantValue][]string{
-// 				`97`: {"ByteA"},
-// 			},
-// 		},
-// 		"Int32Enum": {
-// 			[]string{"Int32A", "Int32B"},
-// 			map[string]constantValue{
-// 				"Int32A": "0",
-// 				"Int32B": "1",
-// 			},
-// 			map[constantValue][]string{
-// 				"0": {"Int32A"},
-// 				"1": {"Int32B"},
-// 			},
-// 		},
-// 		"Float64Enum": {
-// 			[]string{"Float64A", "Float64B"},
-// 			map[string]constantValue{
-// 				"Float64A": `0`,
-// 				"Float64B": `1`,
-// 			},
-// 			map[constantValue][]string{
-// 				`0`: {"Float64A"},
-// 				`1`: {"Float64B"},
-// 			},
-// 		},
-// 	}
+	wantPkg := []checkEnum{
+		{"VarConstMixed", &enumMembers{
+			[]string{"VCMixedB"},
+			map[string]constantValue{
+				"VCMixedB": `1`,
+			},
+			map[constantValue][]string{
+				`1`: {"VCMixedB"},
+			},
+		}},
+		{"IotaEnum", &enumMembers{
+			[]string{"IotaA", "IotaB"},
+			map[string]constantValue{
+				"IotaA": `0`,
+				"IotaB": `2`,
+			},
+			map[constantValue][]string{
+				`0`: {"IotaA"},
+				`2`: {"IotaB"},
+			},
+		}},
+		{"RepeatedValue", &enumMembers{
+			[]string{"RepeatedValueA", "RepeatedValueB"},
+			map[string]constantValue{
+				"RepeatedValueA": `1`,
+				"RepeatedValueB": `1`,
+			},
+			map[constantValue][]string{
+				`1`: {"RepeatedValueA", "RepeatedValueB"},
+			},
+		}},
+		{"AcrossBlocksDeclsFiles", &enumMembers{
+			[]string{"Here", "Separate", "There"},
+			map[string]constantValue{
+				"Here":     `0`,
+				"Separate": `1`,
+				"There":    `2`,
+			},
+			map[constantValue][]string{
+				`0`: {"Here"},
+				`1`: {"Separate"},
+				`2`: {"There"},
+			},
+		}},
+		{"UnexportedMembers", &enumMembers{
+			[]string{"unexportedMembersA", "unexportedMembersB"},
+			map[string]constantValue{
+				"unexportedMembersA": `1`,
+				"unexportedMembersB": `2`,
+			},
+			map[constantValue][]string{
+				`1`: {"unexportedMembersA"},
+				`2`: {"unexportedMembersB"},
+			},
+		}},
+		{"ParenVal", &enumMembers{
+			[]string{"ParenVal0", "ParenVal1"},
+			map[string]constantValue{
+				"ParenVal0": `0`,
+				"ParenVal1": `1`,
+			},
+			map[constantValue][]string{
+				`0`: {"ParenVal0"},
+				`1`: {"ParenVal1"},
+			},
+		}},
+		{"T", &enumMembers{
+			[]string{"A", "B"},
+			map[string]constantValue{
+				"A": `0`,
+				"B": `1`,
+			},
+			map[constantValue][]string{
+				`0`: {"A"},
+				`1`: {"B"},
+			},
+		}},
+		{"PkgRequireSameLevel", &enumMembers{
+			[]string{"PA"},
+			map[string]constantValue{
+				"PA": `200`,
+			},
+			map[constantValue][]string{
+				`200`: {"PA"},
+			},
+		}},
+		{"UIntEnum", &enumMembers{
+			[]string{"UIntA", "UIntB"},
+			map[string]constantValue{
+				"UIntA": "0",
+				"UIntB": "1",
+			},
+			map[constantValue][]string{
+				"0": {"UIntA"},
+				"1": {"UIntB"},
+			},
+		}},
+		{"StringEnum", &enumMembers{
+			[]string{"StringA", "StringB", "StringC"},
+			map[string]constantValue{
+				"StringA": `"stringa"`,
+				"StringB": `"stringb"`,
+				"StringC": `"stringc"`,
+			},
+			map[constantValue][]string{
+				`"stringa"`: {"StringA"},
+				`"stringb"`: {"StringB"},
+				`"stringc"`: {"StringC"},
+			},
+		}},
+		{"RuneEnum", &enumMembers{
+			[]string{"RuneA"},
+			map[string]constantValue{
+				"RuneA": `97`,
+			},
+			map[constantValue][]string{
+				`97`: {"RuneA"},
+			},
+		}},
+		{"ByteEnum", &enumMembers{
+			[]string{"ByteA"},
+			map[string]constantValue{
+				"ByteA": `97`,
+			},
+			map[constantValue][]string{
+				`97`: {"ByteA"},
+			},
+		}},
+		{"Int32Enum", &enumMembers{
+			[]string{"Int32A", "Int32B"},
+			map[string]constantValue{
+				"Int32A": "0",
+				"Int32B": "1",
+			},
+			map[constantValue][]string{
+				"0": {"Int32A"},
+				"1": {"Int32B"},
+			},
+		}},
+		{"Float64Enum", &enumMembers{
+			[]string{"Float64A", "Float64B"},
+			map[string]constantValue{
+				"Float64A": `0`,
+				"Float64B": `1`,
+			},
+			map[constantValue][]string{
+				`0`: {"Float64A"},
+				`1`: {"Float64B"},
+			},
+		}},
+	}
 
-// 	// check the `want` declaration for programmer error.
-// 	for k, v := range want {
-// 		checkEnumMembersLiteral(t, k, v)
-// 	}
+	for _, c := range wantPkg {
+		checkEnumMembersLiteral(t, c.typeName, c.members)
+	}
 
-// 	if len(want) != len(got) {
-// 		t.Errorf("unequal lengths: want %d, got %d", len(want), len(got))
-// 		return
-// 	}
+	wantInner := []checkEnum{
+		{"InnerRequireSameLevel", &enumMembers{
+			[]string{"IX", "IY"},
+			map[string]constantValue{
+				"IX": `200`,
+				"IY": `200`,
+			},
+			map[constantValue][]string{
+				`200`: {"IX", "IY"},
+			},
+		}},
+		{"T", &enumMembers{
+			[]string{"C", "D", "E", "F"},
+			map[string]constantValue{
+				"C": `0`,
+				"D": `1`,
+				"E": `42`,
+				"F": `43`,
+			},
+			map[constantValue][]string{
+				`0`:  {"C"},
+				`1`:  {"D"},
+				`42`: {"E"},
+				`43`: {"F"},
+			},
+		}},
+		{"T", &enumMembers{
+			[]string{"A", "B"},
+			map[string]constantValue{
+				"A": `0`,
+				"B": `1`,
+			},
+			map[constantValue][]string{
+				`0`: {"A"},
+				`1`: {"B"},
+			},
+		}},
+	}
 
-// 	// check members for each type.
-// 	for k := range want {
-// 		g, ok := got[k]
-// 		if !ok {
-// 			t.Errorf("missing %q in got", k)
-// 			return
-// 		}
-// 		if !reflect.DeepEqual(want[k], g) {
-// 			t.Errorf("%s: want %v, got %v", k, *want[k], *g)
-// 		}
-// 	}
-// }
+	for _, c := range wantInner {
+		checkEnumMembersLiteral(t, c.typeName, c.members)
+	}
+
+	want := append([]checkEnum{}, wantPkg...)
+	if !pkgOnly {
+		want = append(want, wantInner...)
+	}
+
+	sort.Sort(byNameAndMembers(want))
+	sort.Sort(byNameAndMembers(got))
+
+	if len(want) != len(got) {
+		var wantNames, gotNames []string
+		for _, c := range want {
+			wantNames = append(wantNames, c.typeName)
+		}
+		for _, c := range got {
+			gotNames = append(gotNames, c.typeName)
+		}
+		t.Errorf("unequal lengths: %d != %d; want %v, got %v", len(want), len(got), wantNames, gotNames)
+		return
+	}
+
+	for i := range want {
+		equalCheckEnum(t, want[i], got[i])
+	}
+}
