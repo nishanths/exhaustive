@@ -13,7 +13,7 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
-// nodeVisitor is similar to the visitor function used by Inspector.WithStack,
+// nodeVisitor is like the visitor function used by Inspector.WithStack,
 // except that it returns an additional value: a short description of
 // the result of this node visit.
 //
@@ -45,12 +45,13 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 
 	return func(n ast.Node, push bool, stack []ast.Node) (bool, string) {
 		if !push {
-			// we only inspect things on the way down, not up.
+			// The proceed return value should not matter; it is ignored by
+			// inspector package for pop calls.
+			// Nevertheless, return true to be on the safe side for the future.
 			return true, resultNotPush
 		}
 
 		file := stack[0].(*ast.File)
-		sw := n.(*ast.SwitchStmt)
 
 		// Determine if the file is a generated file, and save the result.
 		// If it is a generated file, don't check the file.
@@ -58,15 +59,21 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 			generated[file] = isGeneratedFile(file)
 		}
 		if generated[file] && !cfg.checkGeneratedFiles {
-			// don't check this file.
-			return true, resultGeneratedFile
+			// Don't check this file.
+			// Return false because the children nodes of node `n` don't have to be checked.
+			return false, resultGeneratedFile
 		}
+
+		sw := n.(*ast.SwitchStmt)
 
 		if _, ok := comments[file]; !ok {
 			comments[file] = ast.NewCommentMap(pass.Fset, file, file.Comments)
 		}
 		if containsIgnoreDirective(comments[file].Filter(sw).Comments()) {
-			// skip checking due to ignore directive
+			// Skip checking of *this* switch statement due to ignore directive comment.
+			// Still return true because there may be nested switch statements
+			// that are not to be ignored.
+			// TODO(testing): add a test for this.
 			return true, resultSwitchIgnoreComment
 		}
 
@@ -127,7 +134,7 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 type config struct {
 	defaultSignifiesExhaustive bool
 	checkGeneratedFiles        bool
-	ignoreEnumMembers          *regexp.Regexp
+	ignoreEnumMembers          *regexp.Regexp // can be nil
 }
 
 // checkSwitchStatements checks exhaustiveness of enum switch statements for the supplied

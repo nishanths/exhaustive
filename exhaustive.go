@@ -57,18 +57,17 @@ var Analyzer = &analysis.Analyzer{
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
-	enums := findEnums(pass.Files, pass.TypesInfo)
-	for typ, members := range enums {
+	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
+
+	for typ, members := range findEnums(pass.Files, pass.TypesInfo) {
 		exportFact(pass, typ, members)
 	}
 
-	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 	cfg := config{
 		defaultSignifiesExhaustive: fDefaultSignifiesExhaustive,
 		checkGeneratedFiles:        fCheckGeneratedFiles,
 		ignoreEnumMembers:          fIgnoreEnumMembers.Get().(*regexp.Regexp),
 	}
-
 	checkSwitchStatements(pass, inspect, cfg)
 	return nil, nil
 }
