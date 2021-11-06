@@ -1,7 +1,6 @@
 package exhaustive
 
 import (
-	"fmt"
 	"go/ast"
 	"go/token"
 	"go/types"
@@ -10,18 +9,15 @@ import (
 // constantValue is a constant.Value.ExactString().
 type constantValue string
 
-// %p-fmt formatted string of an address.
-type addr string
-
 // enums contains the enum types and their members for a single package.
 type enums map[enumType]*enumMembers
 
-// enumType is represents an enum type. It is the key type for the enums type.
-// It is designed to be gob-coding compatible.
-type enumType struct {
-	Name string
-	Addr addr // *types.Named addr
-}
+// Represents an enum type (or sometimes a potential enum type).
+type enumType struct{ named *types.Named }
+
+func (et enumType) String() string       { return et.named.String() }
+func (et enumType) name() string         { return et.named.Obj().Name() }
+func (et enumType) object() types.Object { return et.named.Obj() }
 
 // enumMembers is the members for a single enum type.
 // The zero value is ready to use.
@@ -45,32 +41,29 @@ func (em *enumMembers) add(name string, val constantValue) {
 	em.ValueToNames[val] = append(em.ValueToNames[val], name)
 }
 
-func typesNamedAddr(t *types.Named) addr { return addr(fmt.Sprintf("%p", t)) }
-
-// Find the enums for the files in a package. The files is typically obtained from
-// pass.Files and typesInfo is obtained from pass.TypesInfo.
-func findEnums(files []*ast.File, typesInfo *types.Info) enums {
-	possibleEnumTypes := make(map[enumType]struct{})
-
+// Find the enums for the files in a package. The files are typically obtained from
+// pass.Files and info is obtained from pass.TypesInfo.
+func findEnums(files []*ast.File, info *types.Info) enums {
 	// Gather possible enum types.
-	findPossibleEnumTypes(files, typesInfo, func(enumTyp enumType) {
-		possibleEnumTypes[enumTyp] = struct{}{}
+	enumTypes := make(map[*types.Named]struct{})
+	findPossibleEnumTypes(files, info, func(named *types.Named) {
+		enumTypes[named] = struct{}{}
 	})
 
-	pkgEnums := make(enums)
+	out := make(enums)
 
 	// Gather enum members.
-	findEnumMembers(files, typesInfo, possibleEnumTypes, func(memberName string, enumTyp enumType, val constantValue) {
-		if _, ok := pkgEnums[enumTyp]; !ok {
-			pkgEnums[enumTyp] = &enumMembers{}
+	findEnumMembers(files, info, enumTypes, func(memberName string, enumTyp enumType, val constantValue) {
+		if _, ok := out[enumTyp]; !ok {
+			out[enumTyp] = &enumMembers{}
 		}
-		pkgEnums[enumTyp].add(memberName, val)
+		out[enumTyp].add(memberName, val)
 	})
 
-	return pkgEnums
+	return out
 }
 
-func findPossibleEnumTypes(files []*ast.File, typesInfo *types.Info, found func(enumTyp enumType)) {
+func findPossibleEnumTypes(files []*ast.File, info *types.Info, found func(named *types.Named)) {
 	for _, f := range files {
 		for _, decl := range f.Decls {
 			gen, ok := decl.(*ast.GenDecl)
@@ -83,7 +76,7 @@ func findPossibleEnumTypes(files []*ast.File, typesInfo *types.Info, found func(
 			for _, s := range gen.Specs {
 				// Must be TypeSpec since we've filtered on token.TYPE.
 				t := s.(*ast.TypeSpec)
-				obj := typesInfo.Defs[t.Name]
+				obj := info.Defs[t.Name]
 				if obj == nil {
 					continue
 				}
@@ -99,14 +92,14 @@ func findPossibleEnumTypes(files []*ast.File, typesInfo *types.Info, found func(
 
 				switch i := basic.Info(); {
 				case i&types.IsInteger != 0, i&types.IsFloat != 0, i&types.IsString != 0:
-					found(enumType{named.Obj().Name(), typesNamedAddr(named)})
+					found(named)
 				}
 			}
 		}
 	}
 }
 
-func findEnumMembers(files []*ast.File, typesInfo *types.Info, possibleEnumTypes map[enumType]struct{}, found func(memberName string, enumTyp enumType, val constantValue)) {
+func findEnumMembers(files []*ast.File, info *types.Info, possibleEnumTypes map[*types.Named]struct{}, found func(memberName string, enumTyp enumType, val constantValue)) {
 	for _, f := range files {
 		for _, decl := range f.Decls {
 			gen, ok := decl.(*ast.GenDecl)
@@ -120,23 +113,22 @@ func findEnumMembers(files []*ast.File, typesInfo *types.Info, possibleEnumTypes
 				// Must be ValueSpec since we've filtered on token.CONST.
 				v := s.(*ast.ValueSpec)
 				for _, name := range v.Names {
-					obj := typesInfo.Defs[name]
+					obj := info.Defs[name]
 					namedType, ok := obj.Type().(*types.Named)
 					if !ok {
 						continue
 					}
-					enumTyp := enumType{namedType.Obj().Name(), typesNamedAddr(namedType)}
-					if _, ok := possibleEnumTypes[enumTyp]; !ok {
+					if _, ok := possibleEnumTypes[namedType]; !ok {
 						continue
 					}
-					found(obj.Name(), enumTyp, determineConstVal(name, typesInfo))
+					found(obj.Name(), enumType{namedType}, determineConstVal(name, info))
 				}
 			}
 		}
 	}
 }
 
-func determineConstVal(name *ast.Ident, typesInfo *types.Info) constantValue {
-	c := typesInfo.Defs[name].(*types.Const)
+func determineConstVal(name *ast.Ident, info *types.Info) constantValue {
+	c := info.Defs[name].(*types.Const)
 	return constantValue(c.Val().ExactString())
 }

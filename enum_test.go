@@ -1,6 +1,7 @@
 package exhaustive
 
 import (
+	"go/types"
 	"reflect"
 	"testing"
 
@@ -53,8 +54,8 @@ var enumpkg = func() *packages.Package {
 
 func TestFindPossibleEnumTypes(t *testing.T) {
 	var got []string
-	findPossibleEnumTypes(enumpkg.Syntax, enumpkg.TypesInfo, func(enumTyp enumType) {
-		got = append(got, enumTyp.Name)
+	findPossibleEnumTypes(enumpkg.Syntax, enumpkg.TypesInfo, func(named *types.Named) {
+		got = append(got, named.Obj().Name())
 	})
 	want := []string{
 		"VarMember",
@@ -80,17 +81,17 @@ func TestFindPossibleEnumTypes(t *testing.T) {
 }
 
 func TestFindEnumMembers(t *testing.T) {
-	possibleEnumTypes := make(map[enumType]struct{})
-	findPossibleEnumTypes(enumpkg.Syntax, enumpkg.TypesInfo, func(enumTyp enumType) {
-		possibleEnumTypes[enumTyp] = struct{}{}
+	possibleEnumTypes := make(map[*types.Named]struct{})
+	findPossibleEnumTypes(enumpkg.Syntax, enumpkg.TypesInfo, func(named *types.Named) {
+		possibleEnumTypes[named] = struct{}{}
 	})
 
 	got := make(map[string]*enumMembers)
 	findEnumMembers(enumpkg.Syntax, enumpkg.TypesInfo, possibleEnumTypes, func(memberName string, enumTyp enumType, val constantValue) {
-		if _, ok := got[enumTyp.Name]; !ok {
-			got[enumTyp.Name] = &enumMembers{}
+		if _, ok := got[enumTyp.name()]; !ok {
+			got[enumTyp.name()] = &enumMembers{}
 		}
-		got[enumTyp.Name].add(memberName, val)
+		got[enumTyp.name()].add(memberName, val)
 	})
 
 	checkEnums(t, got)
@@ -102,7 +103,7 @@ func TestFindEnums(t *testing.T) {
 	transformForChecking := func(in map[enumType]*enumMembers) map[string]*enumMembers {
 		out := make(map[string]*enumMembers)
 		for typ, mem := range in {
-			out[typ.Name] = mem
+			out[typ.name()] = mem
 		}
 		return out
 	}

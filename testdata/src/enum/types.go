@@ -6,14 +6,14 @@ package enum
 
 // TODO: add test coverage for each type that can be an enum.
 
-type UIntEnum uint
+type UIntEnum uint // want UIntEnum:"^UIntA,UIntB$"
 
 const (
 	UIntA UIntEnum = 0
 	UIntB UIntEnum = 1
 )
 
-type StringEnum string
+type StringEnum string // want StringEnum:"^StringA,StringB,StringC$"
 
 const (
 	StringA StringEnum = "stringa"
@@ -21,26 +21,26 @@ const (
 	StringC StringEnum = "stringc"
 )
 
-type RuneEnum rune
+type RuneEnum rune // want RuneEnum:"^RuneA$"
 
 const (
 	RuneA RuneEnum = 'a'
 )
 
-type ByteEnum byte
+type ByteEnum byte // want ByteEnum:"^ByteA$"
 
 const (
 	ByteA = ByteEnum('a')
 )
 
-type Int32Enum int32
+type Int32Enum int32 // want Int32Enum:"^Int32A,Int32B$"
 
 const (
 	Int32A Int32Enum = 0
 	Int32B Int32Enum = 1
 )
 
-type Float64Enum float64
+type Float64Enum float64 // want Float64Enum:"^Float64A,Float64B$"
 
 const (
 	Float64A Float64Enum = iota

@@ -53,13 +53,13 @@ var Analyzer = &analysis.Analyzer{
 	Doc:       "check exhaustiveness of enum switch statements",
 	Run:       run,
 	Requires:  []*analysis.Analyzer{inspect.Analyzer},
-	FactTypes: []analysis.Fact{&enumsFact{}},
+	FactTypes: []analysis.Fact{&enumMembersFact{}},
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
-	e := findEnums(pass.Files, pass.TypesInfo)
-	if len(e) != 0 {
-		pass.ExportPackageFact(&enumsFact{Enums: e})
+	enums := findEnums(pass.Files, pass.TypesInfo)
+	for typ, members := range enums {
+		exportFact(pass, typ, members)
 	}
 
 	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)

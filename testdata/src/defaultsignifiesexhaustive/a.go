@@ -1,5 +1,3 @@
-// want package:"^T:A,B$"
-
 package dse
 
 type T int

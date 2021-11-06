@@ -59,8 +59,8 @@ func checkOneFactType(t *testing.T, factType analysis.Fact) {
 	t.Run("fields exported", func(t *testing.T) {
 		switch v := factType.(type) {
 		// NOTE: if there are more fact types, add them here.
-		case *enumsFact:
-			checkTypeEnumsFact(t, reflect.TypeOf(v).Elem())
+		case *enumMembersFact:
+			checkEnumMembersFact(t, reflect.TypeOf(v).Elem())
 		default:
 			t.Errorf("unhandled type %T", v)
 			return
@@ -68,47 +68,21 @@ func checkOneFactType(t *testing.T, factType analysis.Fact) {
 	})
 }
 
-func checkTypeEnumsFact(t *testing.T, enumsFactType reflect.Type) {
+func checkEnumMembersFact(t *testing.T, fact reflect.Type) {
 	t.Helper()
 
-	assertTypeFields(t, enumsFactType, []wantField{
-		{"Enums", "exhaustive.enums"},
+	assertTypeFields(t, fact, []wantField{
+		{"Members", "exhaustive.enumMembers"},
 	})
 
-	// Check underlying type of the "Enums" field.
-	f, ok := enumsFactType.FieldByName("Enums")
+	field, ok := fact.FieldByName("Members")
 	if !ok {
 		t.Errorf("failed to find field")
 		return
 	}
-	if f.Type.Kind() != reflect.Map {
-		t.Errorf("want reflect.Map, got %v (%v)", f.Type.Kind(), f.Type.Kind().String())
-		return
-	}
-	keyType, elemType := f.Type.Key(), f.Type.Elem()
-	if keyType.String() != "exhaustive.enumType" {
-		t.Errorf("want key type string, got %v", keyType.String())
-		return
-	}
-	if elemType.String() != "*exhaustive.enumMembers" {
-		t.Errorf("want elem type *exhaustive.enumMembers, got %v", elemType.String())
-		return
-	}
 
-	enumTypeType := keyType
-	checkTypeEnumType(t, enumTypeType)
-
-	enumMembersType := elemType.Elem() // call Elem() on pointer type to get value type
+	enumMembersType := field.Type
 	checkTypeEnumMembers(t, enumMembersType)
-}
-
-func checkTypeEnumType(t *testing.T, enumTypeType reflect.Type) {
-	t.Helper()
-	assertTypeFields(t, enumTypeType, []wantField{
-		{"Name", "string"},
-		{"Addr", "exhaustive.addr"},
-	})
-	// TODO: need to assert that exhaustive.addr is a basic type / has no unexported fields.
 }
 
 func checkTypeEnumMembers(t *testing.T, enumMembersType reflect.Type) {

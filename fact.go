@@ -1,45 +1,40 @@
 package exhaustive
 
 import (
-	"sort"
 	"strings"
 
 	"golang.org/x/tools/go/analysis"
 )
 
-var _ analysis.Fact = (*enumsFact)(nil)
+var _ analysis.Fact = (*enumMembersFact)(nil)
 
-type enumsFact struct {
-	Enums enums
+type enumMembersFact struct {
+	Members enumMembers
 }
 
-func (e *enumsFact) AFact() {}
+func (f *enumMembersFact) AFact() {}
 
-func (e *enumsFact) String() string {
-	// sort for stability (required for testing)
-	var sorted []enumType
-	for enumTyp := range e.Enums {
-		sorted = append(sorted, enumTyp)
-	}
-	sort.Slice(sorted, func(i, j int) bool { return sorted[i].Name < sorted[j].Name })
-
+func (f *enumMembersFact) String() string {
 	var buf strings.Builder
-	for i, enumTyp := range sorted {
-		v := e.Enums[enumTyp]
-		buf.WriteString(enumTyp.Name)
-		buf.WriteString(":")
-
-		for j, vv := range v.Names {
-			buf.WriteString(vv)
-			// add comma separator between each enum member in an enum type
-			if j != len(v.Names)-1 {
-				buf.WriteString(",")
-			}
-		}
-		// add semicolon separator between each enum type
-		if i != len(sorted)-1 {
-			buf.WriteString("; ")
+	for j, vv := range f.Members.Names {
+		buf.WriteString(vv)
+		// add comma separator between each enum member in an enum type
+		if j != len(f.Members.Names)-1 {
+			buf.WriteString(",")
 		}
 	}
 	return buf.String()
+}
+
+func exportFact(pass *analysis.Pass, enumTyp enumType, members *enumMembers) {
+	pass.ExportObjectFact(enumTyp.object(), &enumMembersFact{*members})
+}
+
+func importFact(pass *analysis.Pass, possibleEnumType enumType) (*enumMembers, bool) {
+	var f enumMembersFact
+	ok := pass.ImportObjectFact(possibleEnumType.object(), &f)
+	if !ok {
+		return nil, false
+	}
+	return &f.Members, true
 }

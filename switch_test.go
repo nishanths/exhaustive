@@ -98,11 +98,12 @@ func TestMakeDiagnostic(t *testing.T) {
 		// other fields shouldn't matter
 	}
 	samePkg := false
-	enumType := types.NewNamed(
+	named := types.NewNamed(
 		types.NewTypeName(50, types.NewPackage("example.org/enumpkg", "enumpkg"), "Biome", nil),
 		nil, /* underlying type should not matter */
 		nil,
 	)
+	enumTyp := enumType{named}
 	allMembers := &enumMembers{
 		Names: []string{"Tundra", "Savanna", "Desert"},
 		NameToValue: map[string]constantValue{
@@ -118,7 +119,7 @@ func TestMakeDiagnostic(t *testing.T) {
 	}
 	missingMembers := []string{"Savanna", "Desert"}
 
-	got := makeDiagnostic(sw, samePkg, enumType, allMembers, missingMembers)
+	got := makeDiagnostic(sw, samePkg, enumTyp, allMembers, missingMembers)
 	want := analysis.Diagnostic{
 		Pos:     1,
 		End:     11,
