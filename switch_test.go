@@ -146,7 +146,8 @@ func TestAnalyzeSwitchClauses(t *testing.T) {
 	}
 
 	getSwitchStatement := func(fn ast.Decl) *ast.SwitchStmt {
-		// the switch statement is always the first statement in the function body
+		// in this testdata, the switch statement is always the first statement
+		// in the function body.
 		funcDecl := fn.(*ast.FuncDecl)
 		return funcDecl.Body.List[0].(*ast.SwitchStmt)
 	}
