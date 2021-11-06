@@ -11,8 +11,8 @@ import (
 // Flag names used by the analyzer. They are exported for use by analyzer
 // driver programs.
 const (
-	DefaultSignifiesExhaustiveFlag = "default-signifies-exhaustive"
 	CheckGeneratedFlag             = "check-generated"
+	DefaultSignifiesExhaustiveFlag = "default-signifies-exhaustive"
 	IgnoreEnumMembersFlag          = "ignore-enum-members"
 	PackageScopeOnly               = "package-scope-only"
 
@@ -21,23 +21,22 @@ const (
 )
 
 var (
-	fDefaultSignifiesExhaustive bool
 	fCheckGeneratedFiles        bool
+	fDefaultSignifiesExhaustive bool
 	fIgnoreEnumMembers          regexpFlag
 	fPackageScopeOnly           bool
 
-	fDeprecatedIgnorePattern    string // Deprecated: see fIgnoreEnumMembers instead.
-	fDeprecatedCheckingStrategy string // Deprecated.
+	fDeprecated string
 )
 
 func init() {
-	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, "presence of \"default\" case in switch statements satisfies exhaustiveness, even if all enum members are not listed")
 	Analyzer.Flags.BoolVar(&fCheckGeneratedFiles, CheckGeneratedFlag, false, "check switch statements in generated files")
+	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, "presence of \"default\" case in switch statements satisfies exhaustiveness, even if all enum members are not listed")
 	Analyzer.Flags.Var(&fIgnoreEnumMembers, IgnoreEnumMembersFlag, "enum members matching `regex` do not have to be listed in switch statements to satisfy exhaustiveness")
-	Analyzer.Flags.BoolVar(&fPackageScopeOnly, PackageScopeOnly, false, "find enums only at package scope, not in inner scopes")
+	Analyzer.Flags.BoolVar(&fPackageScopeOnly, PackageScopeOnly, false, "consider enums only in package scopes, not in inner scopes")
 
-	Analyzer.Flags.StringVar(&fDeprecatedIgnorePattern, IgnorePatternFlag, "", "no effect (deprecated); see -"+IgnoreEnumMembersFlag+" instead")
-	Analyzer.Flags.StringVar(&fDeprecatedCheckingStrategy, CheckingStrategyFlag, "", "no effect (deprecated)")
+	Analyzer.Flags.StringVar(&fDeprecated, IgnorePatternFlag, "", "no effect (deprecated); see -"+IgnoreEnumMembersFlag+" instead")
+	Analyzer.Flags.StringVar(&fDeprecated, CheckingStrategyFlag, "", "no effect (deprecated)")
 }
 
 // resetFlags resets the flag variables to their default values.
@@ -46,9 +45,6 @@ func resetFlags() {
 	fDefaultSignifiesExhaustive = false
 	fCheckGeneratedFiles = false
 	fIgnoreEnumMembers = regexpFlag{}
-
-	fDeprecatedIgnorePattern = ""
-	fDeprecatedCheckingStrategy = ""
 }
 
 var Analyzer = &analysis.Analyzer{
