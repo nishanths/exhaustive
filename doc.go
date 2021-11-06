@@ -40,8 +40,8 @@ exported enum members be listed to satisfy exhaustiveness.
 
 Flags
 
-The notable flags used by the analyzer are below. All of these flags are
-optional.
+The notable flags used by the analyzer are described below.
+All of these flags are optional.
 
 	Flag name						Type	Default value
 	-check-generated				bool	false
@@ -53,7 +53,7 @@ If the -check-generated flag is enabled, switch statements in generated Go
 source files are also checked. Otherwise switch statements in generated files
 are ignored by default.
 
-If the default-signifies-exhaustive flag is enabled, the presence of a "default"
+If the -default-signifies-exhaustive flag is enabled, the presence of a "default"
 case in switch statements satisfies exhaustiveness, even if all enum members are
 not listed. It is recommended that you do not enable this flag; enabling it
 generally defeats the purpose of exhaustiveness checking.
