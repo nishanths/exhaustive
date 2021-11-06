@@ -148,3 +148,29 @@ func _p() {
 	case ErrFoo:
 	}
 }
+
+type PackageScopeT int // want PackageScopeT:"^A,B$"
+
+const (
+	A PackageScopeT = iota
+	B
+)
+
+func _q() { // see issue #23: https://github.com/nishanths/exhaustive/issues/23
+	type SameNamedInnerT int // want SameNamedInnerT:"^C,D$"
+
+	const (
+		C SameNamedInnerT = iota
+		D
+	)
+
+	var v SameNamedInnerT
+	// must not report diagnostic here
+	switch v {
+	case C, D:
+	}
+
+	switch v { // want "^missing cases in switch of type SameNamedInnerT: D$"
+	case C:
+	}
+}
