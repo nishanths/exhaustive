@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
+	"log"
 
 	"golang.org/x/tools/go/ast/inspector"
 )
@@ -96,8 +97,7 @@ func possibleEnumTypes(gen *ast.GenDecl, info *types.Info, found func(tn *types.
 
 	for _, s := range gen.Specs {
 		t := s.(*ast.TypeSpec) // because gen.Tok == token.TYPE
-
-		if t.Assign.IsValid() {
+		if t.Assign.IsValid() && !fTypealias {
 			// TypeSpec is AliasSpec; we don't support it at the moment.
 			// Additionally:
 			// In type T1 = T2,  info.Defs[t.Name].Type() results in the object on the right-hand side.
@@ -115,6 +115,8 @@ func possibleEnumTypes(gen *ast.GenDecl, info *types.Info, found func(tn *types.
 			// Also, we have no real purpose to record them.
 			continue
 		}
+
+		log.Println(obj.(*types.TypeName).Name())
 
 		{
 			_, ok := obj.(*types.TypeName)
