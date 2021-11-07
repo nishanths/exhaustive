@@ -75,7 +75,7 @@ func TestFindEnums(t *testing.T) {
 	transform := func(in map[enumType]*enumMembers) []checkEnum {
 		var out []checkEnum
 		for typ, mem := range in {
-			out = append(out, checkEnum{typ.name(), mem})
+			out = append(out, checkEnum{typ.tn.Name(), mem})
 		}
 		return out
 	}
@@ -89,8 +89,6 @@ func TestFindEnums(t *testing.T) {
 		})
 	}
 }
-
-func (et enumType) name() string { return et.tn.Name() } // to identify an enumType for comparision in tests
 
 // See checkEnums.
 type checkEnum struct {
