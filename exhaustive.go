@@ -48,7 +48,7 @@ func resetFlags() {
 }
 
 func init() {
-	var deprecated string
+	var unused string
 
 	// Public flags.
 	Analyzer.Flags.BoolVar(&fCheckGeneratedFiles, CheckGeneratedFlag, false, "check switch statements in generated files")
@@ -60,8 +60,8 @@ func init() {
 	Analyzer.Flags.BoolVar(&fTypealias, typealiasFlag, true, "handle type alias enums")
 
 	// Deprecated flags.
-	Analyzer.Flags.StringVar(&deprecated, IgnorePatternFlag, "", "no effect (deprecated); see -"+IgnoreEnumMembersFlag+" instead")
-	Analyzer.Flags.StringVar(&deprecated, CheckingStrategyFlag, "", "no effect (deprecated)")
+	Analyzer.Flags.StringVar(&unused, IgnorePatternFlag, "", "no effect (deprecated); see -"+IgnoreEnumMembersFlag+" instead")
+	Analyzer.Flags.StringVar(&unused, CheckingStrategyFlag, "", "no effect (deprecated)")
 }
 
 var Analyzer = &analysis.Analyzer{
