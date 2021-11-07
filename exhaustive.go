@@ -1,6 +1,7 @@
 package exhaustive
 
 import (
+	"fmt"
 	"regexp"
 
 	"golang.org/x/tools/go/analysis"
@@ -70,4 +71,10 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	}
 	checkSwitchStatements(pass, inspect, cfg)
 	return nil, nil
+}
+
+func assert(v bool, format string, args ...interface{}) {
+	if !v {
+		panic(fmt.Sprintf(format, args...))
+	}
 }

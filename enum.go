@@ -116,11 +116,15 @@ func possibleEnumTypes(gen *ast.GenDecl, info *types.Info, found func(tn *types.
 			continue
 		}
 
+		{
+			_, ok := obj.(*types.TypeName)
+			assert(ok, "obj must be *types.TypeName")
+		}
+
 		named, ok := obj.Type().(*types.Named)
 		if !ok {
 			continue
 		}
-		tn := named.Obj()
 
 		// RHS type of `named` should either be an enum type (named with
 		// with underlying valid basic type) or directory
@@ -133,7 +137,7 @@ func possibleEnumTypes(gen *ast.GenDecl, info *types.Info, found func(tn *types.
 		}
 		switch i := basic.Info(); {
 		case i&types.IsInteger != 0, i&types.IsFloat != 0, i&types.IsString != 0:
-			found(tn, obj.Parent())
+			found(obj.(*types.TypeName), obj.Parent())
 		}
 	}
 }
@@ -155,6 +159,11 @@ func possibleEnumMembers(gen *ast.GenDecl, info *types.Info, possibleEnumTypes m
 				// the const with its enum type will fail).
 				// Also, we have no real purpose to record them.
 				continue
+			}
+
+			{
+				_, ok := obj.(*types.Const)
+				assert(ok, "obj must be *types.Const")
 			}
 
 			named, ok := obj.Type().(*types.Named)
