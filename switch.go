@@ -98,8 +98,7 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 			return true, resultTagNoPkg
 		}
 
-		enumTyp := enumType{tagType}
-
+		enumTyp := enumType{tagType.Obj()}
 		members, ok := importFact(pass, enumTyp)
 		if !ok {
 			// switch tag's type is not a known enum type.
@@ -244,16 +243,16 @@ func diagnosticMissingMembers(missingMembers []string, em *enumMembers) []string
 
 // diagnosticEnumTypeName returns a string representation of an enum type for
 // use in reported diagnostics.
-func diagnosticEnumTypeName(enumType *types.Named, samePkg bool) string {
+func diagnosticEnumTypeName(enumType *types.TypeName, samePkg bool) string {
 	if samePkg {
-		return enumType.Obj().Name()
+		return enumType.Name()
 	}
-	return enumType.Obj().Pkg().Name() + "." + enumType.Obj().Name()
+	return enumType.Pkg().Name() + "." + enumType.Name()
 }
 
 func makeDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumTyp enumType, allMembers *enumMembers, missingMembers []string) analysis.Diagnostic {
 	message := fmt.Sprintf("missing cases in switch of type %s: %s",
-		diagnosticEnumTypeName(enumTyp.Named, samePkg),
+		diagnosticEnumTypeName(enumTyp.tn, samePkg),
 		strings.Join(diagnosticMissingMembers(missingMembers, allMembers), ", "))
 
 	return analysis.Diagnostic{

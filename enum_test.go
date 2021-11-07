@@ -90,6 +90,8 @@ func TestFindEnums(t *testing.T) {
 	}
 }
 
+func (et enumType) name() string { return et.tn.Name() } // to identify an enumType for comparision in tests
+
 // See checkEnums.
 type checkEnum struct {
 	typeName string

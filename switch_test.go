@@ -14,12 +14,8 @@ import (
 
 func TestDiagnosticEnumTypeName(t *testing.T) {
 	t.Run("same package", func(t *testing.T) {
-		enumType := types.NewNamed(
-			types.NewTypeName(50, types.NewPackage("example.org/enumpkg-go", "enumpkg"), "Biome", nil),
-			nil, /* underlying type should not matter */
-			nil,
-		)
-		got := diagnosticEnumTypeName(enumType, true)
+		tn := types.NewTypeName(50, types.NewPackage("example.org/enumpkg-go", "enumpkg"), "Biome", nil)
+		got := diagnosticEnumTypeName(tn, true)
 		want := "Biome"
 		if got != want {
 			t.Errorf("want %q, got %q", want, got)
@@ -27,12 +23,8 @@ func TestDiagnosticEnumTypeName(t *testing.T) {
 	})
 
 	t.Run("different package", func(t *testing.T) {
-		enumType := types.NewNamed(
-			types.NewTypeName(50, types.NewPackage("example.org/enumpkg-go", "enumpkg"), "Biome", nil),
-			nil, /* underlying type should not matter */
-			nil,
-		)
-		got := diagnosticEnumTypeName(enumType, false)
+		tn := types.NewTypeName(50, types.NewPackage("example.org/enumpkg-go", "enumpkg"), "Biome", nil)
+		got := diagnosticEnumTypeName(tn, false)
 		want := "enumpkg.Biome"
 		if got != want {
 			t.Errorf("want %q, got %q", want, got)
@@ -99,12 +91,8 @@ func TestMakeDiagnostic(t *testing.T) {
 		// other fields shouldn't matter
 	}
 	samePkg := false
-	named := types.NewNamed(
-		types.NewTypeName(50, types.NewPackage("example.org/enumpkg", "enumpkg"), "Biome", nil),
-		nil, /* underlying type should not matter */
-		nil,
-	)
-	enumTyp := enumType{named}
+	tn := types.NewTypeName(50, types.NewPackage("example.org/enumpkg", "enumpkg"), "Biome", nil)
+	enumTyp := enumType{tn}
 	allMembers := &enumMembers{
 		Names: []string{"Tundra", "Savanna", "Desert"},
 		NameToValue: map[string]constantValue{

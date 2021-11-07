@@ -15,11 +15,10 @@ type constantValue string
 type enums map[enumType]*enumMembers
 
 // Represents an enum type (or sometimes a potential enum type).
-type enumType struct{ *types.Named }
+type enumType struct{ tn *types.TypeName }
 
-func (et enumType) String() string       { return et.Named.String() } // for debugging
-func (et enumType) name() string         { return et.Named.Obj().Name() }
-func (et enumType) object() types.Object { return et.Named.Obj() }
+func (et enumType) String() string       { return et.tn.String() } // for debugging
+func (et enumType) object() types.Object { return et.tn }          // types.Object for fact export
 
 // enumMembers is the members for a single enum type.
 // The zero value is ready to use.
@@ -60,11 +59,11 @@ func findEnums(pkgScopeOnly bool, pkg *types.Package, inspect *inspector.Inspect
 
 	enumTypes := make(map[enumTypeAndScope]struct{})
 
-	f := func(named *types.Named, scope *types.Scope) {
+	f := func(tn *types.TypeName, scope *types.Scope) {
 		if scope != pkg.Scope() && pkgScopeOnly {
 			return
 		}
-		e := enumTypeAndScope{scope, enumType{named}}
+		e := enumTypeAndScope{scope, enumType{tn}}
 		enumTypes[e] = struct{}{}
 	}
 
@@ -90,13 +89,14 @@ func findEnums(pkgScopeOnly bool, pkg *types.Package, inspect *inspector.Inspect
 
 // possibleEnumTypes reports types that could possibly be enum types
 // in the given GenDecl. It calls found for enum type found.
-func possibleEnumTypes(gen *ast.GenDecl, info *types.Info, found func(named *types.Named, scope *types.Scope)) {
+func possibleEnumTypes(gen *ast.GenDecl, info *types.Info, found func(tn *types.TypeName, scope *types.Scope)) {
 	if gen.Tok != token.TYPE {
 		return
 	}
 
 	for _, s := range gen.Specs {
 		t := s.(*ast.TypeSpec) // because gen.Tok == token.TYPE
+
 		if t.Assign.IsValid() {
 			// TypeSpec is AliasSpec; we don't support it at the moment.
 			// Additionally:
@@ -115,21 +115,25 @@ func possibleEnumTypes(gen *ast.GenDecl, info *types.Info, found func(named *typ
 			// Also, we have no real purpose to record them.
 			continue
 		}
+
 		named, ok := obj.Type().(*types.Named)
 		if !ok {
 			continue
 		}
+		tn := named.Obj()
+
 		// RHS type of `named` should either be an enum type (named with
 		// with underlying valid basic type) or directory
 		// be a valid basic type. We can handle both cases
 		// by checking `named.Underlying()`.
+
 		basic, ok := named.Underlying().(*types.Basic)
 		if !ok {
 			continue
 		}
 		switch i := basic.Info(); {
 		case i&types.IsInteger != 0, i&types.IsFloat != 0, i&types.IsString != 0:
-			found(named, obj.Parent())
+			found(tn, obj.Parent())
 		}
 	}
 }
@@ -152,17 +156,21 @@ func possibleEnumMembers(gen *ast.GenDecl, info *types.Info, possibleEnumTypes m
 				// Also, we have no real purpose to record them.
 				continue
 			}
+
 			named, ok := obj.Type().(*types.Named)
 			if !ok {
 				continue
 			}
+			tn := named.Obj()
+
 			// Enum type's scope and enum member's scope must be the same.
 			// If they're not, don't consider the const a member.
-			e := enumTypeAndScope{obj.Parent(), enumType{named}}
+			e := enumTypeAndScope{obj.Parent(), enumType{tn}}
 			if _, ok := possibleEnumTypes[e]; !ok {
 				continue
 			}
-			found(enumType{named}, obj.Name(), determineConstVal(name, info))
+
+			found(enumType{tn}, obj.Name(), determineConstVal(name, info))
 		}
 	}
 }
