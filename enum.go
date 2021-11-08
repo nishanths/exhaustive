@@ -119,6 +119,10 @@ func possibleEnumTypes(gen *ast.GenDecl, info *types.Info, found func(named *typ
 		if !ok {
 			continue
 		}
+		// RHS type of `named` should either be an enum type (named with
+		// with underlying valid basic type) or directory
+		// be a valid basic type. We can handle both cases
+		// by checking `named.Underlying()`.
 		basic, ok := named.Underlying().(*types.Basic)
 		if !ok {
 			continue

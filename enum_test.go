@@ -185,6 +185,17 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 				`1`: {"ParenVal1"},
 			},
 		}},
+		{"EnumRHS", &enumMembers{
+			[]string{"EnumRHS_A", "EnumRHS_B"},
+			map[string]constantValue{
+				"EnumRHS_A": `0`,
+				"EnumRHS_B": `1`,
+			},
+			map[constantValue][]string{
+				`0`: {"EnumRHS_A"},
+				`1`: {"EnumRHS_B"},
+			},
+		}},
 		{"T", &enumMembers{
 			[]string{"A", "B"},
 			map[string]constantValue{
