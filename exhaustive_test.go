@@ -9,10 +9,15 @@ import (
 
 // Integration-style tests using the analysistest package.
 func TestExhaustive(t *testing.T) {
+	// TODO: merge these t.Run (currently separated for simpler isolated testing).
 	// Enum discovery.
 	t.Run("enum", func(t *testing.T) {
 		resetFlags()
-		analysistest.Run(t, analysistest.TestData(), Analyzer, "enum/...")
+		analysistest.Run(t, analysistest.TestData(), Analyzer, "enum")
+	})
+	t.Run("enum typealias", func(t *testing.T) {
+		resetFlags()
+		analysistest.Run(t, analysistest.TestData(), Analyzer, "enum/typealias")
 	})
 
 	// Switch statements associated with the ignore directive comment should not

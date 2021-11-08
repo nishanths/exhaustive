@@ -17,7 +17,7 @@ const (
 	IgnoreEnumMembersFlag          = "ignore-enum-members"
 	PackageScopeOnly               = "package-scope-only"
 
-	typealiasFlag = "typealias"
+	excludeAliasTypesFlag = "exclude-type-alias"
 
 	IgnorePatternFlag    = "ignore-pattern"    // Deprecated: see IgnoreEnumMembersFlag instead.
 	CheckingStrategyFlag = "checking-strategy" // Deprecated.
@@ -31,7 +31,7 @@ var (
 	fPackageScopeOnly           bool
 
 	// Internal flags.
-	fTypealias bool
+	fExcludeTypeAlias bool
 )
 
 // resetFlags resets the flag variables to their default values.
@@ -44,7 +44,7 @@ func resetFlags() {
 	fPackageScopeOnly = false
 
 	// Internal flags.
-	fTypealias = true
+	fExcludeTypeAlias = true
 }
 
 func init() {
@@ -57,7 +57,7 @@ func init() {
 	Analyzer.Flags.BoolVar(&fPackageScopeOnly, PackageScopeOnly, false, "consider enums only in package scopes, not in inner scopes")
 
 	// Internal flags.
-	Analyzer.Flags.BoolVar(&fTypealias, typealiasFlag, true, "handle type alias enums")
+	Analyzer.Flags.BoolVar(&fExcludeTypeAlias, excludeAliasTypesFlag, false, "type alias cannot be an enum")
 
 	// Deprecated flags.
 	Analyzer.Flags.StringVar(&unused, IgnorePatternFlag, "", "no effect (deprecated); see -"+IgnoreEnumMembersFlag+" instead")
@@ -75,7 +75,7 @@ var Analyzer = &analysis.Analyzer{
 func run(pass *analysis.Pass) (interface{}, error) {
 	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 
-	for typ, members := range findEnums(fPackageScopeOnly, pass.Pkg, inspect, pass.TypesInfo) {
+	for typ, members := range findEnums(fPackageScopeOnly, fExcludeTypeAlias, pass.Pkg, inspect, pass.TypesInfo) {
 		exportFact(pass, typ, members)
 	}
 

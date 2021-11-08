@@ -124,7 +124,7 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 			// So don't report.
 			return true, resultDefaultCaseSuffices
 		}
-		pass.Report(makeDiagnostic(sw, samePkg, enumTyp, members, toSlice(checklist.remaining())))
+		pass.Report(makeDiagnostic(sw, samePkg, enumTyp, members, mapToSlice(checklist.remaining())))
 		return true, resultReportedDiagnostic
 	}
 }
@@ -262,7 +262,7 @@ func makeDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumTyp enumType, allMembe
 	}
 }
 
-func toSlice(m map[string]struct{}) []string {
+func mapToSlice(m map[string]struct{}) []string {
 	var out []string
 	for k := range m {
 		out = append(out, k)

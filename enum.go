@@ -12,14 +12,17 @@ import (
 // constantValue is a constant.Value.ExactString().
 type constantValue string
 
-// enums contains the enum types and their members for a single package.
-type enums map[enumType]*enumMembers
+type enumData struct {
+	typ     enumType
+	members enumMembers
+}
 
-// Represents an enum type (or sometimes a potential enum type).
-type enumType struct{ tn *types.TypeName }
+// Represents an enum type (or a potential enum type).
+// Either a defined type's name, or a type alias's left-side name.
+type enumType struct{ *types.TypeName }
 
-func (et enumType) String() string           { return et.tn.String() } // for debugging
-func (et enumType) factObject() types.Object { return et.tn }          // types.Object for fact export
+func (et enumType) String() string           { return et.TypeName.String() } // for debugging
+func (et enumType) factObject() types.Object { return et.TypeName }          // types.Object for fact export
 
 // enumMembers is the members for a single enum type.
 // The zero value is ready to use.
@@ -85,13 +88,24 @@ type enumTypeAndScope struct {
 	typ   enumType
 }
 
-func findEnums(pkgScopeOnly bool, pkg *types.Package, inspect *inspector.Inspector, info *types.Info) enums {
-	typedefs, _, consts := collectSpecs(inspect)
-	result := make(map[enumType]*enumMembers)
+type importFactFn func(enumType) (*enumMembers, bool)
+
+func findEnums(pkgScopeOnly, excludeTypeAlias bool, pkg *types.Package, inspect *inspector.Inspector, info *types.Info, importFn importFactFn) []enumData {
+	toSlice := func(v map[enumType]enumData) []enumData {
+		var ret []enumData
+		for _, vv := range v {
+			ret = append(ret, vv)
+		}
+		return ret
+	}
+
+	typedefs, aliases, consts := collectSpecs(inspect)
+
+	possEnumTypes := make(map[enumTypeAndScope]struct{})
+	aliasRightSides := make(map[enumType]types.Type)
+	result := make(map[enumType]enumData)
 
 	// -- Find possible typedef enum types --
-
-	typedefEnumTypes := make(map[enumTypeAndScope]struct{})
 
 	for _, t := range typedefs {
 		tn, scope, ok := possibleTypedefEnumType(t, info)
@@ -101,25 +115,42 @@ func findEnums(pkgScopeOnly bool, pkg *types.Package, inspect *inspector.Inspect
 		if scope != pkg.Scope() && pkgScopeOnly {
 			continue
 		}
-		e := enumTypeAndScope{scope, enumType{tn}}
-		typedefEnumTypes[e] = struct{}{}
+		possEnumTypes[enumTypeAndScope{scope, enumType{tn}}] = struct{}{}
 	}
 
 	// -- Find enum members of typedef enum types --
 
 	for _, c := range consts {
-		enumTyp, memberName, val, ok := possibleTypedefEnumMembers(c, info, typedefEnumTypes)
+		enumTyp, memberName, val, ok := possibleTypedefEnumMember(c, info, possEnumTypes)
 		if !ok {
 			continue
 		}
-		if _, ok := result[enumTyp]; !ok {
-			result[enumTyp] = &enumMembers{}
+		v := result[enumTyp]
+		v.members.add(memberName, val)
+		result[enumTyp] = v
+	}
+
+	// --
+
+	if excludeTypeAlias {
+		return toSlice(result)
+	}
+
+	// -- Find possible type alias enum types --
+
+	for _, a := range aliases {
+		tn, rightside, scope, ok := possibleAliasEnumType(a, info)
+		if !ok {
+			continue
 		}
-		result[enumTyp].add(memberName, val)
+		if scope != pkg.Scope() && pkgScopeOnly {
+			continue
+		}
+		possEnumTypes[enumTypeAndScope{scope, enumType{tn}}] = struct{}{}
+		aliasRightSides[enumType{tn}] = rightside
 	}
 
 	// TODO:
-	// -- Find possible type alias enum types --
 
 	// TypeSpec is AliasSpec; we don't support it at the moment.
 	// Additionally:
@@ -129,12 +160,43 @@ func findEnums(pkgScopeOnly bool, pkg *types.Package, inspect *inspector.Inspect
 
 	// -- Find enum members of type alias enum types --
 
-	return result
+	return toSlice(result)
+}
+
+func possibleAliasEnumType(alias *ast.TypeSpec, info *types.Info) (*types.TypeName, types.Type, *types.Scope, bool) {
+	if !alias.Assign.IsValid() {
+		panic("TypeSpec is not alias type")
+	}
+
+	obj := info.Defs[alias.Name]
+	if obj == nil {
+		return nil, nil, nil, false
+	}
+	if isBlankIdentifier(obj) {
+		return nil, nil, nil, false
+	}
+
+	_, ok := obj.(*types.TypeName)
+	assert(ok, "obj must be *types.TypeName")
+
+	rightside := obj.Type()
+	_, ok = rightside.(*types.Named)
+	if !ok {
+		return nil, nil, nil, false
+	}
+	basic, ok := rightside.Underlying().(*types.Basic)
+	if !ok || !validBasicEnumType(basic) {
+		return nil, nil, nil, false
+	}
+	return obj.(*types.TypeName), rightside, obj.Parent(), true
+}
+
+func possibleAliasEnumMember(constName *ast.Ident, info *types.Info, possibleTypes map[enumTypeAndScope]struct{}) (et enumType, memberName string, val constantValue, ok bool) {
 }
 
 func possibleTypedefEnumType(typedef *ast.TypeSpec, info *types.Info) (*types.TypeName, *types.Scope, bool) {
 	if typedef.Assign.IsValid() {
-		panic("TypeSpec is a type alias")
+		panic("TypeSpec is alias type")
 	}
 
 	obj := info.Defs[typedef.Name]
@@ -162,18 +224,13 @@ func possibleTypedefEnumType(typedef *ast.TypeSpec, info *types.Info) (*types.Ty
 	// by checking `named.Underlying()`.
 
 	basic, ok := named.Underlying().(*types.Basic)
-	if !ok {
+	if !ok || !validBasicEnumType(basic) {
 		return nil, nil, false
 	}
-	switch i := basic.Info(); {
-	case i&types.IsInteger != 0, i&types.IsFloat != 0, i&types.IsString != 0:
-		return obj.(*types.TypeName), obj.Parent(), true
-	}
-
-	return nil, nil, false
+	return obj.(*types.TypeName), obj.Parent(), true
 }
 
-func possibleTypedefEnumMembers(constName *ast.Ident, info *types.Info, possibleTypes map[enumTypeAndScope]struct{}) (et enumType, memberName string, val constantValue, ok bool) {
+func possibleTypedefEnumMember(constName *ast.Ident, info *types.Info, possibleTypes map[enumTypeAndScope]struct{}) (et enumType, memberName string, val constantValue, ok bool) {
 	obj := info.Defs[constName]
 	if obj == nil {
 		return enumType{}, "", "", false
@@ -211,4 +268,12 @@ func determineConstVal(name *ast.Ident, info *types.Info) constantValue {
 
 func isBlankIdentifier(obj types.Object) bool {
 	return obj.Name() == "_" // NOTE: go/types/decl.go does a direct comparison like this
+}
+
+func validBasicEnumType(basic *types.Basic) bool {
+	switch i := basic.Info(); {
+	case i&types.IsInteger != 0, i&types.IsFloat != 0, i&types.IsString != 0:
+		return true
+	}
+	return false
 }
