@@ -99,15 +99,19 @@ switch on all these enums.
 
 Skipping analysis
 
-To skip analysis of a specific switch statement, associate the following
-comment with the switch statement. Note the lack of whitespace
-between the comment marker ("//") and the comment text.
+To skip checking of a specific switch statement, associate the following comment
+with the switch statement. Note the lack of whitespace between the comment
+marker ("//") and the comment text.
 
     //exhaustive:ignore
 
+For example:
+
+    switch v { //exhaustive:ignore
+
 To ignore specific enum members, see the -ignore-enum-members flag.
 
-By default, the analyzer skips analysis of switch statements in generated
+By default, the analyzer skips checking of switch statements in generated
 Go source files. Use the -check-generated flag to change this behavior.
 See https://golang.org/s/generatedcode for the definition of generated file.
 */
