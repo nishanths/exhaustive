@@ -66,7 +66,7 @@ func findEnums(pkgScopeOnly bool, pkg *types.Package, inspect *inspector.Inspect
 		}
 		for _, s := range gen.Specs {
 			for _, name := range s.(*ast.ValueSpec).Names {
-				enumTyp, memberName, val, ok := possibleEnumMember(name, pkg, info)
+				enumTyp, memberName, val, ok := possibleEnumMember(name, info)
 				if !ok {
 					continue
 				}
@@ -83,7 +83,7 @@ func findEnums(pkgScopeOnly bool, pkg *types.Package, inspect *inspector.Inspect
 	return result
 }
 
-func possibleEnumMember(constName *ast.Ident, pkg *types.Package, info *types.Info) (et enumType, name string, val constantValue, ok bool) {
+func possibleEnumMember(constName *ast.Ident, info *types.Info) (et enumType, name string, val constantValue, ok bool) {
 	obj := info.Defs[constName]
 	if obj == nil {
 		return enumType{}, "", "", false
@@ -105,12 +105,10 @@ func possibleEnumMember(constName *ast.Ident, pkg *types.Package, info *types.In
 	named := obj.Type().(*types.Named)
 	tn := named.Obj()
 
-	// The constant and its type must be in the same package.
-	if obj.Pkg() != tn.Pkg() {
-		return enumType{}, "", "", false
-	}
 	// Enum type's scope and enum member's scope must be the same.
 	// If they're not, don't consider the const a member.
+	// Additionally, the constant and its type must be in the same package (this
+	// the scope check accounts for this, too).
 	if tn.Parent() != obj.Parent() {
 		return enumType{}, "", "", false
 	}
