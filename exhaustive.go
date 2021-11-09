@@ -16,7 +16,7 @@ const (
 	CheckGeneratedFlag             = "check-generated"
 	DefaultSignifiesExhaustiveFlag = "default-signifies-exhaustive"
 	IgnoreEnumMembersFlag          = "ignore-enum-members"
-	PackageScopeOnly               = "package-scope-only"
+	PackageScopeOnlyFlag           = "package-scope-only"
 
 	IgnorePatternFlag    = "ignore-pattern"    // Deprecated: see IgnoreEnumMembersFlag instead.
 	CheckingStrategyFlag = "checking-strategy" // Deprecated.
@@ -47,7 +47,7 @@ func init() {
 	Analyzer.Flags.BoolVar(&fCheckGeneratedFiles, CheckGeneratedFlag, false, "check switch statements in generated files")
 	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, "presence of \"default\" case in switch statements satisfies exhaustiveness, even if all enum members are not listed")
 	Analyzer.Flags.Var(&fIgnoreEnumMembers, IgnoreEnumMembersFlag, "enum members matching `regex` do not have to be listed in switch statements to satisfy exhaustiveness")
-	Analyzer.Flags.BoolVar(&fPackageScopeOnly, PackageScopeOnly, false, "consider enums only in package scopes, not in inner scopes")
+	Analyzer.Flags.BoolVar(&fPackageScopeOnly, PackageScopeOnlyFlag, false, "consider enums only in package scopes, not in inner scopes")
 
 	// Deprecated flags.
 	Analyzer.Flags.StringVar(&unused, IgnorePatternFlag, "", "no effect (deprecated); see -"+IgnoreEnumMembersFlag+" instead")
