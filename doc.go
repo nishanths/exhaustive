@@ -48,12 +48,12 @@ The type alias proposal says that in a type alias declaration:
     type T1 = T2
 
 T1 is merely an alternate spelling for T2, and nearly all analysis of code
-involving T1 proceeds by first expanding T1 to T2 [*]. For the exhaustive
-analyzer, this means that a switch statement that switches on a value of type T1
-is in effect switching on a value of type T2.
+involving T1 proceeds by first expanding T1 to T2 [*]. For this analyzer, it
+means that a switch statement that switches on a value of type T1 is, in effect,
+switching on a value of type T2.
 
-Consider that T2 or its underlying type is an enum type (i.e. a named type whose
-underlying type is integer, float, or string; for details see section
+Consider that T2 or its underlying type is an enum type (i.e. a named type with
+underlying type integer, float, or string; for details see section
 'Definition of enum'). A switch statement that switches on a value of type T1 is
 exhaustive if all of the enum type T2's members are listed in the switch
 statement cases. It is worth highlighting that only constants declared in the
