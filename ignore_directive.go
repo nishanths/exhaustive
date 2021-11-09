@@ -5,9 +5,9 @@ import (
 	"strings"
 )
 
-// IgnoreDirectivePrefix is used to exclude checking of specific switch statements.
+// ignoreDirective is used to exclude checking of specific switch statements.
 // See package comment for details.
-const IgnoreDirectivePrefix = "//exhaustive:ignore"
+const ignoreDirective = "//exhaustive:ignore"
 
 func containsIgnoreDirective(groups []*ast.CommentGroup) bool {
 	for _, group := range groups {
@@ -20,7 +20,7 @@ func containsIgnoreDirective(groups []*ast.CommentGroup) bool {
 
 func containsIgnoreDirectiveComments(comments []*ast.Comment) bool {
 	for _, c := range comments {
-		if strings.HasPrefix(c.Text, IgnoreDirectivePrefix) {
+		if strings.HasPrefix(c.Text, ignoreDirective) {
 			return true
 		}
 	}
