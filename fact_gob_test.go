@@ -26,7 +26,7 @@ func TestFactsGobCompatible(t *testing.T) {
 	}
 
 	for _, typ := range Analyzer.FactTypes {
-		t.Run("fact type: "+reflect.TypeOf(typ).String(), func(t *testing.T) {
+		t.Run("fact type "+reflect.TypeOf(typ).String(), func(t *testing.T) {
 			checkOneFactType(t, typ)
 		})
 	}
@@ -55,8 +55,9 @@ func checkOneFactType(t *testing.T, fact analysis.Fact) {
 		}
 	})
 
-	// Fields should all be exported.
-	t.Run("fields exported", func(t *testing.T) {
+	// Fields should all be exported. And no pointer types should be present
+	// unless you're absolutely sure, since nil pointers don't work with gob.
+	t.Run("fields", func(t *testing.T) {
 		switch v := fact.(type) {
 		// NOTE: if there are more fact types, add them here.
 		case *enumMembersFact:
@@ -80,20 +81,33 @@ func checkEnumMembersFact(t *testing.T, factType reflect.Type) {
 		t.Errorf("failed to find field")
 		return
 	}
-
 	enumMembersType := field.Type
 	checkTypeEnumMembers(t, enumMembersType)
 }
 
 func checkTypeEnumMembers(t *testing.T, enumMembersType reflect.Type) {
 	t.Helper()
+
 	assertTypeFields(t, enumMembersType, []wantField{
 		{"Names", "[]string"},
 		{"NameToValue", "map[string]exhaustive.constantValue"},
 		{"ValueToNames", "map[exhaustive.constantValue][]string"},
 	})
-	// TODO(testing): need to assert that exhaustive.constantValue is a basic
-	// type / has no unexported fields.
+
+	field, ok := enumMembersType.FieldByName("NameToValue")
+	if !ok {
+		t.Errorf("failed to find field")
+		return
+	}
+	cvType := field.Type.Elem()
+	checkTypeConstantValue(t, cvType)
+}
+
+func checkTypeConstantValue(t *testing.T, cvType reflect.Type) {
+	t.Helper()
+	if cvType.Kind() != reflect.String {
+		t.Errorf("unexpected kind %v", cvType.Kind())
+	}
 }
 
 func assertTypeFields(t *testing.T, typ reflect.Type, wantFields []wantField) {
@@ -108,6 +122,9 @@ func assertTypeFields(t *testing.T, typ reflect.Type, wantFields []wantField) {
 		field := typ.Field(i)
 		if !ast.IsExported(field.Name) {
 			t.Errorf("field %q not exported", field.Name)
+		}
+		if field.Type.Kind() == reflect.Ptr {
+			t.Errorf("field %q is pointer", field.Name)
 		}
 		if wantFields[i].name != field.Name {
 			t.Errorf("want %q, got %q", wantFields[i].name, field.Name)

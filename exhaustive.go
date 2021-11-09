@@ -1,7 +1,6 @@
 package exhaustive
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"regexp"
@@ -77,13 +76,6 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	}
 	checkSwitchStatements(pass, inspect, cfg)
 	return nil, nil
-}
-
-// TODO(testing): add unit test
-func assert(v bool, format string, args ...interface{}) {
-	if !v {
-		panic(fmt.Sprintf(format, args...))
-	}
 }
 
 var (

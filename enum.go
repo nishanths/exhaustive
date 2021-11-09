@@ -1,6 +1,7 @@
 package exhaustive
 
 import (
+	"fmt"
 	"go/ast"
 	"go/token"
 	"go/types"
@@ -93,8 +94,9 @@ func possibleEnumMember(constName *ast.Ident, pkg *types.Package, info *types.In
 		return enumType{}, "", "", false
 	}
 
-	_, ok = obj.(*types.Const)
-	assert(ok, "obj must be *types.Const")
+	if _, ok = obj.(*types.Const); !ok {
+		panic(fmt.Sprintf("obj must be *types.Const, got %T", obj))
+	}
 
 	if !validNamedBasic(obj.Type()) {
 		return enumType{}, "", "", false

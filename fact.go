@@ -19,9 +19,8 @@ func exportFact(pass *analysis.Pass, enumTyp enumType, members enumMembers) {
 	pass.ExportObjectFact(enumTyp.factObject(), &enumMembersFact{members})
 }
 
-// importFact imports the enum members for the given possible enum type. An
-// (_, false) return indicates that no members exist for the given type, and by
-// definition that the given type is not an enum type.
+// importFact imports the enum members for the given possible enum type.
+// An (_, false) return indicates that the enum type is not a known one.
 func importFact(pass *analysis.Pass, possibleEnumType enumType) (enumMembers, bool) {
 	var f enumMembersFact
 	ok := pass.ImportObjectFact(possibleEnumType.factObject(), &f)

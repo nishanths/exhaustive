@@ -33,9 +33,11 @@ func TestExhaustive(t *testing.T) {
 	t.Run("default signifies exhaustive", func(t *testing.T) {
 		resetFlags()
 		fDefaultSignifiesExhaustive = true
+
 		t.Run("default case absent", func(t *testing.T) {
 			analysistest.Run(t, analysistest.TestData(), Analyzer, "defaultsignifiesexhaustive/defaultabsent/...")
 		})
+
 		t.Run("default case present", func(t *testing.T) {
 			analysistest.Run(t, analysistest.TestData(), Analyzer, "defaultsignifiesexhaustive/defaultpresent/...")
 		})
