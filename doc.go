@@ -60,6 +60,8 @@ members are listed in the switch statement cases. It is worth highlighting that
 only constants declared in the same package as the type T2 can constitute T2's
 enum members (as defined in section 'Definition of enum').
 
+[*]: https://go.googlesource.com/proposal/+/master/design/18130-type-alias.md#proposal
+
 Flags
 
 The notable flags used by the analyzer are described below.
@@ -108,7 +110,5 @@ To ignore specific enum members, see the -ignore-enum-members flag.
 By default, the analyzer skips analysis of switch statements in generated
 Go source files. Use the -check-generated flag to change this behavior.
 See https://golang.org/s/generatedcode for the definition of generated file.
-
-[*]: https://go.googlesource.com/proposal/+/master/design/18130-type-alias.md#proposal
 */
 package exhaustive
