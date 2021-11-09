@@ -70,10 +70,9 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 			comments[file] = ast.NewCommentMap(pass.Fset, file, file.Comments)
 		}
 		if containsIgnoreDirective(comments[file].Filter(sw).Comments()) {
-			// Skip checking of *this* switch statement due to ignore directive comment.
+			// Skip checking of this switch statement due to ignore directive comment.
 			// Still return true because there may be nested switch statements
 			// that are not to be ignored.
-			// TODO(testing): add a test for this.
 			return true, resultSwitchIgnoreComment
 		}
 
@@ -98,8 +97,7 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 			return true, resultTagNoPkg
 		}
 
-		enumTyp := enumType{tagType}
-
+		enumTyp := enumType{tagType.Obj()}
 		members, ok := importFact(pass, enumTyp)
 		if !ok {
 			// switch tag's type is not a known enum type.
@@ -125,7 +123,7 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 			// So don't report.
 			return true, resultDefaultCaseSuffices
 		}
-		pass.Report(makeDiagnostic(sw, samePkg, enumTyp, members, toSlice(checklist.remaining())))
+		pass.Report(makeDiagnostic(sw, samePkg, enumTyp, members, mapToSlice(checklist.remaining())))
 		return true, resultReportedDiagnostic
 	}
 }
@@ -226,7 +224,7 @@ func analyzeCaseClauseExpr(e ast.Expr, info *types.Info, samePkg bool, found fun
 
 // diagnosticMissingMembers constructs the list of missing enum members,
 // suitable for use in a reported diagnostic message.
-func diagnosticMissingMembers(missingMembers []string, em *enumMembers) []string {
+func diagnosticMissingMembers(missingMembers []string, em enumMembers) []string {
 	missingByConstVal := make(map[constantValue][]string) // missing members, keyed by constant value.
 	for _, m := range missingMembers {
 		val := em.NameToValue[m]
@@ -244,16 +242,16 @@ func diagnosticMissingMembers(missingMembers []string, em *enumMembers) []string
 
 // diagnosticEnumTypeName returns a string representation of an enum type for
 // use in reported diagnostics.
-func diagnosticEnumTypeName(enumType *types.Named, samePkg bool) string {
+func diagnosticEnumTypeName(enumType *types.TypeName, samePkg bool) string {
 	if samePkg {
-		return enumType.Obj().Name()
+		return enumType.Name()
 	}
-	return enumType.Obj().Pkg().Name() + "." + enumType.Obj().Name()
+	return enumType.Pkg().Name() + "." + enumType.Name()
 }
 
-func makeDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumTyp enumType, allMembers *enumMembers, missingMembers []string) analysis.Diagnostic {
+func makeDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumTyp enumType, allMembers enumMembers, missingMembers []string) analysis.Diagnostic {
 	message := fmt.Sprintf("missing cases in switch of type %s: %s",
-		diagnosticEnumTypeName(enumTyp.Named, samePkg),
+		diagnosticEnumTypeName(enumTyp.TypeName, samePkg),
 		strings.Join(diagnosticMissingMembers(missingMembers, allMembers), ", "))
 
 	return analysis.Diagnostic{
@@ -263,7 +261,7 @@ func makeDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumTyp enumType, allMembe
 	}
 }
 
-func toSlice(m map[string]struct{}) []string {
+func mapToSlice(m map[string]struct{}) []string {
 	var out []string
 	for k := range m {
 		out = append(out, k)

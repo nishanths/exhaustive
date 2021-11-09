@@ -72,6 +72,12 @@ func TestExhaustive(t *testing.T) {
 		})
 	})
 
+	// Type alias switch statements.
+	t.Run("type alias", func(t *testing.T) {
+		resetFlags()
+		analysistest.Run(t, analysistest.TestData(), Analyzer, "typealias/...")
+	})
+
 	// General tests (a mixture).
 	t.Run("general", func(t *testing.T) {
 		resetFlags()

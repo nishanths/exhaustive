@@ -5,9 +5,10 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"fmt"
 	bar "general/y"
 	barpkg "general/y"
-	"log"
+	"io/fs"
 	"net/http"
 	"os"
 	"reflect"
@@ -22,7 +23,7 @@ func useComplexPackages() {
 		_ json.Encoder
 		_ elliptic.Curve
 	)
-	log.Println(os.LookupEnv(""))
+	fmt.Println(os.LookupEnv(""))
 }
 
 type Direction int // want Direction:"^N,E,S,W,directionInvalid$"
@@ -165,5 +166,26 @@ func _p() {
 	switch err {
 	case nil:
 	case ErrFoo:
+	}
+}
+
+func _q() {
+	// Type alias:
+	// type os.FileMode = fs.FileMode
+
+	fi, err := os.Lstat(".")
+	fmt.Println(err)
+
+	switch fi.Mode() { // want "^missing cases in switch of type fs.FileMode: ModeDevice, ModePerm, ModeSetgid, ModeSetuid, ModeType$"
+	case os.ModeDir:
+	case os.ModeAppend:
+	case os.ModeExclusive:
+	case fs.ModeTemporary:
+	case fs.ModeSymlink:
+	case fs.ModeNamedPipe:
+	case os.ModeSocket:
+	case fs.ModeCharDevice:
+	case fs.ModeSticky:
+	case fs.ModeIrregular:
 	}
 }

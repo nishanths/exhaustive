@@ -1,7 +1,7 @@
 package otherpkg
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/nishanths/exhaustive/testdata/switchtest"
 )
@@ -9,7 +9,7 @@ import (
 func switchParen(b switchtest.Biome) {
 	switch b {
 	case (switchtest.Tundra):
-		log.Println("hi")
+		fmt.Println("hi")
 	case (switchtest.Desert):
 	case (99):
 	}

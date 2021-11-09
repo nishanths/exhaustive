@@ -1,5 +1,5 @@
 on: [push, pull_request]
-name: test and vet
+name: build, test, and vet
 jobs:
   main:
     strategy:
@@ -14,10 +14,15 @@ jobs:
         go-version: ${{ matrix.go-version }}
     - name: checkout code
       uses: actions/checkout@v2
+    - name: build
+      # NOTE: Must build with go1.14.
+      # Do not change this requirement unless you're sure.
+      run: make build
     - name: test
+      if: matrix.go-version >= '1.16' # some tests use io/fs which is available only >= go1.16
       run: make test
     - name: install vet tools
-      if: matrix.go-version >= '1.16'
+      if: matrix.go-version >= '1.16' # required for 'go install cmd@v1.2.3' syntax
       run: make install-vet
     - name: vet
       if: matrix.go-version >= '1.16'

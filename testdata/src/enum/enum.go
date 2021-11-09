@@ -70,3 +70,10 @@ const (
 	ParenVal0 ParenVal = 0
 	ParenVal1 ParenVal = (1)
 )
+
+type EnumRHS Int32Enum // want EnumRHS:"^EnumRHS_A,EnumRHS_B$"
+
+const (
+	EnumRHS_A EnumRHS = iota
+	EnumRHS_B
+)
