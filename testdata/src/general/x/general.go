@@ -8,6 +8,7 @@ import (
 	"fmt"
 	bar "general/y"
 	barpkg "general/y"
+	"io/fs"
 	"net/http"
 	"os"
 	"reflect"
@@ -165,5 +166,23 @@ func _p() {
 	switch err {
 	case nil:
 	case ErrFoo:
+	}
+}
+
+func _q() {
+	fi, err := os.Lstat(".")
+	fmt.Println(err)
+
+	switch fi.Mode() { // want "^missing cases in switch of type fs.FileMode: ModeDevice, ModePerm, ModeSetgid, ModeSetuid, ModeType$"
+	case os.ModeDir:
+	case os.ModeAppend:
+	case os.ModeExclusive:
+	case fs.ModeTemporary:
+	case fs.ModeSymlink:
+	case fs.ModeNamedPipe:
+	case os.ModeSocket:
+	case fs.ModeCharDevice:
+	case fs.ModeSticky:
+	case fs.ModeIrregular:
 	}
 }
