@@ -1,6 +1,6 @@
 package otherpkg
 
-import "enum/otherpkg/anotherpkg"
+import "enum/typealias/otherpkg/anotherpkg"
 
 type T5 int
 type T7 = T5

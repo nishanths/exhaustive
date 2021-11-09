@@ -1,7 +1,7 @@
 package typealias
 
 import (
-	"enum/otherpkg"
+	"enum/typealias/otherpkg"
 )
 
 type T1 = int // RHS is not allowed enum (alias -> valid basic type)
