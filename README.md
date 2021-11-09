@@ -19,7 +19,7 @@ exhaustive with your own analysis driver program.
 
 Given the enum
 
-```diff
+```
 package env
 
 type Environment string
