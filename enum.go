@@ -97,6 +97,27 @@ func possibleEnumMember(constName *ast.Ident, info *types.Info) (et enumType, na
 		return enumType{}, "", "", false
 	}
 
+	/*
+		NOTE:
+
+		type T int
+		const A T = iota // obj.Type() is T
+
+		type R T
+		const B R = iota // obj.Type() is R
+
+		type T2 int
+		type T1 = T2
+		const C T1 = iota // obj.Type() is T2
+
+		type T3 = T4
+		type T4 int
+		type T5 = T3
+		const D T5 = iota // obj.Type() is T4
+
+		// And, in all these cases, validNamedBasic(obj.Type()) == true.
+	*/
+
 	if !validNamedBasic(obj.Type()) {
 		return enumType{}, "", "", false
 	}
