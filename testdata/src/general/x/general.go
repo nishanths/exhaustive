@@ -170,6 +170,9 @@ func _p() {
 }
 
 func _q() {
+	// Type alias:
+	// type os.FileMode = fs.FileMode
+
 	fi, err := os.Lstat(".")
 	fmt.Println(err)
 
