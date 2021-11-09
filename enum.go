@@ -88,14 +88,13 @@ func possibleEnumMember(constName *ast.Ident, info *types.Info) (et enumType, na
 	if obj == nil {
 		return enumType{}, "", "", false
 	}
+	if _, ok = obj.(*types.Const); !ok {
+		panic(fmt.Sprintf("obj must be *types.Const, got %T", obj))
+	}
 	if isBlankIdentifier(obj) {
 		// These objects have a nil parent scope.
 		// Also, we have no real purpose to record them.
 		return enumType{}, "", "", false
-	}
-
-	if _, ok = obj.(*types.Const); !ok {
-		panic(fmt.Sprintf("obj must be *types.Const, got %T", obj))
 	}
 
 	if !validNamedBasic(obj.Type()) {
