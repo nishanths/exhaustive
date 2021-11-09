@@ -60,7 +60,7 @@ members are listed in the switch statement cases. It is worth highlighting that
 only constants declared in the same package as the type T2 can constitute T2's
 enum members (as defined in section 'Definition of enum').
 
-[*]: https://go.googlesource.com/proposal/+/master/design/18130-type-alias.md#proposal
+[*] https://go.googlesource.com/proposal/+/master/design/18130-type-alias.md#proposal
 
 Flags
 
