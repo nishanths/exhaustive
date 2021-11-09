@@ -17,11 +17,6 @@ The package provides an `Analyzer` that follows the guidelines in the
 [`go/analysis`][3] package; this should make it possible to integrate
 exhaustive with your own analysis driver program.
 
-### Known issues
-
-The analyzer's behavior is undefined for enum types that are [type
-aliases][4]. See issue [#13][5].
-
 ### Example
 
 Given the enum

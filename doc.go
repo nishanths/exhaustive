@@ -4,11 +4,11 @@ switch statements in Go source code.
 
 Definition of enum
 
-The Go language spec does not provide an explicit definition for enums. For the
-purpose of this analyzer, an enum type is a named (defined) type whose
-underlying type is an integer (includes byte and rune), a float, or a string
-type. An enum type has associated with it constants of the named type. These
-constants constitute the enum's members.
+The Go language spec does not provide an explicit definition for an enum. For
+the purpose of this analyzer, an enum type is a named type (a.k.a. defined type)
+whose underlying type is an integer (includes byte and rune), a float, or a
+string type. An enum type has associated with it constants of the named type;
+these constants constitute the enum's members.
 
 In the example below, Biome is an enum type with 3 members.
 
@@ -20,23 +20,45 @@ In the example below, Biome is an enum type with 3 members.
         Desert  Biome = 3
     )
 
-For a constant to be an enum member, it must be declared in either the same
-scope of the enum type. Enum member constants for a given enum type don't
-necessarily have to all be declared in the same const block. Enum member
-constant values may be specified by using iota or by using explicit values.
+For a constant to be an enum member, it must be declared in the same scope as
+the enum type. This implies that all members of an enum type must be present
+in the same package as the enum type (if a constant of the enum type is defined
+in a package different from the enum type's package, the constant will not
+constitute an enum member).
 
-The analyzer's behavior is undefined for type aliases to enum types. This may
-change in the future.
+Enum member constants for a given enum type don't necessarily have to all be
+declared in the same const block. The constant values may be specified using
+using iota, using explicit values, or by any means of declaring a valid const.
 
 Definition of exhaustiveness
 
-An switch statement that switches on an enum type is exhaustive if all of the
-enum's members (by value) are listed in the switch statement's cases.
+An switch statement that switches on a value of an enum type is exhaustive if
+all of the enum type's members (by constant value) are listed in the switch
+statement cases.
 
 For an enum type defined in the same package as the switch statement, both
 exported and unexported enum members must be listed to satisfy exhaustiveness.
 For an enum type defined in an external package, it is sufficient that only the
 exported enum members be listed to satisfy exhaustiveness.
+
+Type aliases and exhaustiveness
+
+The type alias proposal says that in a type alias declaration:
+
+    type T1 = T2
+
+T1 is merely an alternate spelling for T2, and nearly all analysis of code
+involving T1 proceeds by first expanding T1 to T2 [*]. For the exhaustive
+analyzer, this means that a switch statement that switches on a value of type T1
+is in effect switching on a value of type T2.
+
+Consider the type alias declaration type T1 = T2, where T2 or its underlying
+type is an enum type (i.e. a named type whose underlying type is integer, float,
+or string; for details see section 'Definition of enum'). A switch statement
+that switches on a value of type T1 is exhaustive if all of the enum type T2's
+members are listed in the switch statement cases. It is worth highlighting that
+only constants declared in the same package as the type T2 can constitute T2's
+enum members (as defined in section 'Definition of enum').
 
 Flags
 
@@ -44,7 +66,6 @@ The notable flags used by the analyzer are described below.
 All of these flags are optional.
 
     Flag                            Type    Default value
-
     -check-generated                bool    false
     -default-signifies-exhaustive   bool    false
     -ignore-enum-members            string  (none)
@@ -87,5 +108,7 @@ To ignore specific enum members, see the -ignore-enum-members flag.
 By default, the analyzer skips analysis of switch statements in generated
 Go source files. Use the -check-generated flag to change this behavior.
 See https://golang.org/s/generatedcode for the definition of generated file.
+
+[*]: https://go.googlesource.com/proposal/+/master/design/18130-type-alias.md#proposal
 */
 package exhaustive
