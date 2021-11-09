@@ -19,8 +19,6 @@ const (
 	IgnoreEnumMembersFlag          = "ignore-enum-members"
 	PackageScopeOnly               = "package-scope-only"
 
-	excludeTypeAliasFlag = "exclude-type-alias"
-
 	IgnorePatternFlag    = "ignore-pattern"    // Deprecated: see IgnoreEnumMembersFlag instead.
 	CheckingStrategyFlag = "checking-strategy" // Deprecated.
 )
@@ -31,9 +29,6 @@ var (
 	fDefaultSignifiesExhaustive bool
 	fIgnoreEnumMembers          regexpFlag
 	fPackageScopeOnly           bool
-
-	// Internal flags.
-	fExcludeTypeAlias bool
 )
 
 // resetFlags resets the flag variables to their default values.
@@ -44,9 +39,6 @@ func resetFlags() {
 	fDefaultSignifiesExhaustive = false
 	fIgnoreEnumMembers = regexpFlag{}
 	fPackageScopeOnly = false
-
-	// Internal flags.
-	fExcludeTypeAlias = false
 }
 
 func init() {
@@ -57,9 +49,6 @@ func init() {
 	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, "presence of \"default\" case in switch statements satisfies exhaustiveness, even if all enum members are not listed")
 	Analyzer.Flags.Var(&fIgnoreEnumMembers, IgnoreEnumMembersFlag, "enum members matching `regex` do not have to be listed in switch statements to satisfy exhaustiveness")
 	Analyzer.Flags.BoolVar(&fPackageScopeOnly, PackageScopeOnly, false, "consider enums only in package scopes, not in inner scopes")
-
-	// Internal flags.
-	Analyzer.Flags.BoolVar(&fExcludeTypeAlias, excludeTypeAliasFlag, false, "don't check switch statements in which the switch tag's type name is an alias to an enum type")
 
 	// Deprecated flags.
 	Analyzer.Flags.StringVar(&unused, IgnorePatternFlag, "", "no effect (deprecated); see -"+IgnoreEnumMembersFlag+" instead")
@@ -77,8 +66,7 @@ var Analyzer = &analysis.Analyzer{
 func run(pass *analysis.Pass) (interface{}, error) {
 	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 
-	for typ, members := range findEnums(fPackageScopeOnly, fExcludeTypeAlias, pass.Pkg, inspect, pass.TypesInfo) {
-		// TODO: need to also include alias RHS
+	for typ, members := range findEnums(fPackageScopeOnly, pass.Pkg, inspect, pass.TypesInfo) {
 		exportFact(pass, typ, members)
 	}
 

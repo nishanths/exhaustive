@@ -82,10 +82,9 @@ func TestFindEnums(t *testing.T) {
 
 	inspect := inspector.New(testdataEnumPkg.Syntax)
 
-	// TODO(testing): Test for type alias true/false.
 	for _, pkgOnly := range [...]bool{false, true} {
 		t.Run("package scopes only "+strconv.FormatBool(pkgOnly), func(t *testing.T) {
-			result := findEnums(pkgOnly, false, testdataEnumPkg.Types, inspect, testdataEnumPkg.TypesInfo)
+			result := findEnums(pkgOnly, testdataEnumPkg.Types, inspect, testdataEnumPkg.TypesInfo)
 			checkEnums(t, transform(result), pkgOnly)
 		})
 	}

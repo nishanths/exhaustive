@@ -70,10 +70,9 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 			comments[file] = ast.NewCommentMap(pass.Fset, file, file.Comments)
 		}
 		if containsIgnoreDirective(comments[file].Filter(sw).Comments()) {
-			// Skip checking of *this* switch statement due to ignore directive comment.
+			// Skip checking of this switch statement due to ignore directive comment.
 			// Still return true because there may be nested switch statements
 			// that are not to be ignored.
-			// TODO(testing): add a test for this.
 			return true, resultSwitchIgnoreComment
 		}
 

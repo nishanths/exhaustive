@@ -49,7 +49,6 @@ All of these flags are optional.
     -default-signifies-exhaustive   bool    false
     -ignore-enum-members            string  (none)
     -package-scope-only             bool    false
-    -exclude-type-alias             bool    false
 
 If the -check-generated flag is enabled, switch statements in generated Go
 source files are also checked. Otherwise switch statements in generated files
