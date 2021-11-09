@@ -20,46 +20,39 @@ exhaustive with your own analysis driver program.
 Given the enum
 
 ```diff
-package token
+package env
 
-type Token int
+type Environment string
 
 const (
-	Add Token = iota
-	Subtract
-	Multiply
-+	Quotient
-+	Remainder
+	Production Environment = "production"
+	Staging    Environment = "staging"
+	Dev        Environment = "dev"
 )
+
+func Current() Environment { ... }
 ```
 
 and the switch statement
 
 ```
-package calc
+package app
 
-import "token"
+import "example/pkg/env"
 
-func processToken(t token.Token) {
-	switch t {
-	case token.Add: ...
-	case token.Subtract: ...
-	case token.Multiply: ...
+func readFile(path string) ([]byte, error) {
+	switch env.Current() {
+	case env.Production: ...
+	case env.Dev: ...
 	default: ...
 	}
 }
 ```
 
-running exhaustive
+running exhaustive will print
 
 ```
-exhaustive ./calc/...
-```
-
-will print
-
-```
-calc.go:6:2: missing cases in switch of type token.Token: Quotient, Remainder
+app.go:6:2: missing cases in switch of type env.Environment: Staging
 ```
 
 [1]: https://godoc.org/github.com/nishanths/exhaustive
