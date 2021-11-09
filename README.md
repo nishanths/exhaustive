@@ -7,7 +7,7 @@ go install github.com/nishanths/exhaustive/cmd/exhaustive@latest
 ```
 
 For docs on the flags, the definition of enum, and the definition of
-exhaustiveness used by the analyzer, see [pkg.go.dev][6].
+exhaustiveness, see [pkg.go.dev][6].
 
 For the changelog, see [CHANGELOG][changelog] in the wiki.
 
