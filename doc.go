@@ -52,13 +52,13 @@ involving T1 proceeds by first expanding T1 to T2 [*]. For the exhaustive
 analyzer, this means that a switch statement that switches on a value of type T1
 is in effect switching on a value of type T2.
 
-Consider the type alias declaration type T1 = T2, where T2 or its underlying
-type is an enum type (i.e. a named type whose underlying type is integer, float,
-or string; for details see section 'Definition of enum'). A switch statement
-that switches on a value of type T1 is exhaustive if all of the enum type T2's
-members are listed in the switch statement cases. It is worth highlighting that
-only constants declared in the same package as the type T2 can constitute T2's
-enum members (as defined in section 'Definition of enum').
+Consider that T2 or its underlying type is an enum type (i.e. a named type whose
+underlying type is integer, float, or string; for details see section
+'Definition of enum'). A switch statement that switches on a value of type T1 is
+exhaustive if all of the enum type T2's members are listed in the switch
+statement cases. It is worth highlighting that only constants declared in the
+same package as the type T2 can constitute T2's enum members (as defined in
+section 'Definition of enum').
 
 [*] https://go.googlesource.com/proposal/+/master/design/18130-type-alias.md#proposal
 
