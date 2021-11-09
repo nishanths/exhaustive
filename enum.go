@@ -102,13 +102,13 @@ func possibleEnumMember(constName *ast.Ident, info *types.Info) (et enumType, na
 		return enumType{}, "", "", false
 	}
 
-	named := obj.Type().(*types.Named)
+	named := obj.Type().(*types.Named) // guaranteed by validNamedBasic()
 	tn := named.Obj()
 
-	// Enum type's scope and enum member's scope must be the same.
-	// If they're not, don't consider the const a member.
-	// Additionally, the constant and its type must be in the same package (this
-	// the scope check accounts for this, too).
+	// Enum type's scope and enum member's scope must be the same. If they're
+	// not, don't consider the const a member. Additionally, the enum type and
+	// the enum member must be in the same package (the scope check accounts for
+	// this, too).
 	if tn.Parent() != obj.Parent() {
 		return enumType{}, "", "", false
 	}
