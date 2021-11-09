@@ -1,15 +1,14 @@
 ## exhaustive [![Godoc][2]][1]
 
-The exhaustive package and command line program
-check enum switch statements in Go source code for exhaustiveness.
+Check exhaustiveness of enum switch statements in Go source code.
 
 ```
 go install github.com/nishanths/exhaustive/cmd/exhaustive@latest
 ```
 
-For documentation, see the package comment at [pkg.go.dev][6]. It
-describes the flags, the definition of enum, and the definition of
-exhaustiveness used by this package.
+For docs, see package comment at [pkg.go.dev][6]. It describes the
+flags, the definition of enum, and the definition of exhaustiveness used
+by this package.
 
 For the changelog, see [CHANGELOG][changelog] in the wiki.
 
