@@ -73,7 +73,7 @@ func findEnums(pkgScopeOnly bool, pkg *types.Package, inspect *inspector.Inspect
 				if pkgScopeOnly && enumTyp.scope() != pkg.Scope() {
 					continue
 				}
-				v, ok := result[enumTyp]
+				v := result[enumTyp]
 				v.add(memberName, val)
 				result[enumTyp] = v
 			}
