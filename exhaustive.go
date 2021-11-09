@@ -2,6 +2,8 @@ package exhaustive
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"regexp"
 
 	"golang.org/x/tools/go/analysis"
@@ -17,7 +19,7 @@ const (
 	IgnoreEnumMembersFlag          = "ignore-enum-members"
 	PackageScopeOnly               = "package-scope-only"
 
-	excludeAliasTypesFlag = "exclude-type-alias"
+	excludeTypeAliasFlag = "exclude-type-alias"
 
 	IgnorePatternFlag    = "ignore-pattern"    // Deprecated: see IgnoreEnumMembersFlag instead.
 	CheckingStrategyFlag = "checking-strategy" // Deprecated.
@@ -44,7 +46,7 @@ func resetFlags() {
 	fPackageScopeOnly = false
 
 	// Internal flags.
-	fExcludeTypeAlias = true
+	fExcludeTypeAlias = false
 }
 
 func init() {
@@ -57,7 +59,7 @@ func init() {
 	Analyzer.Flags.BoolVar(&fPackageScopeOnly, PackageScopeOnly, false, "consider enums only in package scopes, not in inner scopes")
 
 	// Internal flags.
-	Analyzer.Flags.BoolVar(&fExcludeTypeAlias, excludeAliasTypesFlag, false, "type alias cannot be an enum")
+	Analyzer.Flags.BoolVar(&fExcludeTypeAlias, excludeTypeAliasFlag, false, "don't check switch statements in which the switch tag's type name is an alias to an enum type")
 
 	// Deprecated flags.
 	Analyzer.Flags.StringVar(&unused, IgnorePatternFlag, "", "no effect (deprecated); see -"+IgnoreEnumMembersFlag+" instead")
@@ -76,6 +78,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 
 	for typ, members := range findEnums(fPackageScopeOnly, fExcludeTypeAlias, pass.Pkg, inspect, pass.TypesInfo) {
+		// TODO: need to also include alias RHS
 		exportFact(pass, typ, members)
 	}
 
@@ -94,3 +97,7 @@ func assert(v bool, format string, args ...interface{}) {
 		panic(fmt.Sprintf(format, args...))
 	}
 }
+
+var (
+	debug = log.New(os.Stderr, "", log.Lshortfile)
+)

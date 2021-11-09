@@ -10,7 +10,7 @@ import (
 func TestChecklist(t *testing.T) {
 	enumPkg := types.NewPackage("github.com/example/bar-go", "bar")
 
-	em := &enumMembers{
+	em := enumMembers{
 		Names: []string{"A", "B", "C", "D", "E", "F", "G"},
 		NameToValue: map[string]constantValue{
 			"A": "1",
@@ -141,7 +141,7 @@ func TestChecklist(t *testing.T) {
 	})
 
 	t.Run("blank identifier", func(t *testing.T) {
-		em := &enumMembers{
+		em := enumMembers{
 			Names: []string{"A", "B", "C", "D", "E", "F", "G", "_"},
 			NameToValue: map[string]constantValue{
 				"A": "1",
@@ -176,8 +176,8 @@ func TestChecklist(t *testing.T) {
 		})
 	})
 
-	t.Run("include unexported", func(t *testing.T) {
-		em := &enumMembers{
+	t.Run("unexported", func(t *testing.T) {
+		em := enumMembers{
 			Names: []string{"A", "B", "C", "D", "E", "F", "G", "lowercase"},
 			NameToValue: map[string]constantValue{
 				"A":         "1",

@@ -1,11 +1,11 @@
 package switchtest
 
-import "log"
+import "fmt"
 
 func switchWithDefault(b Biome) {
 	switch b {
 	case Tundra:
-		log.Println("hi")
+		fmt.Println("hi")
 	case Desert:
 		_ = 42
 	default:
@@ -16,7 +16,7 @@ func switchWithDefault(b Biome) {
 func switchWithoutDefault(b Biome) {
 	switch b {
 	case Tundra:
-		log.Println("hi")
+		fmt.Println("hi")
 	case Desert:
 		_ = 42
 	}

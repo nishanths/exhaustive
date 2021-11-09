@@ -33,7 +33,7 @@ func TestDiagnosticEnumTypeName(t *testing.T) {
 }
 
 func TestDiagnosticMissingMembers(t *testing.T) {
-	em := &enumMembers{
+	em := enumMembers{
 		Names: []string{"Ganga", "Yamuna", "Kaveri", "Unspecified"},
 		NameToValue: map[string]constantValue{
 			"Unspecified": "0",
@@ -93,7 +93,7 @@ func TestMakeDiagnostic(t *testing.T) {
 	samePkg := false
 	tn := types.NewTypeName(50, types.NewPackage("example.org/enumpkg", "enumpkg"), "Biome", nil)
 	enumTyp := enumType{tn}
-	allMembers := &enumMembers{
+	allMembers := enumMembers{
 		Names: []string{"Tundra", "Savanna", "Desert"},
 		NameToValue: map[string]constantValue{
 			"Tundra":  "1",

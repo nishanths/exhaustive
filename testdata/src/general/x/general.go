@@ -5,9 +5,9 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"fmt"
 	bar "general/y"
 	barpkg "general/y"
-	"log"
 	"net/http"
 	"os"
 	"reflect"
@@ -22,7 +22,7 @@ func useComplexPackages() {
 		_ json.Encoder
 		_ elliptic.Curve
 	)
-	log.Println(os.LookupEnv(""))
+	fmt.Println(os.LookupEnv(""))
 }
 
 type Direction int // want Direction:"^N,E,S,W,directionInvalid$"

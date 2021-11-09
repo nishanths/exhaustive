@@ -11,7 +11,7 @@ import (
 )
 
 // Asserts that the enumMembers literal is correctly defined.
-func checkEnumMembersLiteral(t *testing.T, id string, v *enumMembers) {
+func checkEnumMembersLiteral(t *testing.T, id string, v enumMembers) {
 	t.Helper()
 
 	if len(v.Names) != len(v.NameToValue) {
@@ -72,10 +72,10 @@ var testdataEnumPkg = func() *packages.Package {
 }()
 
 func TestFindEnums(t *testing.T) {
-	transform := func(in map[enumType]*enumMembers) []checkEnum {
+	transform := func(in map[enumType]enumMembers) []checkEnum {
 		var out []checkEnum
-		for typ, mem := range in {
-			out = append(out, checkEnum{typ.tn.Name(), mem})
+		for typ, members := range in {
+			out = append(out, checkEnum{typ.TypeName.Name(), members})
 		}
 		return out
 	}
@@ -94,15 +94,15 @@ func TestFindEnums(t *testing.T) {
 // See checkEnums.
 type checkEnum struct {
 	typeName string
-	members  *enumMembers
+	members  enumMembers
 }
 
 func equalCheckEnum(t *testing.T, want, got checkEnum) {
 	if want.typeName != got.typeName {
 		t.Errorf("want type name %s, got %s", want.typeName, got.typeName)
 	}
-	if !reflect.DeepEqual(*want.members, *got.members) {
-		t.Errorf("type name %s: want members %+v, got %+v", want.typeName, *want.members, *got.members)
+	if !reflect.DeepEqual(want.members, got.members) {
+		t.Errorf("type name %s: want members %+v, got %+v", want.typeName, want.members, got.members)
 	}
 }
 
@@ -121,7 +121,7 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 	t.Helper()
 
 	wantPkg := []checkEnum{
-		{"VarConstMixed", &enumMembers{
+		{"VarConstMixed", enumMembers{
 			[]string{"VCMixedB"},
 			map[string]constantValue{
 				"VCMixedB": `1`,
@@ -130,7 +130,7 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 				`1`: {"VCMixedB"},
 			},
 		}},
-		{"IotaEnum", &enumMembers{
+		{"IotaEnum", enumMembers{
 			[]string{"IotaA", "IotaB"},
 			map[string]constantValue{
 				"IotaA": `0`,
@@ -141,7 +141,7 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 				`2`: {"IotaB"},
 			},
 		}},
-		{"RepeatedValue", &enumMembers{
+		{"RepeatedValue", enumMembers{
 			[]string{"RepeatedValueA", "RepeatedValueB"},
 			map[string]constantValue{
 				"RepeatedValueA": `1`,
@@ -151,7 +151,7 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 				`1`: {"RepeatedValueA", "RepeatedValueB"},
 			},
 		}},
-		{"AcrossBlocksDeclsFiles", &enumMembers{
+		{"AcrossBlocksDeclsFiles", enumMembers{
 			[]string{"Here", "Separate", "There"},
 			map[string]constantValue{
 				"Here":     `0`,
@@ -164,7 +164,7 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 				`2`: {"There"},
 			},
 		}},
-		{"UnexportedMembers", &enumMembers{
+		{"UnexportedMembers", enumMembers{
 			[]string{"unexportedMembersA", "unexportedMembersB"},
 			map[string]constantValue{
 				"unexportedMembersA": `1`,
@@ -175,7 +175,7 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 				`2`: {"unexportedMembersB"},
 			},
 		}},
-		{"ParenVal", &enumMembers{
+		{"ParenVal", enumMembers{
 			[]string{"ParenVal0", "ParenVal1"},
 			map[string]constantValue{
 				"ParenVal0": `0`,
@@ -186,7 +186,7 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 				`1`: {"ParenVal1"},
 			},
 		}},
-		{"EnumRHS", &enumMembers{
+		{"EnumRHS", enumMembers{
 			[]string{"EnumRHS_A", "EnumRHS_B"},
 			map[string]constantValue{
 				"EnumRHS_A": `0`,
@@ -197,7 +197,7 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 				`1`: {"EnumRHS_B"},
 			},
 		}},
-		{"T", &enumMembers{
+		{"T", enumMembers{
 			[]string{"A", "B"},
 			map[string]constantValue{
 				"A": `0`,
@@ -208,7 +208,7 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 				`1`: {"B"},
 			},
 		}},
-		{"PkgRequireSameLevel", &enumMembers{
+		{"PkgRequireSameLevel", enumMembers{
 			[]string{"PA"},
 			map[string]constantValue{
 				"PA": `200`,
@@ -217,7 +217,7 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 				`200`: {"PA"},
 			},
 		}},
-		{"UIntEnum", &enumMembers{
+		{"UIntEnum", enumMembers{
 			[]string{"UIntA", "UIntB"},
 			map[string]constantValue{
 				"UIntA": "0",
@@ -228,7 +228,7 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 				"1": {"UIntB"},
 			},
 		}},
-		{"StringEnum", &enumMembers{
+		{"StringEnum", enumMembers{
 			[]string{"StringA", "StringB", "StringC"},
 			map[string]constantValue{
 				"StringA": `"stringa"`,
@@ -241,7 +241,7 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 				`"stringc"`: {"StringC"},
 			},
 		}},
-		{"RuneEnum", &enumMembers{
+		{"RuneEnum", enumMembers{
 			[]string{"RuneA"},
 			map[string]constantValue{
 				"RuneA": `97`,
@@ -250,7 +250,7 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 				`97`: {"RuneA"},
 			},
 		}},
-		{"ByteEnum", &enumMembers{
+		{"ByteEnum", enumMembers{
 			[]string{"ByteA"},
 			map[string]constantValue{
 				"ByteA": `97`,
@@ -259,7 +259,7 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 				`97`: {"ByteA"},
 			},
 		}},
-		{"Int32Enum", &enumMembers{
+		{"Int32Enum", enumMembers{
 			[]string{"Int32A", "Int32B"},
 			map[string]constantValue{
 				"Int32A": "0",
@@ -270,7 +270,7 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 				"1": {"Int32B"},
 			},
 		}},
-		{"Float64Enum", &enumMembers{
+		{"Float64Enum", enumMembers{
 			[]string{"Float64A", "Float64B"},
 			map[string]constantValue{
 				"Float64A": `0`,
@@ -288,7 +288,7 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 	}
 
 	wantInner := []checkEnum{
-		{"InnerRequireSameLevel", &enumMembers{
+		{"InnerRequireSameLevel", enumMembers{
 			[]string{"IX", "IY"},
 			map[string]constantValue{
 				"IX": `200`,
@@ -298,7 +298,7 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 				`200`: {"IX", "IY"},
 			},
 		}},
-		{"T", &enumMembers{
+		{"T", enumMembers{
 			[]string{"C", "D", "E", "F"},
 			map[string]constantValue{
 				"C": `0`,
@@ -313,7 +313,7 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 				`43`: {"F"},
 			},
 		}},
-		{"T", &enumMembers{
+		{"T", enumMembers{
 			[]string{"A", "B"},
 			map[string]constantValue{
 				"A": `0`,

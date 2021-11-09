@@ -225,7 +225,7 @@ func analyzeCaseClauseExpr(e ast.Expr, info *types.Info, samePkg bool, found fun
 
 // diagnosticMissingMembers constructs the list of missing enum members,
 // suitable for use in a reported diagnostic message.
-func diagnosticMissingMembers(missingMembers []string, em *enumMembers) []string {
+func diagnosticMissingMembers(missingMembers []string, em enumMembers) []string {
 	missingByConstVal := make(map[constantValue][]string) // missing members, keyed by constant value.
 	for _, m := range missingMembers {
 		val := em.NameToValue[m]
@@ -250,9 +250,9 @@ func diagnosticEnumTypeName(enumType *types.TypeName, samePkg bool) string {
 	return enumType.Pkg().Name() + "." + enumType.Name()
 }
 
-func makeDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumTyp enumType, allMembers *enumMembers, missingMembers []string) analysis.Diagnostic {
+func makeDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumTyp enumType, allMembers enumMembers, missingMembers []string) analysis.Diagnostic {
 	message := fmt.Sprintf("missing cases in switch of type %s: %s",
-		diagnosticEnumTypeName(enumTyp.tn, samePkg),
+		diagnosticEnumTypeName(enumTyp.TypeName, samePkg),
 		strings.Join(diagnosticMissingMembers(missingMembers, allMembers), ", "))
 
 	return analysis.Diagnostic{

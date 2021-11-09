@@ -1,10 +1,7 @@
 ## exhaustive [![Godoc][2]][1]
 
-The `exhaustive` package and the related command line program (found in
-`cmd/exhaustive`) can be used to check exhaustiveness of enum switch
-statements in Go code.
-
-Install the command:
+The exhaustive package and command line program
+check enum switch statements in Go source code for exhaustiveness.
 
 ```
 go install github.com/nishanths/exhaustive/cmd/exhaustive@latest
@@ -18,7 +15,7 @@ For the changelog, see [CHANGELOG][changelog] in the wiki.
 
 The package provides an `Analyzer` that follows the guidelines in the
 [`go/analysis`][3] package; this should make it possible to integrate
-with external analysis driver programs.
+exhaustive with your own analysis driver program.
 
 ### Known issues
 
@@ -60,7 +57,7 @@ func processToken(t token.Token) {
 }
 ```
 
-running `exhaustive`
+running exhaustive
 
 ```
 exhaustive ./calc/...

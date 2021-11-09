@@ -13,11 +13,11 @@ import (
 //
 // Only interact via its methods. It is not safe for concurrent use.
 type checklist struct {
-	em *enumMembers
+	em enumMembers
 	m  map[string]struct{} // remaining unsatisfied member names
 }
 
-func makeChecklist(em *enumMembers, enumPkg *types.Package, includeUnexported bool, ignore *regexp.Regexp) *checklist {
+func makeChecklist(em enumMembers, enumPkg *types.Package, includeUnexported bool, ignore *regexp.Regexp) *checklist {
 	m := make(map[string]struct{})
 
 	add := func(memberName string) {
