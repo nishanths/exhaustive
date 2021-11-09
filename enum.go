@@ -86,7 +86,7 @@ func findEnums(pkgScopeOnly bool, pkg *types.Package, inspect *inspector.Inspect
 func possibleEnumMember(constName *ast.Ident, info *types.Info) (et enumType, name string, val constantValue, ok bool) {
 	obj := info.Defs[constName]
 	if obj == nil {
-		return enumType{}, "", "", false
+		panic(fmt.Sprintf("info.Defs[%s] == nil", constName))
 	}
 	if _, ok = obj.(*types.Const); !ok {
 		panic(fmt.Sprintf("obj must be *types.Const, got %T", obj))
