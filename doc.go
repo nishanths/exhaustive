@@ -41,7 +41,7 @@ exported and unexported enum members must be listed to satisfy exhaustiveness.
 For an enum type defined in an external package, it is sufficient that only the
 exported enum members be listed to satisfy exhaustiveness.
 
-Type aliases and exhaustiveness
+Exhaustiveness and type aliases
 
 The type alias proposal says that in a type alias declaration:
 
