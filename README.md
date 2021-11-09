@@ -66,7 +66,5 @@ calc.go:6:2: missing cases in switch of type token.Token: Quotient, Remainder
 [1]: https://godoc.org/github.com/nishanths/exhaustive
 [2]: https://godoc.org/github.com/nishanths/exhaustive?status.svg
 [3]: https://pkg.go.dev/golang.org/x/tools/go/analysis
-[4]: https://go.googlesource.com/proposal/+/master/design/18130-type-alias.md
-[5]: https://github.com/nishanths/exhaustive/issues/13
 [6]: https://pkg.go.dev/github.com/nishanths/exhaustive#section-documentation
 [changelog]: https://github.com/nishanths/exhaustive/wiki/CHANGELOG
