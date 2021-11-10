@@ -67,8 +67,8 @@ is exhaustive even though it lists no T2 members explicitly:
     package bar
     type T2 rune // T2 is an enum type with enum members: A, B.
     const (
-        A = 'a'
-        B = 'b'
+        A T2 = 'a'
+        B T2 = 'b'
     )
 
     package foo
@@ -80,12 +80,12 @@ is exhaustive even though it lists no T2 members explicitly:
     )
     func ReturnsT1() T1 { ... }
 
-    package main
+    package quux
     import "foo"
     func x() {
-        switch foo.ReturnsT1() { // Switch tag's type is bar.T2, according to Go type analysis.
-        case foo.A:              // The analyzer considers foo.A equivalent to bar.A (same name, same value).
-        case foo.B:              // The analyzer considers foo.B equivalent to bar.B (same name, same value).
+        switch foo.ReturnsT1() { // Switch tag type is bar.T2 according to go/types.
+        case foo.A: // The analyzer considers foo.A equivalent to bar.A (same name, same value).
+        case foo.B: // The analyzer considers foo.B equivalent to bar.B (same name, same value).
         }
     }
 
