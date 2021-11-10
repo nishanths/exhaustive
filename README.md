@@ -19,7 +19,7 @@ exhaustive with your own analysis driver program.
 
 Given the enum
 
-```
+```go
 package env
 
 type Environment string
@@ -30,21 +30,21 @@ const (
 	Dev        Environment = "dev"
 )
 
-func Current() Environment { ... }
+func Current() Environment { /* ... */ }
 ```
 
 and the switch statement
 
-```
+```go
 package app
 
 import "example/pkg/env"
 
-func readFile(path string) ([]byte, error) {
+func f() {
 	switch env.Current() {
-	case env.Production: ...
-	case env.Dev: ...
-	default: ...
+	case env.Production:
+	case env.Dev:
+	default:
 	}
 }
 ```
