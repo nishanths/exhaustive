@@ -9,7 +9,7 @@ type T1 = bar.T2
 const (
     A        = bar.A // matches bar.A by value; can be listed in switch case instead of bar.A
     B        = bar.B // matches bar.B by value; can be listed in switch case instead of bar.B
-    C bar.T2 = "+"   // matches bar.C by value; can be listed instead of foo.C in switch
+    C bar.T2 = "+"   // matches bar.C by value; can be listed instead of bar.C in switch
     F T1     = "|"   // matches bar.F by value (type does not matter); can be listed in switch case instead of bar.F
     H bar.T2 = "<"   // matches bar.I by value (name does not matter); can be listed in switch case instead of bar.I
 
