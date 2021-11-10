@@ -15,7 +15,7 @@ The package provides an `Analyzer` that follows the guidelines in the
 [`go/analysis`][3] package; this should make it possible to integrate
 exhaustive with your own analysis driver program.
 
-### Example
+## Example
 
 Given the enum
 
@@ -54,6 +54,11 @@ running exhaustive will print
 ```
 app.go:6:2: missing cases in switch of type env.Environment: Staging
 ```
+
+## Contributing
+
+Issues and pull requests are welcome. Before making a substantial
+change, please discuss it in an issue.
 
 [1]: https://godoc.org/github.com/nishanths/exhaustive
 [2]: https://godoc.org/github.com/nishanths/exhaustive?status.svg

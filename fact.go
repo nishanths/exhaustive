@@ -1,11 +1,9 @@
 package exhaustive
 
-import (
-	"golang.org/x/tools/go/analysis"
-)
+import "golang.org/x/tools/go/analysis"
 
 // NOTE: Fact types must remain gob-coding compatible.
-// See fact_gob_test.go.
+// See TestFactsGob.
 
 var _ analysis.Fact = (*enumMembersFact)(nil)
 

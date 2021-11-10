@@ -40,8 +40,8 @@ const (
 // of enum switch statements for the supplied pass, and reports diagnostics for
 // switch statements that are non-exhaustive.
 func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
-	comments := make(map[*ast.File]ast.CommentMap)
-	generated := make(map[*ast.File]bool)
+	generated := make(map[*ast.File]bool)          // cached results
+	comments := make(map[*ast.File]ast.CommentMap) // cached results
 
 	return func(n ast.Node, push bool, stack []ast.Node) (bool, string) {
 		if !push {
@@ -184,7 +184,6 @@ func analyzeSwitchClauses(sw *ast.SwitchStmt, tagPkg *types.Package, members map
 	return hasDefaultCase
 }
 
-// Helper for analyzeSwitchClauses. See docs there.
 func analyzeCaseClauseExpr(e ast.Expr, tagPkg *types.Package, members map[string]constantValue, info *types.Info, found func(val constantValue)) {
 	handleIdent := func(ident *ast.Ident) {
 		obj := info.Uses[ident]
@@ -227,9 +226,9 @@ func analyzeCaseClauseExpr(e ast.Expr, tagPkg *types.Package, members map[string
 		//   }
 		//
 		// In this scenario, too, we accept the case clause expr constant
-		// by value, as is. If the Go type checker is okay with the
+		// value, as is. If the Go type checker is okay with the
 		// name being listed in the case clause, we don't care much further.
-
+		//
 		found(determineConstVal(ident, info))
 	}
 
@@ -305,4 +304,59 @@ func mapToSlice(m map[string]struct{}) []string {
 		out = append(out, k)
 	}
 	return out
+}
+
+// A checklist holds a set of enum member names that have to be
+// accounted for to satisfy exhaustiveness in an enum switch statement.
+//
+// The found method checks off member names from the set, based on
+// constant value, when a constant value is encoutered in the switch
+// statement's cases.
+//
+// The remaining method returns the member names not accounted for.
+//
+type checklist struct {
+	em    enumMembers
+	names map[string]struct{}
+}
+
+func makeChecklist(em enumMembers, enumPkg *types.Package, includeUnexported bool, ignore *regexp.Regexp) *checklist {
+	m := make(map[string]struct{})
+
+	add := func(memberName string) {
+		if memberName == "_" {
+			// Blank identifier is often used to skip entries in iota lists.
+			// Also, it can't be referenced anywhere (including in a switch
+			// statement's cases), so it doesn't make sense to include it
+			// as required member to satisfy exhaustiveness.
+			return
+		}
+		if !ast.IsExported(memberName) && !includeUnexported {
+			return
+		}
+		if ignore != nil && ignore.MatchString(enumPkg.Path()+"."+memberName) {
+			return
+		}
+		m[memberName] = struct{}{}
+	}
+
+	for _, name := range em.Names {
+		add(name)
+	}
+
+	return &checklist{
+		em:    em,
+		names: m,
+	}
+}
+
+func (c *checklist) found(val constantValue) {
+	// Delete all of the same-valued names.
+	for _, name := range c.em.ValueToNames[val] {
+		delete(c.names, name)
+	}
+}
+
+func (c *checklist) remaining() map[string]struct{} {
+	return c.names
 }
