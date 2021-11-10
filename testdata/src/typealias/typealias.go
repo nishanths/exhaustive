@@ -141,3 +141,13 @@ func _l() {
 	switch v { // want "^missing cases in switch of type anotherpkg.T1: T1_A$"
 	}
 }
+
+// --
+
+func d1() typealias.D1 { return struct{}{} }
+
+func _m() {
+	v := d1()
+	switch v {
+	}
+}
