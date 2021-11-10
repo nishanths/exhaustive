@@ -1,7 +1,7 @@
 package otherpkg
 
 import (
-	d "duplicateenumvalue"
+	d "duplicate-enum-value"
 )
 
 func _p() {

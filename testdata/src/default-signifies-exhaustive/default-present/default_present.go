@@ -1,6 +1,6 @@
 package present
 
-import "defaultsignifiesexhaustive"
+import dse "default-signifies-exhaustive"
 
 func _a(t dse.T) {
 	// expect no diagnostics, since default case is present,

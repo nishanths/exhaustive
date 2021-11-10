@@ -1,6 +1,7 @@
 package exhaustive
 
 import (
+	"flag"
 	"log"
 	"os"
 	"regexp"
@@ -9,6 +10,36 @@ import (
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/inspector"
 )
+
+var _ flag.Value = (*regexpFlag)(nil)
+
+// regexpFlag implements the flag.Value interface for parsing
+// regular expression flag values.
+type regexpFlag struct{ r *regexp.Regexp }
+
+func (v *regexpFlag) String() string {
+	if v == nil || v.r == nil {
+		return ""
+	}
+	return v.r.String()
+}
+
+func (v *regexpFlag) Set(expr string) error {
+	if expr == "" {
+		v.r = nil
+		return nil
+	}
+
+	r, err := regexp.Compile(expr)
+	if err != nil {
+		return err
+	}
+
+	v.r = r
+	return nil
+}
+
+func (v *regexpFlag) value() *regexp.Regexp { return v.r }
 
 // Flag names used by the analyzer. They are exported for use by analyzer
 // driver programs.
@@ -72,7 +103,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	cfg := config{
 		defaultSignifiesExhaustive: fDefaultSignifiesExhaustive,
 		checkGeneratedFiles:        fCheckGeneratedFiles,
-		ignoreEnumMembers:          fIgnoreEnumMembers.Get().(*regexp.Regexp),
+		ignoreEnumMembers:          fIgnoreEnumMembers.value(),
 	}
 	checkSwitchStatements(pass, inspect, cfg)
 	return nil, nil

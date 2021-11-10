@@ -7,79 +7,115 @@ import (
 	"golang.org/x/tools/go/analysis/analysistest"
 )
 
+func TestRegexpFlag(t *testing.T) {
+	t.Run("not set", func(t *testing.T) {
+		var v regexpFlag
+		if got := v.value(); got != nil {
+			t.Errorf("want nil, got %+v", got)
+		}
+		if got := v.String(); got != "" {
+			t.Errorf("expected empty string, got %q", got)
+		}
+	})
+
+	t.Run("empty input", func(t *testing.T) {
+		var v regexpFlag
+		if err := v.Set(""); err != nil {
+			t.Errorf("error unexpectedly non-nil: %v", err)
+		}
+		if got := v.value(); got != nil {
+			t.Errorf("want nil, got %+v", got)
+		}
+		if got := v.String(); got != "" {
+			t.Errorf("expected empty string, got %q", got)
+		}
+	})
+
+	t.Run("bad input", func(t *testing.T) {
+		var v regexpFlag
+		if err := v.Set("("); err == nil {
+			t.Errorf("error unexpectedly nil")
+		}
+		if got := v.value(); got != nil {
+			t.Errorf("want nil, got %+v", got)
+		}
+		if got := v.String(); got != "" {
+			t.Errorf("expected empty string, got %q", got)
+		}
+	})
+
+	t.Run("good input", func(t *testing.T) {
+		var v regexpFlag
+		if err := v.Set("^foo$"); err != nil {
+			t.Errorf("error unexpectedly non-nil: %v", err)
+		}
+		if v.value() == nil {
+			t.Errorf("unexpectedly nil")
+		}
+		if !v.value().MatchString("foo") {
+			t.Errorf("did not match")
+		}
+		if got, want := v.String(), regexp.MustCompile("^foo$").String(); got != want {
+			t.Errorf("want %q, got %q", got, want)
+		}
+	})
+
+	// The flag.Value interface doc says: "The flag package may call the
+	// String method with a zero-valued receiver, such as a nil pointer."
+	t.Run("String() nil receiver", func(t *testing.T) {
+		var v *regexpFlag
+		// expect no panic, and ...
+		if got := v.String(); got != "" {
+			t.Errorf("expected empty string, got %q", got)
+		}
+	})
+}
+
 func TestExhaustive(t *testing.T) {
+	run := func(t *testing.T, pattern string, setup ...func()) {
+		t.Helper()
+		t.Run(pattern, func(t *testing.T) {
+			resetFlags()
+			for _, f := range setup {
+				f()
+			}
+			analysistest.Run(t, analysistest.TestData(), Analyzer, pattern)
+		})
+	}
+
 	// Enum discovery.
-	t.Run("enum", func(t *testing.T) {
-		resetFlags()
-		analysistest.Run(t, analysistest.TestData(), Analyzer, "enum/...")
-	})
+	run(t, "enum...")
 
-	// Switch statements with ignore directive comment should not
-	// have diagnostics.
-	t.Run("ignore directive comment", func(t *testing.T) {
-		resetFlags()
-		analysistest.Run(t, analysistest.TestData(), Analyzer, "ignorecomment/...")
-	})
-
-	// For an enum switch to be exhaustive, it is sufficient for each unique
-	// constant value of the members to be listed, not each member by name.
-	t.Run("duplicate enum value", func(t *testing.T) {
-		resetFlags()
-		analysistest.Run(t, analysistest.TestData(), Analyzer, "duplicateenumvalue/...")
-	})
+	// Tests for the -check-generated flag.
+	run(t, "generated-file/check-generated-off...")
+	run(t, "generated-file/check-generated-on...", func() { fCheckGeneratedFiles = true })
 
 	// Tests for the -default-signifies-exhaustive flag.
-	t.Run("default signifies exhaustive", func(t *testing.T) {
-		resetFlags()
-		fDefaultSignifiesExhaustive = true
+	// (For tests with this flag off, see other testdata packages
+	// such as "general...".)
+	run(t, "default-signifies-exhaustive/default-absent...", func() { fDefaultSignifiesExhaustive = true })
+	run(t, "default-signifies-exhaustive/default-present...", func() { fDefaultSignifiesExhaustive = true })
 
-		t.Run("default case absent", func(t *testing.T) {
-			analysistest.Run(t, analysistest.TestData(), Analyzer, "defaultsignifiesexhaustive/defaultabsent/...")
-		})
-
-		t.Run("default case present", func(t *testing.T) {
-			analysistest.Run(t, analysistest.TestData(), Analyzer, "defaultsignifiesexhaustive/defaultpresent/...")
-		})
+	// Tests for the -ignore-enum-member flag.
+	run(t, "ignore-enum-member...", func() {
+		re := regexp.MustCompile(`_UNSPECIFIED$|^general/y\.Echinodermata$|^ignore-enum-member.User$`)
+		fIgnoreEnumMembers = regexpFlag{re}
 	})
 
-	// There should be no diagnostics for missing enum members that match the
-	// supplied regular expression.
-	t.Run("ignore enum member", func(t *testing.T) {
-		resetFlags()
-		fIgnoreEnumMembers = regexpFlag{regexp.MustCompile(`_UNSPECIFIED$|^general/y\.Echinodermata$|^ignoreenummember.User$`)}
-		analysistest.Run(t, analysistest.TestData(), Analyzer, "ignoreenummember/...")
-	})
+	// Tests for -package-scope-only flag.
+	run(t, "scope/allscope...")
+	run(t, "scope/pkgscope...", func() { fPackageScopeOnly = true })
 
-	// Generated files should not have diagnostics.
-	t.Run("generated file", func(t *testing.T) {
-		resetFlags()
-		analysistest.Run(t, analysistest.TestData(), Analyzer, "generated/...")
-	})
+	// Switch statements with ignore directive comment should not be checked.
+	run(t, "ignore-comment...")
 
-	// Switch statements using package-scoped and inner-scoped enums.
-	t.Run("scope", func(t *testing.T) {
-		t.Run("all scopes", func(t *testing.T) {
-			resetFlags()
-			fPackageScopeOnly = false
-			analysistest.Run(t, analysistest.TestData(), Analyzer, "scope/allscope/...")
-		})
-
-		t.Run("package scope only", func(t *testing.T) {
-			resetFlags()
-			fPackageScopeOnly = true
-			analysistest.Run(t, analysistest.TestData(), Analyzer, "scope/pkgscope/...")
-		})
-	})
+	// For satisfy exhaustiveness, it is sufficient for each unique constant
+	// value of the members to be listed, not each member by name.
+	run(t, "duplicate-enum-value...")
 
 	// Type alias switch statements.
-	t.Run("type alias", func(t *testing.T) {
-		resetFlags()
-		analysistest.Run(t, analysistest.TestData(), Analyzer, "typealias/...")
-	})
+	run(t, "typealias...")
 
 	// General tests (a mixture).
-	t.Run("general", func(t *testing.T) {
-		resetFlags()
-		analysistest.Run(t, analysistest.TestData(), Analyzer, "general/...")
-	})
+	run(t, "general...")
 }
