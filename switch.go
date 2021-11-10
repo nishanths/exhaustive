@@ -238,13 +238,11 @@ func analyzeCaseClauseExpr(e ast.Expr, tagPkg *types.Package, members map[string
 		handleIdent(e)
 
 	case *ast.SelectorExpr:
-		// Check that X, which is everything except the rightmost *ast.Ident (or
-		// Sel), is also an *ast.Ident, and that it refers to the package
-		// of the enum type.
-		x := astutil.Unparen(e.X)
-
 		// Ensure we only see the form `pkg.Const`, and not e.g. `structVal.f`
 		// or `structVal.inner.f`.
+		// Check that X, which is everything except the rightmost *ast.Ident (or
+		// Sel), is also an *ast.Ident.
+		x := astutil.Unparen(e.X)
 		ident, ok := x.(*ast.Ident)
 		if !ok {
 			return
@@ -321,7 +319,7 @@ type checklist struct {
 }
 
 func makeChecklist(em enumMembers, enumPkg *types.Package, includeUnexported bool, ignore *regexp.Regexp) *checklist {
-	m := make(map[string]struct{})
+	names := make(map[string]struct{})
 
 	add := func(memberName string) {
 		if memberName == "_" {
@@ -337,7 +335,7 @@ func makeChecklist(em enumMembers, enumPkg *types.Package, includeUnexported boo
 		if ignore != nil && ignore.MatchString(enumPkg.Path()+"."+memberName) {
 			return
 		}
-		m[memberName] = struct{}{}
+		names[memberName] = struct{}{}
 	}
 
 	for _, name := range em.Names {
@@ -346,7 +344,7 @@ func makeChecklist(em enumMembers, enumPkg *types.Package, includeUnexported boo
 
 	return &checklist{
 		em:    em,
-		names: m,
+		names: names,
 	}
 }
 

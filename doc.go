@@ -34,9 +34,9 @@ constant value.
 Definition of exhaustiveness
 
 A switch statement that switches on a value of an enum type is exhaustive if all
-of the enum type's members are listed in the switch statement's cases. If multiple
-enum members have the same constant value, it is sufficient that any one of
-these same-valued members is listed.
+of the enum type's members are listed in the switch statement's cases. If
+multiple enum member constants have the same constant value, it is sufficient
+that any one of these same-valued members is listed.
 
 For an enum type defined in the same package as the switch statement, both
 exported and unexported enum members must be listed to satisfy exhaustiveness.
@@ -44,8 +44,8 @@ For an enum type defined in an external package, it is sufficient that only the
 exported enum members are listed.
 
 Only identifiers denoting constants (e.g. Tundra) and qualified identifiers
-denoting constants (e.g. enumpkg.Member) listed in switch statement cases can
-contribute towards satisfying exhaustiveness. Literal constant values (e.g. 1,
+denoting constants (e.g. mypkg.Constant) listed in switch statement cases can
+contribute towards satisfying exhaustiveness. Literal constant values (e.g. 42,
 "Sunday"), struct fields (e.g. obj.f), etc. will not.
 
 Type aliases
@@ -87,16 +87,16 @@ Recall from an earlier section that for a constant to be an enum member for an
 enum type, the constant must be declared in the same scope as the enum type.
 However it is valid, both to the Go type checker and to this analyzer, for any
 constant of the right type to be listed in the cases of an enum switch statement
-(it does not necessarily have to a constant declared in the same scope/package
+(it does not necessarily have to be a constant declared in the same scope/package
 as the enum type's scope/package).
 
 Such a constant can contribute towards satisfying switch statement
-exhaustiveness if it has the same constant value as an actual enum member—the
-constant can take the place of the same-valued enum member in the switch
-statement's cases. This behavior is particularly useful when a type alias is
-involved: A forwarding const declaration (such as pkg.A, in type T1's package)
-can take the place of the actual enum member const (such as otherpkg.A, in type
-T2's package) in the switch statement's cases.
+exhaustiveness if it has the same constant value as an actual enum member
+constant—the constant can take the place of the same-valued enum member constant
+in the switch statement's cases. This behavior is particularly useful when a
+type alias is involved: A forwarding const declaration (such as pkg.A, in type
+T1's package) can take the place of the actual enum member const (such as
+otherpkg.A, in type T2's package) in the switch statement's cases.
 
 Flags
 

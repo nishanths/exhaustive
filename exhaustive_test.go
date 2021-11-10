@@ -83,7 +83,7 @@ func TestExhaustive(t *testing.T) {
 		})
 	}
 
-	// Enum discovery.
+	// Enum discovery, enum types.
 	run(t, "enum...")
 
 	// Tests for the -check-generated flag.
@@ -109,7 +109,7 @@ func TestExhaustive(t *testing.T) {
 	// Switch statements with ignore directive comment should not be checked.
 	run(t, "ignore-comment...")
 
-	// For satisfy exhaustiveness, it is sufficient for each unique constant
+	// To satisfy exhaustiveness, it is sufficient for each unique constant
 	// value of the members to be listed, not each member by name.
 	run(t, "duplicate-enum-value...")
 

@@ -7,7 +7,6 @@ import (
 
 func x() {
     var v foo.T1 = foo.ReturnsT1()
-
     switch v { // want "^missing cases in switch of type bar.T2: D, E$"
     case foo.A:
     case bar.B:
