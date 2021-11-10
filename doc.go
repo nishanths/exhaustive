@@ -61,9 +61,6 @@ As a side note, it is worth noting that only constants declared in the same
 package as the type T2 can constitute T2's enum members (as defined in section
 'Definition of enum').
 
-For a thorough example, see the test case in
-testdata/src/typealias/quux/quux.go.
-
 [*] https://go.googlesource.com/proposal/+/master/design/18130-type-alias.md#proposal
 
 Flags
