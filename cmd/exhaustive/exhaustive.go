@@ -1,6 +1,20 @@
 // Command exhaustive checks exhaustiveness of enum switch statements.
 //
-// For documentation see https://godoc.org/github.com/nishanths/exhaustive.
+// Usage
+//
+// The command line usage is:
+//
+//    exhaustive [flags] [packages]
+//
+// The program checks exhaustiveness of enum switch statements found in the
+// specified packages. The enums required for the analysis don't necessarily
+// have to be declared in the specified packages.
+//
+// For more about specifying packages, see 'go help packages'.
+//
+// For help, run 'exhaustive -h'.
+//
+// For more documentation, see https://godoc.org/github.com/nishanths/exhaustive.
 package main
 
 import (

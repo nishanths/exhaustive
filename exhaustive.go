@@ -96,16 +96,15 @@ type.
         B T2 = 2
     )
 
-A switch statement that switches on a value of type T1 (which, in reality, is
-just an alternate spelling for type T2) is exhaustive if all of T2's enum
+Then a switch statement that switches on a value of type T1 (which, in reality,
+is just an alternate spelling for type T2) is exhaustive if all of T2's enum
 members are listed in the switch statement's cases. The same conditions
 described in the previous section for same-valued enum members and for
 exported/unexported enum members apply here too.
 
 It is worth noting that, though T1 and T2 are identical types, only constants
-declared in the same scope as type T2's scope can constitute the enum type T2's
-enum members. In the example, otherpkg.A and otherpkg.B are T2's enum
-members.
+declared in the same scope as type T2's scope can be T2's enum members. In the
+example, otherpkg.A and otherpkg.B are T2's enum members.
 
 Advanced notes
 
@@ -118,16 +117,16 @@ as the enum type's scope/package).
 
 Such a constant can contribute towards satisfying switch statement
 exhaustiveness if it has the same constant value as an actual enum member
-constant—the constant can be a substitute for the enum member constant in the
+constant. The constant can be a substitute for the enum member constant in the
 switch statement's cases. This behavior is particularly useful when a type alias
 is involved: A const declaration (such as pkg.A, in type T1's package) can take
 the place of the actual enum member constant (such as otherpkg.A, in type T2's
 package) in the switch statement's cases.
 
-    var v pkg.T1 = pkg.ReturnsT1() // in effect, this is type otherpkg.T2 due to alias
+    var v pkg.T1 = pkg.ReturnsT1() // in effect, v has type otherpkg.T2 due to alias
     switch v {
-    case pkg.A: // counts toward otherpkg.A
-    case pkg.B: // counts toward otherpkg.B
+    case pkg.A: // can be a substitute for otherpkg.A (both have same value)
+    case pkg.B: // can be a substitute for otherpkg.B (both have same value)
     }
 
 Flags
@@ -166,24 +165,19 @@ on package-scoped enums will be checked for exhaustiveness. By default, the
 analyzer finds enums defined in all scopes, and checks switch statements that
 switch on all these enums.
 
-Skipping analysis
+Skip analysis
 
-To skip checking of a specific switch statement, associate the following comment
-with the switch statement. Note the lack of whitespace between the comment
-marker ("//") and the comment text.
-
-    //exhaustive:ignore
-
-For example:
+To skip checking of a specific switch statement, associate a comment with the
+switch statement, like shown in the example below. Note the lack of whitespace
+between the comment marker ("//") and the comment text.
 
     //exhaustive:ignore
-    switch v {
-
+    switch v { ... }
 
 To ignore specific enum members, see the -ignore-enum-members flag.
 
-By default, the analyzer skips checking of switch statements in generated
-Go source files. Use the -check-generated flag to change this behavior.
+Switch statements in generated Go source files are not checked by default.
+Use the -check-generated flag to change this behavior.
 */
 package exhaustive
 
