@@ -6,17 +6,17 @@ import (
 	"strings"
 )
 
-// Spec
+// Generated file definition
 // http://golang.org/s/generatedcode
 //
-// To convey to humans and machine tools that code is generated, generated
-// source should have a line that matches the following regular expression (in
-// Go syntax):
+//  To convey to humans and machine tools that code is generated, generated
+//  source should have a line that matches the following regular expression (in
+//  Go syntax):
 //
-//   ^// Code generated .* DO NOT EDIT\.$
+//    ^// Code generated .* DO NOT EDIT\.$
 //
-// This line must appear before the first non-comment, non-blank
-// text in the file.
+//  This line must appear before the first non-comment, non-blank
+//  text in the file.
 
 func isGeneratedFile(file *ast.File) bool {
 	// NOTE: file.Comments includes file.Doc as well, so no need
@@ -51,7 +51,6 @@ func isGeneratedFileComment(s string) bool {
 }
 
 // ignoreDirective is used to exclude checking of specific switch statements.
-// See package comment for details.
 const ignoreDirective = "//exhaustive:ignore"
 
 func containsIgnoreDirective(comments []*ast.CommentGroup) bool {

@@ -74,23 +74,6 @@ func _j() {
 	}
 }
 
-func _k(d Direction) {
-	// Parenthesized values in case statements.
-
-	switch d { // want "^missing cases in switch of type Direction: S, directionInvalid$"
-	case (N):
-	case (E):
-	case (W):
-	}
-
-	// Parenthesized values in switch tag.
-	switch d { // want "^missing cases in switch of type Direction: S, directionInvalid$"
-	case N:
-	case E:
-	case W:
-	}
-}
-
 func _f() {
 	// Multiple values in single case.
 
@@ -189,5 +172,18 @@ func _q() {
 	case fs.ModeCharDevice:
 	case fs.ModeSticky:
 	case fs.ModeIrregular:
+	}
+}
+
+func _r(d Direction) {
+	// Raw constants (i.e. not identifier or sel expr)
+	// in case clauses do not count.
+
+	switch d { // want "^missing cases in switch of type Direction: S, directionInvalid$"
+	case N:
+	case E:
+	case 3:
+	case W:
+	case 5:
 	}
 }
