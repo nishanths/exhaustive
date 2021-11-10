@@ -7,7 +7,6 @@ import (
 	"golang.org/x/tools/go/analysis/analysistest"
 )
 
-// Integration-style tests using the analysistest package.
 func TestExhaustive(t *testing.T) {
 	// Enum discovery.
 	t.Run("enum", func(t *testing.T) {
@@ -15,21 +14,21 @@ func TestExhaustive(t *testing.T) {
 		analysistest.Run(t, analysistest.TestData(), Analyzer, "enum/...")
 	})
 
-	// Switch statements associated with the ignore directive comment should not
+	// Switch statements with ignore directive comment should not
 	// have diagnostics.
 	t.Run("ignore directive comment", func(t *testing.T) {
 		resetFlags()
 		analysistest.Run(t, analysistest.TestData(), Analyzer, "ignorecomment/...")
 	})
 
-	// For an enum switch to be exhaustive, it is sufficient for each unique enum
-	// value to be listed, not each unique member by name.
+	// For an enum switch to be exhaustive, it is sufficient for each unique
+	// constant value of the members to be listed, not each member by name.
 	t.Run("duplicate enum value", func(t *testing.T) {
 		resetFlags()
 		analysistest.Run(t, analysistest.TestData(), Analyzer, "duplicateenumvalue/...")
 	})
 
-	// Tests for the the default-signifies-exhaustive flag.
+	// Tests for the -default-signifies-exhaustive flag.
 	t.Run("default signifies exhaustive", func(t *testing.T) {
 		resetFlags()
 		fDefaultSignifiesExhaustive = true
@@ -43,11 +42,11 @@ func TestExhaustive(t *testing.T) {
 		})
 	})
 
-	// No diagnostics for missing enum members that match the supplied regular
-	// expression.
+	// There should be no diagnostics for missing enum members that match the
+	// supplied regular expression.
 	t.Run("ignore enum member", func(t *testing.T) {
 		resetFlags()
-		fIgnoreEnumMembers = regexpFlag{regexp.MustCompile(`_UNSPECIFIED$|^general/y\.Echinodermata$`)}
+		fIgnoreEnumMembers = regexpFlag{regexp.MustCompile(`_UNSPECIFIED$|^general/y\.Echinodermata$|^ignoreenummember.User$`)}
 		analysistest.Run(t, analysistest.TestData(), Analyzer, "ignoreenummember/...")
 	})
 

@@ -51,7 +51,7 @@ func TestChecklist(t *testing.T) {
 			"G": {},
 		})
 
-		checklist.found("A")
+		checklist.found(`1`)
 		checkRemaining(t, checklist, map[string]struct{}{
 			"B": {},
 			"C": {},
@@ -61,7 +61,7 @@ func TestChecklist(t *testing.T) {
 			"G": {},
 		})
 
-		checklist.found("B")
+		checklist.found(`2`)
 		checkRemaining(t, checklist, map[string]struct{}{
 			"C": {},
 			"E": {},
@@ -69,27 +69,34 @@ func TestChecklist(t *testing.T) {
 		})
 
 		// repeated call should be a no-op.
-		checklist.found("B")
+		checklist.found(`2`)
 		checkRemaining(t, checklist, map[string]struct{}{
 			"C": {},
 			"E": {},
 			"G": {},
 		})
 
-		checklist.found("F")
+		checklist.found(`2`)
 		checkRemaining(t, checklist, map[string]struct{}{
 			"C": {},
 			"E": {},
 			"G": {},
 		})
 
-		checklist.found("C")
+		checklist.found(`5`)
 		checkRemaining(t, checklist, map[string]struct{}{
 			"E": {},
 			"G": {},
 		})
 
-		checklist.found("E")
+		// unknown value
+		checklist.found(`100000`)
+		checkRemaining(t, checklist, map[string]struct{}{
+			"E": {},
+			"G": {},
+		})
+
+		checklist.found(`3`)
 		checkRemaining(t, checklist, map[string]struct{}{
 			"G": {},
 		})

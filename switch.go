@@ -108,8 +108,8 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 		checkUnexported := samePkg    // we want to include unexported members in the exhaustiveness check only if we're in the same package
 		checklist := makeChecklist(members, tagPkg, checkUnexported, cfg.ignoreEnumMembers)
 
-		hasDefaultCase := analyzeSwitchClauses(sw, pass.TypesInfo, samePkg, func(memberName string) {
-			checklist.found(memberName)
+		hasDefaultCase := analyzeSwitchClauses(sw, tagPkg, members.NameToValue, pass.TypesInfo, func(val constantValue) {
+			checklist.found(val)
 		})
 
 		if len(checklist.remaining()) == 0 {
@@ -150,26 +150,27 @@ func isDefaultCase(c *ast.CaseClause) bool {
 	return c.List == nil // see doc comment on List field
 }
 
-// isPackageNameIdent returns whether ident represents an imported Go package.
-func isPackageNameIdent(ident *ast.Ident, info *types.Info) bool {
+func denotesPackage(ident *ast.Ident, info *types.Info) (*types.Package, bool) {
 	obj := info.ObjectOf(ident)
 	if obj == nil {
-		return false
+		return nil, false
 	}
-	_, ok := obj.(*types.PkgName)
-	return ok
+	n, ok := obj.(*types.PkgName)
+	if !ok {
+		return nil, false
+	}
+	return n.Imported(), true
 }
 
 // analyzeSwitchClauses analyzes the clauses in the supplied switch statement.
 //
-// The info param should typically be pass.TypesInfo. The samePkg param
-// indicates whether the switch tag type and the switch statement live in the
-// same package. The found function is called for each enum member name found in
-// the switch statement.
+// tagPkg is the package of the switch statement's tag value's type.
+// The info param should typically be pass.TypesInfo. The found function is
+// called for each enum member name found in the switch statement.
 //
 // The hasDefaultCase return value indicates whether the switch statement has a
 // default clause.
-func analyzeSwitchClauses(sw *ast.SwitchStmt, info *types.Info, samePkg bool, found func(identName string)) (hasDefaultCase bool) {
+func analyzeSwitchClauses(sw *ast.SwitchStmt, tagPkg *types.Package, members map[string]constantValue, info *types.Info, found func(val constantValue)) (hasDefaultCase bool) {
 	for _, stmt := range sw.Body.List {
 		caseCl := stmt.(*ast.CaseClause)
 		if isDefaultCase(caseCl) {
@@ -177,49 +178,86 @@ func analyzeSwitchClauses(sw *ast.SwitchStmt, info *types.Info, samePkg bool, fo
 			continue // nothing more to do if it's the default case
 		}
 		for _, expr := range caseCl.List {
-			analyzeCaseClauseExpr(expr, info, samePkg, found)
+			analyzeCaseClauseExpr(expr, tagPkg, members, info, found)
 		}
 	}
 	return hasDefaultCase
 }
 
 // Helper for analyzeSwitchClauses. See docs there.
-func analyzeCaseClauseExpr(e ast.Expr, info *types.Info, samePkg bool, found func(identName string)) {
-	e = astutil.Unparen(e)
+func analyzeCaseClauseExpr(e ast.Expr, tagPkg *types.Package, members map[string]constantValue, info *types.Info, found func(val constantValue)) {
+	handleIdent := func(ident *ast.Ident) {
+		obj := info.Uses[ident]
+		if obj == nil {
+			return
+		}
+		if _, ok := obj.(*types.Const); !ok {
+			return
+		}
 
-	if samePkg {
-		ident, ok := e.(*ast.Ident)
+		// There are two scenarios.
+		// See related test cases in typealias/quux/quux.go.
+		//
+		// ### Scenario 1
+		//
+		// Tag package and constant package are the same.
+		//
+		// For example:
+		//   var mode fs.FileMode
+		//   switch mode {
+		//   case fs.ModeDir:
+		//   }
+		//
+		// This is simple: we just use fs.ModeDir's value.
+		//
+		// ### Scenario 2
+		//
+		// Tag package and constant package are different.
+		//
+		// For example:
+		//   var mode fs.FileMode
+		//   switch mode {
+		//   case os.ModeDir:
+		//   }
+		//
+		// Or equivalently:
+		//   var mode os.FileMode // in effect, fs.FileMode because of type alias in package os
+		//   switch mode {
+		//   case os.ModeDir:
+		//   }
+		//
+		// In this scenario, too, we accept the case clause expr constant
+		// by value, as is. If the Go type checker is okay with the
+		// name being listed in the case clause, we don't care much further.
+
+		found(determineConstVal(ident, info))
+	}
+
+	e = astutil.Unparen(e)
+	switch e := e.(type) {
+	case *ast.Ident:
+		handleIdent(e)
+
+	case *ast.SelectorExpr:
+		// Check that X, which is everything except the rightmost *ast.Ident (or
+		// Sel), is also an *ast.Ident, and that it refers to the package
+		// of the enum type.
+		x := astutil.Unparen(e.X)
+
+		// Ensure we only see the form `pkg.Const`, and not e.g. `structVal.f`
+		// or `structVal.inner.f`.
+		ident, ok := x.(*ast.Ident)
 		if !ok {
 			return
 		}
-		found(ident.Name)
-		return
+		// Doesn't matter which package, just that it denotes a package.
+		_, ok = denotesPackage(ident, info)
+		if !ok {
+			return
+		}
+
+		handleIdent(e.Sel)
 	}
-
-	selExpr, ok := e.(*ast.SelectorExpr)
-	if !ok {
-		return
-	}
-
-	// Check that X (which is everything except the rightmost *ast.Ident, or
-	// the Sel) is also an *ast.Ident, and particularly that it is a package
-	// name identifier.
-	x := astutil.Unparen(selExpr.X)
-	ident, ok := x.(*ast.Ident)
-	if !ok {
-		return
-	}
-
-	if !isPackageNameIdent(ident, info) {
-		return
-	}
-
-	// TODO: ident represents a package at this point; check if it represents
-	// the enum package? (Is this additional check necessary? Wouldn't the type
-	// checker have already failed if this wasn't the case?)
-	// This may need additional thought for type aliases, too.
-
-	found(selExpr.Sel.Name)
 }
 
 // diagnosticMissingMembers constructs the list of missing enum members,

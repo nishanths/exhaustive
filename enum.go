@@ -137,7 +137,7 @@ func possibleEnumMember(constName *ast.Ident, info *types.Info) (et enumType, na
 }
 
 func determineConstVal(name *ast.Ident, info *types.Info) constantValue {
-	c := info.Defs[name].(*types.Const)
+	c := info.ObjectOf(name).(*types.Const)
 	return constantValue(c.Val().ExactString())
 }
 

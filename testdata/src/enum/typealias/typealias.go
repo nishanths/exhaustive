@@ -26,7 +26,12 @@ type (
 )
 
 // through multiple packages.
+// RHS is possible enum.
 type T18 = otherpkg.T19
+
+// Disallowed RHS type.
+type D2 struct{}
+type D1 = D2
 
 // -- Auxiliary types --
 
