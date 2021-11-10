@@ -53,13 +53,16 @@ means that a switch statement that switches on a value of type T1 is, in effect,
 switching on a value of type T2.
 
 If T2 or its underlying type were an enum type, then a switch statement that
-switches on a value of type T1 (which, in effect, is type T2) is exhaustive if
-all of the T2's enum members are listed in the switch statement cases.
+switches on a value of type T1 (which, being an alias for T2, is, in effect,
+type T2) is exhaustive if all of T2's enum members (by constant value) are
+listed in the switch statement cases.
 
-Note that only constants declared in the same package as the type T2 can
-constitute T2's enum members (as defined in section 'Definition of enum').
+As a side note, it is worth noting that only constants declared in the same
+package as the type T2 can constitute T2's enum members (as defined in section
+'Definition of enum').
 
-For a test case exploring the nuances here, see testdata/src/typealias/quux/quux.go.
+For a thorough example, see the test case in
+testdata/src/typealias/quux/quux.go.
 
 [*] https://go.googlesource.com/proposal/+/master/design/18130-type-alias.md#proposal
 

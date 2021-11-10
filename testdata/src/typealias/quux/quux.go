@@ -14,6 +14,7 @@ func x() {
     case foo.C:
     case foo.D:
     case foo.F:
+    case foo.H:
     }
 
     var w bar.T2 = foo.ReturnsT1()
@@ -23,5 +24,6 @@ func x() {
     case foo.C:
     case foo.D:
     case foo.F:
+    case foo.H:
     }
 }

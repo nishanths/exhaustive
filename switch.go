@@ -195,42 +195,41 @@ func analyzeCaseClauseExpr(e ast.Expr, tagPkg *types.Package, members map[string
 			return
 		}
 
-		if obj.Pkg() == tagPkg {
-			// Tag package and constant package are the same.
-			// For example:
-			//   var mode fs.FileMode
-			//   switch mode {
-			//   case fs.ModeDir:
-			//   }
-			//
-			found(determineConstVal(ident, info))
-			return
-		}
-
+		// There are two scenarios.
+		// See related test cases in typealias/quux/quux.go.
+		//
+		// ### Scenario 1
+		//
+		// Tag package and constant package are the same.
+		//
+		// For example:
+		//   var mode fs.FileMode
+		//   switch mode {
+		//   case fs.ModeDir:
+		//   }
+		//
+		// This is simple: we just use fs.ModeDir's value.
+		//
+		// ### Scenario 2
+		//
 		// Tag package and constant package are different.
+		//
 		// For example:
 		//   var mode fs.FileMode
 		//   switch mode {
 		//   case os.ModeDir:
 		//   }
+		//
 		// Or equivalently:
 		//   var mode os.FileMode // in effect, fs.FileMode because of type alias in package os
 		//   switch mode {
 		//   case os.ModeDir:
 		//   }
-		// In this scenario, we accept the case clause expr constant
-		// if the case clause expr constant has the same named and same valued
-		// counterpart constant in the tag type's package.
-		v, ok := members[ident.Name]
-		if !ok {
-			return
-		}
-		if v != determineConstVal(ident, info) {
-			return
-		}
-		// Continuing the example from the comment above: this found call is
-		// equivalent to fs.ModeDir being found, though the case clause
-		// expr is os.ModeDir.
+		//
+		// In this scenario, too, we accept the case clause expr constant
+		// by value, as is. If the Go type checker is okay with the
+		// name being listed in the case clause, we don't care much further.
+
 		found(determineConstVal(ident, info))
 	}
 
@@ -244,14 +243,19 @@ func analyzeCaseClauseExpr(e ast.Expr, tagPkg *types.Package, members map[string
 		// Sel), is also an *ast.Ident, and that it refers to the package
 		// of the enum type.
 		x := astutil.Unparen(e.X)
+
+		// Ensure we only see the form `pkg.Const`, and not e.g. `structVal.f`
+		// or `structVal.inner.f`.
 		ident, ok := x.(*ast.Ident)
 		if !ok {
 			return
 		}
+		// Doesn't matter which package, just that it denotes a package.
 		_, ok = denotesPackage(ident, info)
 		if !ok {
 			return
 		}
+
 		handleIdent(e.Sel)
 	}
 }
