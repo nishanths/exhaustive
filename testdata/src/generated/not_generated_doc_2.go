@@ -7,3 +7,5 @@ func _doc_2() {
 	case N:
 	}
 }
+
+// Explanation: /*-style comments don't count.
