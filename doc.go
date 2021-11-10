@@ -52,11 +52,44 @@ involving T1 proceeds by first expanding T1 to T2 [*]. For this analyzer, it
 means that a switch statement that switches on a value of type T1 is, in effect,
 switching on a value of type T2.
 
-Consider that T2 or its underlying type is an enum type (i.e. a named type with
-underlying type integer, float, or string; for details see section
-'Definition of enum'). A switch statement that switches on a value of type T1 is
-exhaustive if all of the enum type T2's members are listed in the switch
-statement cases. It is worth highlighting that only constants declared in the
+If T2 or its underlying type were, then a switch statement that switches on a
+value of type T1 (which, in effect, is type T2) is exhaustive if all of the type
+T2's enum members are listed in the switch statement cases.
+
+Note that the switch statement cases don't necessarily have to list only T2
+constants; it is valid to list T1 constants (or a mixture of T2 and T1
+constants) since T1 and T2 are type aliases.
+
+If a T1 constant is listed, the analzyer attempts to match the T1 constant with
+a T2 enum member by name and value. For example, the switch statement below
+is exhaustive even though it lists no T2 members explicitly:
+
+    package bar
+    type T2 rune // T2 is an enum type with enum members: A, B.
+    const (
+        A = 'a'
+        B = 'b'
+    )
+
+    package foo
+    import "bar"
+    type T1 = bar.T2 // T1 is an alias for enum type T2.
+    const (
+       A = bar.A
+       B = bar.B
+    )
+    func ReturnsT1() T1 { ... }
+
+    package main
+    import "foo"
+    func x() {
+        switch foo.ReturnsT1() { // Switch tag's type is bar.T2, according to Go type analysis.
+        case foo.A:              // The analyzer considers foo.A equivalent to bar.A (same name, same value).
+        case foo.B:              // The analyzer considers foo.B equivalent to bar.B (same name, same value).
+        }
+    }
+
+As a side note, it is worth highlighting that only constants declared in the
 same package as the type T2 can constitute T2's enum members (as defined in
 section 'Definition of enum').
 

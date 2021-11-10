@@ -172,6 +172,18 @@ func _p() {
 func _q() {
 	// Type alias:
 	// type os.FileMode = fs.FileMode
+	//
+	// Both os.Mode* and fs.Mode* constants can exist in the case
+	// clauses (the Go type system allows it).
+	// When checking if exhaustiveness is satisfied, the exhaustive analyzer
+	// will "match" same-named and same-valued constants in package os and
+	// package fs, for the listed case clause expressions in the switch
+	// statement.
+	// This means, for example, that listing os.ModeSocket is equivalent to
+	// listing fs.ModeSocket (since they have the same name and the same
+	// constant value).
+	//
+	// This test case tests for the above described scenarios.
 
 	fi, err := os.Lstat(".")
 	fmt.Println(err)
@@ -182,8 +194,7 @@ func _q() {
 	case os.ModeExclusive:
 	case fs.ModeTemporary:
 	case fs.ModeSymlink:
-	case fs.ModeNamedPipe:
-	case os.ModeSocket:
+	case fs.ModeNamedPipe, os.ModeSocket:
 	case fs.ModeCharDevice:
 	case fs.ModeSticky:
 	case fs.ModeIrregular:
