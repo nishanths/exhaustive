@@ -1,6 +1,7 @@
 package exhaustive
 
 import (
+	"fmt"
 	"reflect"
 	"sort"
 	"strconv"
@@ -10,12 +11,10 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// Asserts that the enumMembers literal is correctly defined.
-func checkEnumMembersLiteral(t *testing.T, id string, v enumMembers) {
-	t.Helper()
-
+// Check that an enumMembers literal is correctly defined in a test case.
+func checkEnumMembersLiteral(id string, v enumMembers) {
 	if len(v.Names) != len(v.NameToValue) {
-		t.Fatalf("%s: wrong lengths: %d != %d (test definition bug)", id, len(v.Names), len(v.NameToValue))
+		panic(fmt.Sprintf("%s: wrong lengths: %d != %d (test definition bug)", id, len(v.Names), len(v.NameToValue)))
 	}
 
 	var count int
@@ -23,7 +22,7 @@ func checkEnumMembersLiteral(t *testing.T, id string, v enumMembers) {
 		count += len(names)
 	}
 	if len(v.Names) != count {
-		t.Fatalf("%s: wrong lengths: %d != %d (test definition bug)", id, len(v.Names), count)
+		panic(fmt.Sprintf("%s: wrong lengths: %d != %d (test definition bug)", id, len(v.Names), count))
 	}
 }
 
@@ -283,7 +282,7 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 	}
 
 	for _, c := range wantPkg {
-		checkEnumMembersLiteral(t, c.typeName, c.members)
+		checkEnumMembersLiteral(c.typeName, c.members)
 	}
 
 	wantInner := []checkEnum{
@@ -326,7 +325,7 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 	}
 
 	for _, c := range wantInner {
-		checkEnumMembersLiteral(t, c.typeName, c.members)
+		checkEnumMembersLiteral(c.typeName, c.members)
 	}
 
 	want := append([]checkEnum{}, wantPkg...)

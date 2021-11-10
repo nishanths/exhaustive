@@ -3,6 +3,7 @@ package exhaustive
 import (
 	"go/ast"
 	"regexp"
+	"strings"
 )
 
 // Spec
@@ -43,8 +44,23 @@ func isGeneratedFile(file *ast.File) bool {
 	return false
 }
 
+var generatedCodeRx = regexp.MustCompile(`^// Code generated .* DO NOT EDIT\.$`)
+
 func isGeneratedFileComment(s string) bool {
 	return generatedCodeRx.MatchString(s)
 }
 
-var generatedCodeRx = regexp.MustCompile(`^// Code generated .* DO NOT EDIT\.$`)
+// ignoreDirective is used to exclude checking of specific switch statements.
+// See package comment for details.
+const ignoreDirective = "//exhaustive:ignore"
+
+func containsIgnoreDirective(comments []*ast.CommentGroup) bool {
+	for _, c := range comments {
+		for _, cc := range c.List {
+			if strings.HasPrefix(cc.Text, ignoreDirective) {
+				return true
+			}
+		}
+	}
+	return false
+}

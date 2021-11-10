@@ -47,7 +47,7 @@ func TestDiagnosticMissingMembers(t *testing.T) {
 			"2": {"Yamuna"},
 		},
 	}
-	checkEnumMembersLiteral(t, "River", em)
+	checkEnumMembersLiteral("River", em)
 
 	t.Run("missing some: same-valued", func(t *testing.T) {
 		got := diagnosticMissingMembers([]string{"Ganga", "Unspecified", "Kaveri"}, em)
@@ -106,7 +106,7 @@ func TestMakeDiagnostic(t *testing.T) {
 			"3": {"Desert"},
 		},
 	}
-	checkEnumMembersLiteral(t, "Biome", allMembers)
+	checkEnumMembersLiteral("Biome", allMembers)
 	missingMembers := []string{"Savanna", "Desert"}
 
 	got := makeDiagnostic(sw, samePkg, enumTyp, allMembers, missingMembers)

@@ -29,7 +29,7 @@ func TestChecklist(t *testing.T) {
 			"5": {"C"},
 		},
 	}
-	checkEnumMembersLiteral(t, "TestChecklist", em)
+	checkEnumMembersLiteral("TestChecklist", em)
 
 	checkRemaining := func(t *testing.T, h *checklist, want map[string]struct{}) {
 		t.Helper()
@@ -169,7 +169,7 @@ func TestChecklist(t *testing.T) {
 				"5": {"C"},
 			},
 		}
-		checkEnumMembersLiteral(t, "TestChecklist blank identifier", em)
+		checkEnumMembersLiteral("TestChecklist blank identifier", em)
 
 		checklist := makeChecklist(em, enumPkg, true, nil)
 		checkRemaining(t, checklist, map[string]struct{}{
@@ -205,7 +205,7 @@ func TestChecklist(t *testing.T) {
 				"42": {"lowercase"},
 			},
 		}
-		checkEnumMembersLiteral(t, "TestChecklist lowercase", em)
+		checkEnumMembersLiteral("TestChecklist lowercase", em)
 
 		t.Run("include", func(t *testing.T) {
 			checklist := makeChecklist(em, enumPkg, true, nil)
