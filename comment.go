@@ -28,7 +28,7 @@ func isGeneratedFile(file *ast.File) bool {
 			// first non-comment, non-blank text in the file".
 			// TODO: Is this check fully correct? Seems correct based
 			// on https://golang.org/ref/spec#Source_file_organization.
-			if c.Pos() > file.Package {
+			if c.Pos() >= file.Package {
 				return false
 			}
 			// According to the docs:
