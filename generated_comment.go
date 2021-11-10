@@ -25,7 +25,8 @@ func isGeneratedFile(file *ast.File) bool {
 		for _, cc := range c.List {
 			// This check is intended to handle "must appear before the
 			// first non-comment, non-blank text in the file".
-			// TODO: Is this check fully correct?
+			// TODO: Is this check fully correct? Seems correct based
+			// on https://golang.org/ref/spec#Source_file_organization.
 			if c.Pos() > file.Package {
 				return false
 			}
