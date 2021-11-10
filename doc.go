@@ -108,7 +108,8 @@ marker ("//") and the comment text.
 
 For example:
 
-    switch v { //exhaustive:ignore
+    //exhaustive:ignore
+    switch v {
 
 To ignore specific enum members, see the -ignore-enum-members flag.
 
