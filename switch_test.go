@@ -127,6 +127,11 @@ func TestAnalyzeSwitchClauses(t *testing.T) {
 
 	switchtest, otherpkg := pkgs[0], pkgs[1]
 	switchtestGoFile, otherpkgGoFile := switchtest.Syntax[1], otherpkg.Syntax[0]
+	m := map[string]constantValue{
+		"Tundra":  "1",
+		"Savanna": "2",
+		"Desert":  "3",
+	}
 
 	getFuncName := func(fn ast.Decl) string {
 		funcDecl := fn.(*ast.FuncDecl)
@@ -140,14 +145,17 @@ func TestAnalyzeSwitchClauses(t *testing.T) {
 		return funcDecl.Body.List[0].(*ast.SwitchStmt)
 	}
 
-	assertFoundNames := func(t *testing.T, sw *ast.SwitchStmt, typesInfo *types.Info, samePkg bool, wantNames []string, wantDefaultExists bool) {
+	assertFoundNames := func(t *testing.T, sw *ast.SwitchStmt, info *types.Info, want []constantValue, wantDefaultExists bool) {
 		t.Helper()
-		var gotNames []string
-		gotDefaultExists := analyzeSwitchClauses(sw, typesInfo, samePkg, func(name string) {
-			gotNames = append(gotNames, name)
+		tagType := info.Types[sw.Tag].Type.(*types.Named)
+
+		var got []constantValue
+		gotDefaultExists := analyzeSwitchClauses(sw, tagType.Obj().Pkg(), m, info, func(val constantValue) {
+			got = append(got, val)
 		})
-		if !reflect.DeepEqual(wantNames, gotNames) {
-			t.Errorf("want %v, got %v", wantNames, gotNames)
+
+		if !reflect.DeepEqual(want, got) {
+			t.Errorf("want %v, got %v", want, got)
 		}
 		if wantDefaultExists != gotDefaultExists {
 			t.Errorf("want %v, got %v", wantDefaultExists, gotDefaultExists)
@@ -155,27 +163,28 @@ func TestAnalyzeSwitchClauses(t *testing.T) {
 	}
 
 	type testSpec struct {
-		declIdx int // func decl index
+		// decl index of function
+		declIdx int
 
-		samePkg bool
-		pkg     *packages.Package
-		file    *ast.File
+		// which package and file to look in
+		pkg  *packages.Package
+		file *ast.File
 
-		// what to expect at the decl index:
+		// what to expect at the function
 		funcName      string
-		memberNames   []string
+		vals          []constantValue
 		defaultExists bool
 	}
 
 	cases := []testSpec{
-		{1, true, switchtest, switchtestGoFile, "switchWithDefault", []string{"Tundra", "Desert"}, true},
-		{2, true, switchtest, switchtestGoFile, "switchWithoutDefault", []string{"Tundra", "Desert"}, false},
-		{3, true, switchtest, switchtestGoFile, "switchParen", []string{"Tundra", "Desert"}, false},
-		{4, true, switchtest, switchtestGoFile, "switchNotIdent", []string{"Savanna"}, false},
+		{1, switchtest, switchtestGoFile, "switchWithDefault", []constantValue{m["Tundra"], m["Desert"]}, true},
+		{2, switchtest, switchtestGoFile, "switchWithoutDefault", []constantValue{m["Tundra"], m["Desert"]}, false},
+		{3, switchtest, switchtestGoFile, "switchParen", []constantValue{m["Tundra"], m["Desert"]}, false},
+		{4, switchtest, switchtestGoFile, "switchNotIdent", []constantValue{m["Savanna"]}, false},
 
-		{1, false, otherpkg, otherpkgGoFile, "switchParen", []string{"Tundra", "Desert"}, false},
-		{2, false, otherpkg, otherpkgGoFile, "switchNotSelExpr", []string{"Tundra"}, false},
-		{4, false, otherpkg, otherpkgGoFile, "switchNotExpectedSelExpr", []string{"Desert"}, false},
+		{1, otherpkg, otherpkgGoFile, "switchParen", []constantValue{m["Tundra"], m["Desert"]}, false},
+		{2, otherpkg, otherpkgGoFile, "switchNotSelExpr", []constantValue{m["Tundra"]}, false},
+		{4, otherpkg, otherpkgGoFile, "switchNotExpectedSelExpr", []constantValue{m["Desert"]}, false},
 	}
 
 	for _, tt := range cases {
@@ -186,7 +195,7 @@ func TestAnalyzeSwitchClauses(t *testing.T) {
 				return
 			}
 			sw := getSwitchStatement(fn)
-			assertFoundNames(t, sw, tt.pkg.TypesInfo, tt.samePkg, tt.memberNames, tt.defaultExists)
+			assertFoundNames(t, sw, tt.pkg.TypesInfo, tt.vals, tt.defaultExists)
 		})
 	}
 }
