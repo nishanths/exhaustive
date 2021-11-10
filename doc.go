@@ -52,9 +52,9 @@ involving T1 proceeds by first expanding T1 to T2 [*]. For this analyzer, it
 means that a switch statement that switches on a value of type T1 is, in effect,
 switching on a value of type T2.
 
-If T2 or its underlying type were, then a switch statement that switches on a
-value of type T1 (which, in effect, is type T2) is exhaustive if all of the type
-T2's enum members are listed in the switch statement cases.
+If T2 or its underlying type were an enum type, then a switch statement that
+switches on a value of type T1 (which, in effect, is type T2) is exhaustive if
+all of the T2's enum members are listed in the switch statement cases.
 
 Note that only constants declared in the same package as the type T2 can
 constitute T2's enum members (as defined in section 'Definition of enum').
