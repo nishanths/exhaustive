@@ -40,15 +40,12 @@ func (v *regexpFlag) Set(expr string) error {
 func (v *regexpFlag) value() *regexp.Regexp { return v.r }
 
 func init() {
-	var unused string
-
-	// Public flags.
 	Analyzer.Flags.BoolVar(&fCheckGeneratedFiles, CheckGeneratedFlag, false, "check switch statements in generated files")
 	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, "presence of \"default\" case in switch statements satisfies exhaustiveness, even if all enum members are not listed")
 	Analyzer.Flags.Var(&fIgnoreEnumMembers, IgnoreEnumMembersFlag, "enum members matching `regex` do not have to be listed in switch statements to satisfy exhaustiveness")
 	Analyzer.Flags.BoolVar(&fPackageScopeOnly, PackageScopeOnlyFlag, false, "consider enums only in package scopes, not in inner scopes")
 
-	// Deprecated flags.
+	var unused string
 	Analyzer.Flags.StringVar(&unused, IgnorePatternFlag, "", "no effect (deprecated); see -"+IgnoreEnumMembersFlag+" instead")
 	Analyzer.Flags.StringVar(&unused, CheckingStrategyFlag, "", "no effect (deprecated)")
 }
@@ -66,7 +63,6 @@ const (
 )
 
 var (
-	// Public flags.
 	fCheckGeneratedFiles        bool
 	fDefaultSignifiesExhaustive bool
 	fIgnoreEnumMembers          regexpFlag
@@ -76,7 +72,6 @@ var (
 // resetFlags resets the flag variables to their default values.
 // Useful in tests.
 func resetFlags() {
-	// Public flags.
 	fCheckGeneratedFiles = false
 	fDefaultSignifiesExhaustive = false
 	fIgnoreEnumMembers = regexpFlag{}
