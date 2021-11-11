@@ -123,7 +123,7 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 			// So don't report.
 			return true, resultDefaultCaseSuffices
 		}
-		pass.Report(makeDiagnostic(sw, samePkg, enumTyp, members, mapToSlice(checklist.remaining())))
+		pass.Report(makeDiagnostic(sw, samePkg, enumTyp, members, checklist.remaining()))
 		return true, resultReportedDiagnostic
 	}
 }
@@ -238,30 +238,28 @@ func analyzeCaseClauseExpr(e ast.Expr, tagPkg *types.Package, members map[string
 		handleIdent(e)
 
 	case *ast.SelectorExpr:
+		x := astutil.Unparen(e.X)
 		// Ensure we only see the form `pkg.Const`, and not e.g. `structVal.f`
 		// or `structVal.inner.f`.
 		// Check that X, which is everything except the rightmost *ast.Ident (or
 		// Sel), is also an *ast.Ident.
-		x := astutil.Unparen(e.X)
-		ident, ok := x.(*ast.Ident)
+		xIdent, ok := x.(*ast.Ident)
 		if !ok {
 			return
 		}
 		// Doesn't matter which package, just that it denotes a package.
-		_, ok = denotesPackage(ident, info)
-		if !ok {
+		if _, ok := denotesPackage(xIdent, info); !ok {
 			return
 		}
-
 		handleIdent(e.Sel)
 	}
 }
 
 // diagnosticMissingMembers constructs the list of missing enum members,
 // suitable for use in a reported diagnostic message.
-func diagnosticMissingMembers(missingMembers []string, em enumMembers) []string {
+func diagnosticMissingMembers(missingMembers map[string]struct{}, em enumMembers) []string {
 	missingByConstVal := make(map[constantValue][]string) // missing members, keyed by constant value.
-	for _, m := range missingMembers {
+	for m := range missingMembers {
 		val := em.NameToValue[m]
 		missingByConstVal[val] = append(missingByConstVal[val], m)
 	}
@@ -284,7 +282,7 @@ func diagnosticEnumTypeName(enumType *types.TypeName, samePkg bool) string {
 	return enumType.Pkg().Name() + "." + enumType.Name()
 }
 
-func makeDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumTyp enumType, allMembers enumMembers, missingMembers []string) analysis.Diagnostic {
+func makeDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumTyp enumType, allMembers enumMembers, missingMembers map[string]struct{}) analysis.Diagnostic {
 	message := fmt.Sprintf("missing cases in switch of type %s: %s",
 		diagnosticEnumTypeName(enumTyp.TypeName, samePkg),
 		strings.Join(diagnosticMissingMembers(missingMembers, allMembers), ", "))
@@ -294,14 +292,6 @@ func makeDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumTyp enumType, allMembe
 		End:     sw.End(),
 		Message: message,
 	}
-}
-
-func mapToSlice(m map[string]struct{}) []string {
-	var out []string
-	for k := range m {
-		out = append(out, k)
-	}
-	return out
 }
 
 // A checklist holds a set of enum member names that have to be

@@ -84,40 +84,40 @@ func TestExhaustive(t *testing.T) {
 	}
 
 	// Enum discovery, enum types.
-	run(t, "enum...")
+	run(t, "enum/...")
 
 	// Tests for the -check-generated flag.
-	run(t, "generated-file/check-generated-off...")
-	run(t, "generated-file/check-generated-on...", func() { fCheckGeneratedFiles = true })
+	run(t, "generated-file/check-generated-off/...")
+	run(t, "generated-file/check-generated-on/...", func() { fCheckGeneratedFiles = true })
 
 	// Tests for the -default-signifies-exhaustive flag.
 	// (For tests with this flag off, see other testdata packages
-	// such as "general...".)
-	run(t, "default-signifies-exhaustive/default-absent...", func() { fDefaultSignifiesExhaustive = true })
-	run(t, "default-signifies-exhaustive/default-present...", func() { fDefaultSignifiesExhaustive = true })
+	// such as "general/...".)
+	run(t, "default-signifies-exhaustive/default-absent/...", func() { fDefaultSignifiesExhaustive = true })
+	run(t, "default-signifies-exhaustive/default-present/...", func() { fDefaultSignifiesExhaustive = true })
 
 	// Tests for the -ignore-enum-member flag.
-	run(t, "ignore-enum-member...", func() {
+	run(t, "ignore-enum-member/...", func() {
 		re := regexp.MustCompile(`_UNSPECIFIED$|^general/y\.Echinodermata$|^ignore-enum-member.User$`)
 		fIgnoreEnumMembers = regexpFlag{re}
 	})
 
 	// Tests for -package-scope-only flag.
-	run(t, "scope/allscope...")
-	run(t, "scope/pkgscope...", func() { fPackageScopeOnly = true })
+	run(t, "scope/allscope/...")
+	run(t, "scope/pkgscope/...", func() { fPackageScopeOnly = true })
 
 	// Switch statements with ignore directive comment should not be checked.
-	run(t, "ignore-comment...")
+	run(t, "ignore-comment/...")
 
 	// To satisfy exhaustiveness, it is sufficient for each unique constant
 	// value of the members to be listed, not each member by name.
-	run(t, "duplicate-enum-value...")
+	run(t, "duplicate-enum-value/...")
 
 	// Type alias switch statements.
-	run(t, "typealias...")
+	run(t, "typealias/...")
 
 	// General tests (a mixture).
-	run(t, "general...")
+	run(t, "general/...")
 }
 
 func assertNoError(t *testing.T, err error) {

@@ -51,7 +51,7 @@ func TestDiagnosticMissingMembers(t *testing.T) {
 	checkEnumMembersLiteral("River", em)
 
 	t.Run("missing some: same-valued", func(t *testing.T) {
-		got := diagnosticMissingMembers([]string{"Ganga", "Unspecified", "Kaveri"}, em)
+		got := diagnosticMissingMembers(map[string]struct{}{"Ganga": {}, "Unspecified": {}, "Kaveri": {}}, em)
 		want := []string{"Ganga|Unspecified", "Kaveri"}
 		if !reflect.DeepEqual(want, got) {
 			t.Errorf("want %v, got %v", want, got)
@@ -59,7 +59,7 @@ func TestDiagnosticMissingMembers(t *testing.T) {
 	})
 
 	t.Run("missing some: unique or unknown values", func(t *testing.T) {
-		got := diagnosticMissingMembers([]string{"Yamuna", "Kaveri"}, em)
+		got := diagnosticMissingMembers(map[string]struct{}{"Yamuna": {}, "Kaveri": {}}, em)
 		want := []string{"Kaveri", "Yamuna"}
 		if !reflect.DeepEqual(want, got) {
 			t.Errorf("want %v, got %v", want, got)
@@ -74,7 +74,7 @@ func TestDiagnosticMissingMembers(t *testing.T) {
 	})
 
 	t.Run("missing all", func(t *testing.T) {
-		got := diagnosticMissingMembers([]string{"Ganga", "Kaveri", "Yamuna", "Unspecified"}, em)
+		got := diagnosticMissingMembers(map[string]struct{}{"Ganga": {}, "Kaveri": {}, "Yamuna": {}, "Unspecified": {}}, em)
 		want := []string{"Ganga|Unspecified", "Kaveri", "Yamuna"}
 		if !reflect.DeepEqual(want, got) {
 			t.Errorf("want %v, got %v", want, got)
@@ -108,7 +108,7 @@ func TestMakeDiagnostic(t *testing.T) {
 		},
 	}
 	checkEnumMembersLiteral("Biome", allMembers)
-	missingMembers := []string{"Savanna", "Desert"}
+	missingMembers := map[string]struct{}{"Savanna": {}, "Desert": {}}
 
 	got := makeDiagnostic(sw, samePkg, enumTyp, allMembers, missingMembers)
 	want := analysis.Diagnostic{

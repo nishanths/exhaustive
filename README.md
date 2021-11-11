@@ -20,30 +20,31 @@ exhaustive with your own analysis driver program.
 Given the enum
 
 ```go
-package env
+package token
 
-type Environment string
+type Token int
 
 const (
-	Production Environment = "production"
-	Staging    Environment = "staging"
-	Dev        Environment = "dev"
+	Add Token = iota
+	Subtract
+	Multiply
+	Quotient
+	Remainder
 )
-
-func Current() Environment { /* ... */ }
 ```
 
 and the switch statement
 
 ```go
-package app
+package calc
 
-import "example/pkg/env"
+import "token"
 
-func f() {
-	switch env.Current() {
-	case env.Production:
-	case env.Dev:
+func f(t token.Token) {
+	switch t {
+	case token.Add:
+	case token.Subtract:
+	case token.Multiply:
 	default:
 	}
 }
@@ -52,7 +53,7 @@ func f() {
 running exhaustive will print
 
 ```
-app.go:6:2: missing cases in switch of type env.Environment: Staging
+calc.go:6:2: missing cases in switch of type token.Token: Quotient, Remainder
 ```
 
 ## Contributing
