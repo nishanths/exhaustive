@@ -43,9 +43,10 @@ exported and unexported enum members must be listed to satisfy exhaustiveness.
 For an enum type defined in an external package, it is sufficient that only
 exported enum members are listed.
 
-Only identifiers denoting constants and qualified identifiers denoting constants
-listed in switch statement cases can contribute towards satisfying
-exhaustiveness. Literal constant values, struct fields, etc. will not.
+Identifiers denoting constants (e.g. Tundra) and qualified identifiers denoting
+constants (e.g. somepkg.Grassland) listed in a switch statement's cases can
+contribute towards satisfying exhaustiveness. Literal constant values, fields in
+a struct value, etc. will not.
 
 Type aliases
 
@@ -77,6 +78,11 @@ exported/unexported enum members apply here too.
 It is worth noting that, though T1 and T2 are identical types, only constants
 declared in the same scope as type T2's scope can be T2's enum members. In the
 example, otherpkg.A and otherpkg.B are T2's enum members.
+
+The analyzer guarantees that introducing a type alias (such as type T1 =
+otherpkg.T2) will never result in new diagnostics from the analyzer, as long as
+the set of enum member constant values of the new RHS type (otherpkg.T2) is a
+subset of the set of enu member constant values of the old LHS type (T1).
 
 Advanced notes
 
