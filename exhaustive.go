@@ -31,13 +31,6 @@ using explicit values, or by any means of declaring a valid Go const. It is
 allowed for multiple enum members for a given enum type to have the same
 constant value.
 
-    type Command int
-    const (
-        Build Command = iota
-        Test
-    )
-    const Default = Build
-
 Definition of exhaustiveness
 
 A switch statement that switches on a value of an enum type is exhaustive if all
@@ -45,8 +38,17 @@ of the enum type's members are listed in the switch statement's cases. If
 multiple enum member constants have the same constant value, it is sufficient
 for any one of these same-valued members to be listed.
 
+	type Command int
+    const (
+        Build Command = iota
+        Test
+        Default = Build
+    )
+
     func f(cmd Command) {
         // This switch statement is exhaustive.
+        // (The enum member Default does not have to be listed, because
+        // it has the same value as Build.)
         switch cmd {
         case Build:
         case Test:
