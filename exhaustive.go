@@ -38,23 +38,6 @@ of the enum type's members are listed in the switch statement's cases. If
 multiple enum member constants have the same constant value, it is sufficient
 for any one of these same-valued members to be listed.
 
-	type Command int
-
-    const (
-        Build Command = iota
-        Test
-        Default = Build
-    )
-
-    func f(cmd Command) {
-        // This switch statement is exhaustive. (The enum member Default does
-        // not have to be listed, because it has the same value as Build.)
-        switch cmd {
-        case Build:
-        case Test:
-        }
-    }
-
 For an enum type defined in the same package as the switch statement, both
 exported and unexported enum members must be listed to satisfy exhaustiveness.
 For an enum type defined in an external package, it is sufficient that only
@@ -104,18 +87,15 @@ constant of the right type to be listed in the cases of an enum switch statement
 (it does not necessarily have to be a constant declared in the same scope/package
 as the enum type's scope/package).
 
-Such a constant can contribute towards satisfying switch statement
-exhaustiveness if it has the same constant value as an actual enum member
-constant. The constant can be a substitute for the enum member constant in the
-switch statement's cases. This behavior is particularly useful when a type alias
-is involved: A constant (such as pkg.A, in type T1's package) can take the place
-of the actual enum member constant (such as otherpkg.A, in type T2's package) in
-the switch statement's cases.
+This is particularly useful when a type alias is involved: A forwarding constant
+declaration (such as const pkg.A = otherpkg.A, in type T1's package, from the
+earlier example) can take the place of the actual enum member constant
+(otherpkg.A, in type T2's package) in the switch statement's cases.
 
     var v pkg.T1 = pkg.ReturnsT1() // in effect, v is of type otherpkg.T2 due to alias
     switch v {
-    case pkg.A: // can be a substitute for otherpkg.A (both have same value)
-    case pkg.B: // can be a substitute for otherpkg.B (both have same value)
+    case pkg.A: // valid substitute for otherpkg.A (same constant value)
+    case pkg.B: // valid substitute for otherpkg.B (same constant value)
     }
 
 Flags
