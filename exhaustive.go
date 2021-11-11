@@ -39,6 +39,7 @@ multiple enum member constants have the same constant value, it is sufficient
 for any one of these same-valued members to be listed.
 
 	type Command int
+
     const (
         Build Command = iota
         Test
@@ -46,9 +47,8 @@ for any one of these same-valued members to be listed.
     )
 
     func f(cmd Command) {
-        // This switch statement is exhaustive.
-        // (The enum member Default does not have to be listed, because
-        // it has the same value as Build.)
+        // This switch statement is exhaustive. (The enum member Default does
+        // not have to be listed, because it has the same value as Build.)
         switch cmd {
         case Build:
         case Test:
@@ -63,19 +63,6 @@ exported enum members are listed.
 Only identifiers denoting constants and qualified identifiers denoting constants
 listed in switch statement cases can contribute towards satisfying
 exhaustiveness. Literal constant values, struct fields, etc. will not.
-
-    func g(biome Biome) {
-        // Y: may contribute towards satisfying exhaustiveness.
-        // N: will not contribute towards satisfying exhaustiveness.
-        switch biome {
-        case Tundra:               // Y (identifier denoting const)
-        case anotherpkg.Grassland: // Y (qualified identifier denoting const)
-        case aliaspkg.Desert:      // Y (qualified identifier denoting const)
-        case obj.F:                // N (struct field)
-        case SomeBiomeVar:         // N (identifier denoting var)
-        case 2:                    // N (literal)
-        }
-    }
 
 Type aliases
 
@@ -121,11 +108,11 @@ Such a constant can contribute towards satisfying switch statement
 exhaustiveness if it has the same constant value as an actual enum member
 constant. The constant can be a substitute for the enum member constant in the
 switch statement's cases. This behavior is particularly useful when a type alias
-is involved: A const declaration (such as pkg.A, in type T1's package) can take
-the place of the actual enum member constant (such as otherpkg.A, in type T2's
-package) in the switch statement's cases.
+is involved: A constant (such as pkg.A, in type T1's package) can take the place
+of the actual enum member constant (such as otherpkg.A, in type T2's package) in
+the switch statement's cases.
 
-    var v pkg.T1 = pkg.ReturnsT1() // in effect, v has type otherpkg.T2 due to alias
+    var v pkg.T1 = pkg.ReturnsT1() // in effect, v is of type otherpkg.T2 due to alias
     switch v {
     case pkg.A: // can be a substitute for otherpkg.A (both have same value)
     case pkg.B: // can be a substitute for otherpkg.B (both have same value)
