@@ -169,9 +169,9 @@ switch on all these enums.
 
 Skip analysis
 
-To skip checking of a specific switch statement, associate a comment with the
-switch statement, like shown in the example below. Note the lack of whitespace
-between the comment marker ("//") and the comment text.
+To skip checking of a specific switch statement, associate the comment shown in
+the example below with the switch statement. Note the lack of whitespace between
+the comment marker ("//") and the comment text ("exhaustive:ignore").
 
     //exhaustive:ignore
     switch v { ... }
