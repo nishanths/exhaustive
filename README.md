@@ -7,7 +7,7 @@ go install github.com/nishanths/exhaustive/cmd/exhaustive@latest
 ```
 
 For docs on the flags, the definition of enum, and the definition of
-exhaustiveness, see [pkg.go.dev][6].
+exhaustiveness, see [godocs.io][4].
 
 For the changelog, see [CHANGELOG][changelog] in the wiki.
 
@@ -61,8 +61,8 @@ calc.go:6:2: missing cases in switch of type token.Token: Quotient, Remainder
 Issues and pull requests are welcome. Before making a substantial
 change, please discuss it in an issue.
 
-[1]: https://godoc.org/github.com/nishanths/exhaustive
-[2]: https://godoc.org/github.com/nishanths/exhaustive?status.svg
+[1]: https://godocs.io/github.com/nishanths/exhaustive
+[2]: https://godocs.io/github.com/nishanths/exhaustive?status.svg
 [3]: https://pkg.go.dev/golang.org/x/tools/go/analysis
-[6]: https://pkg.go.dev/github.com/nishanths/exhaustive#section-documentation
+[4]: https://godocs.io/github.com/nishanths/exhaustive
 [changelog]: https://github.com/nishanths/exhaustive/wiki/CHANGELOG
