@@ -41,3 +41,11 @@ func _r() {
 	case d.Karnataka:
 	}
 }
+
+func _s(c d.Chart) {
+	switch c { // want "^missing cases in switch of type duplicateenumvalue.Chart: Pie$"
+	case d.Line:
+	case d.Sunburst:
+	case d.Area:
+	}
+}

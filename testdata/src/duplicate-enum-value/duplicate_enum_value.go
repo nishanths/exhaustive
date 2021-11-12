@@ -17,6 +17,23 @@ const (
 	TamilNadu
 	Kerala
 	Karnataka
+	DefaultState = TamilNadu
 )
 
-const DefaultState = TamilNadu
+type Chart int // want Chart:"^Line,Area,Sunburst,Pie,circle$"
+
+const (
+	Line Chart = iota
+	Area
+	Sunburst
+	Pie
+	circle = Pie // NOTE: unexported
+)
+
+func _s(c Chart) {
+	switch c { // want "^missing cases in switch of type Chart: Pie\\|circle$"
+	case Line:
+	case Sunburst:
+	case Area:
+	}
+}
