@@ -14,7 +14,7 @@
 //
 // For help, run 'exhaustive -h'.
 //
-// For more documentation, see https://godoc.org/github.com/nishanths/exhaustive.
+// For more documentation, see https://godocs.io/github.com/nishanths/exhaustive.
 package main
 
 import (
