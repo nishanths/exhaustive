@@ -95,7 +95,7 @@ constant declared in the same scope/package as the enum type's scope/package).
 This is particularly useful when a type alias is involved: A forwarding constant
 declaration (such as pkg.A, in type T1's package) can take the place of the
 actual enum member constant (newpkg.A, in type T2's package) in the switch
-statement's cases, until code is migrated to use newpkg.
+statement's cases to satisfy exhaustiveness.
 
     var v pkg.T1 = pkg.ReturnsT1() // v is effectively of type newpkg.T2 due to alias
     switch v {
