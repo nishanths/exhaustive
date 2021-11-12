@@ -28,8 +28,8 @@ package can constitute the enum members for the enum type.
 Enum member constants for a given enum type don't necessarily have to all be
 declared in the same const block. Constant values may be specified using iota,
 using explicit values, or by any means of declaring a valid Go const. It is
-allowed for multiple enum members for a given enum type to have the same
-constant value.
+allowed for multiple enum member constants for a given enum type to have the
+same constant value.
 
 Definition of exhaustiveness
 
@@ -43,10 +43,10 @@ exported and unexported enum members must be listed to satisfy exhaustiveness.
 For an enum type defined in an external package, it is sufficient that only
 exported enum members are listed.
 
-Identifiers denoting constants (e.g. Tundra) and qualified identifiers denoting
-constants (e.g. somepkg.Grassland) listed in a switch statement's cases can
-contribute towards satisfying exhaustiveness. Literal constant values, fields in
-a struct value, etc. will not.
+Only identifiers denoting constants (e.g. Tundra) and qualified identifiers
+denoting constants (e.g. somepkg.Grassland) listed in a switch statement's cases
+can contribute towards satisfying exhaustiveness. Literal values, struct fields,
+re-assignable variables, etc. will not.
 
 Type aliases
 
@@ -56,13 +56,13 @@ that we don't term T1 itself an enum type; it is only an alias for an enum
 type.
 
     package pkg
-    type T1 = otherpkg.T2
+    type T1 = newpkg.T2
     const (
-        A = otherpkg.A
-        B = otherpkg.B
+        A = newpkg.A
+        B = newpkg.B
     )
 
-    package otherpkg
+    package newpkg
     type T2 int
     const (
         A T2 = 1
@@ -77,31 +77,30 @@ exported/unexported enum members apply here too.
 
 It is worth noting that, though T1 and T2 are identical types, only constants
 declared in the same scope as type T2's scope can be T2's enum members. In the
-example, otherpkg.A and otherpkg.B are T2's enum members.
+example, newpkg.A and newpkg.B are T2's enum members.
 
 The analyzer guarantees that introducing a type alias (such as type T1 =
-otherpkg.T2) will never result in new diagnostics from the analyzer, as long as
-the set of enum member constant values of the new RHS type (otherpkg.T2) is a
-subset of the set of enu member constant values of the old LHS type (T1).
+newpkg.T2) will never result in new diagnostics from the analyzer, as long as
+the set of enum member constant values of the new RHS type (newpkg.T2) is a
+subset of the set of enum member constant values of the old LHS type (T1).
 
 Advanced notes
 
-Recall from an earlier section that for a constant to be an enum member for an
-enum type, the constant must be declared in the same scope as the enum type.
-However it is valid, both to the Go type checker and to this analyzer, for any
-constant of the right type to be listed in the cases of an enum switch statement
-(it does not necessarily have to be a constant declared in the same scope/package
-as the enum type's scope/package).
-
+Non-enum member constants in a switch statement's cases: Recall from an earlier
+section that a constant must be declared in the same scope as the enum type to
+be an enum member. It is valid, however, both to the Go type checker and to this
+analyzer, for any constant of the right type to be listed in the cases of an
+enum switch statement (it does not necessarily have to be an enum member
+constant declared in the same scope/package as the enum type's scope/package).
 This is particularly useful when a type alias is involved: A forwarding constant
-declaration (such as const pkg.A = otherpkg.A, in type T1's package, from the
-earlier example) can take the place of the actual enum member constant
-(otherpkg.A, in type T2's package) in the switch statement's cases.
+declaration (such as pkg.A, in type T1's package) can take the place of the
+actual enum member constant (newpkg.A, in type T2's package) in the switch
+statement's cases, until code is migrated to use newpkg.
 
-    var v pkg.T1 = pkg.ReturnsT1() // in effect, v is of type otherpkg.T2 due to alias
+    var v pkg.T1 = pkg.ReturnsT1() // v is effectively of type newpkg.T2 due to alias
     switch v {
-    case pkg.A: // valid substitute for otherpkg.A (same constant value)
-    case pkg.B: // valid substitute for otherpkg.B (same constant value)
+    case pkg.A: // valid substitute for newpkg.A (same constant value)
+    case pkg.B: // valid substitute for newpkg.B (same constant value)
     }
 
 Flags
