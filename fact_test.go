@@ -112,7 +112,6 @@ func checkOneFactType(t *testing.T, fact analysis.Fact) {
 			checkTypeEnumMembersFact(t, reflect.TypeOf(v).Elem())
 		default:
 			t.Errorf("unhandled type %T", v)
-			return
 		}
 	})
 }

@@ -148,10 +148,9 @@ func TestAnalyzeSwitchClauses(t *testing.T) {
 
 	assertFoundNames := func(t *testing.T, sw *ast.SwitchStmt, info *types.Info, want []constantValue, wantDefaultExists bool) {
 		t.Helper()
-		tagType := info.Types[sw.Tag].Type.(*types.Named)
 
 		var got []constantValue
-		gotDefaultExists := analyzeSwitchClauses(sw, tagType.Obj().Pkg(), m, info, func(val constantValue) {
+		gotDefaultExists := analyzeSwitchClauses(sw, info, func(val constantValue) {
 			got = append(got, val)
 		})
 

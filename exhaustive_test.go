@@ -88,7 +88,7 @@ func TestExhaustive(t *testing.T) {
 
 	// Tests for the -check-generated flag.
 	run(t, "generated-file/check-generated-off/...")
-	run(t, "generated-file/check-generated-on/...", func() { fCheckGeneratedFiles = true })
+	run(t, "generated-file/check-generated-on/...", func() { fCheckGenerated = true })
 
 	// Tests for the -default-signifies-exhaustive flag.
 	// (For tests with this flag off, see other testdata packages

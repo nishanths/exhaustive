@@ -61,15 +61,6 @@ func TestEnumMembers_add(t *testing.T) {
 	// TODO(testing): add tests for iota, repeated values, ...
 }
 
-var testdataEnumPkg = func() *packages.Package {
-	cfg := &packages.Config{Mode: packages.NeedTypesInfo | packages.NeedTypes | packages.NeedSyntax}
-	pkgs, err := packages.Load(cfg, "./testdata/src/enum")
-	if err != nil {
-		panic(err)
-	}
-	return pkgs[0]
-}()
-
 func TestFindEnums(t *testing.T) {
 	transform := func(in map[enumType]enumMembers) []checkEnum {
 		var out []checkEnum
@@ -79,6 +70,14 @@ func TestFindEnums(t *testing.T) {
 		return out
 	}
 
+	testdataEnumPkg := func() *packages.Package {
+		cfg := &packages.Config{Mode: packages.NeedTypesInfo | packages.NeedTypes | packages.NeedSyntax}
+		pkgs, err := packages.Load(cfg, "./testdata/src/enum")
+		if err != nil {
+			panic(err)
+		}
+		return pkgs[0]
+	}()
 	inspect := inspector.New(testdataEnumPkg.Syntax)
 
 	for _, pkgOnly := range [...]bool{false, true} {
@@ -89,7 +88,7 @@ func TestFindEnums(t *testing.T) {
 	}
 }
 
-// See checkEnums.
+// See func checkEnums.
 type checkEnum struct {
 	typeName string
 	members  enumMembers

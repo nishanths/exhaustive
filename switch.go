@@ -39,6 +39,7 @@ const (
 // switchStmtChecker returns a node visitor that checks exhaustiveness
 // of enum switch statements for the supplied pass, and reports diagnostics for
 // switch statements that are non-exhaustive.
+// It expects to only see *ast.SwitchStmt nodes.
 func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 	generated := make(map[*ast.File]bool)          // cached results
 	comments := make(map[*ast.File]ast.CommentMap) // cached results
@@ -108,7 +109,7 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 		checkUnexported := samePkg    // we want to include unexported members in the exhaustiveness check only if we're in the same package
 		checklist := makeChecklist(members, tagPkg, checkUnexported, cfg.ignoreEnumMembers)
 
-		hasDefaultCase := analyzeSwitchClauses(sw, tagPkg, members.NameToValue, pass.TypesInfo, func(val constantValue) {
+		hasDefaultCase := analyzeSwitchClauses(sw, pass.TypesInfo, func(val constantValue) {
 			checklist.found(val)
 		})
 
@@ -163,14 +164,11 @@ func denotesPackage(ident *ast.Ident, info *types.Info) (*types.Package, bool) {
 }
 
 // analyzeSwitchClauses analyzes the clauses in the supplied switch statement.
-//
-// tagPkg is the package of the switch statement's tag value's type.
 // The info param should typically be pass.TypesInfo. The found function is
 // called for each enum member name found in the switch statement.
-//
 // The hasDefaultCase return value indicates whether the switch statement has a
 // default clause.
-func analyzeSwitchClauses(sw *ast.SwitchStmt, tagPkg *types.Package, members map[string]constantValue, info *types.Info, found func(val constantValue)) (hasDefaultCase bool) {
+func analyzeSwitchClauses(sw *ast.SwitchStmt, info *types.Info, found func(val constantValue)) (hasDefaultCase bool) {
 	for _, stmt := range sw.Body.List {
 		caseCl := stmt.(*ast.CaseClause)
 		if isDefaultCase(caseCl) {
@@ -178,13 +176,13 @@ func analyzeSwitchClauses(sw *ast.SwitchStmt, tagPkg *types.Package, members map
 			continue // nothing more to do if it's the default case
 		}
 		for _, expr := range caseCl.List {
-			analyzeCaseClauseExpr(expr, tagPkg, members, info, found)
+			analyzeCaseClauseExpr(expr, info, found)
 		}
 	}
 	return hasDefaultCase
 }
 
-func analyzeCaseClauseExpr(e ast.Expr, tagPkg *types.Package, members map[string]constantValue, info *types.Info, found func(val constantValue)) {
+func analyzeCaseClauseExpr(e ast.Expr, info *types.Info, found func(val constantValue)) {
 	handleIdent := func(ident *ast.Ident) {
 		obj := info.Uses[ident]
 		if obj == nil {
@@ -282,6 +280,9 @@ func diagnosticEnumTypeName(enumType *types.TypeName, samePkg bool) string {
 	return enumType.Pkg().Name() + "." + enumType.Name()
 }
 
+// Makes a "missing cases in switch" diagnostic.
+// samePkg should be true if the enum type and the switch statement are defined
+// in the same package.
 func makeDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumTyp enumType, allMembers enumMembers, missingMembers map[string]struct{}) analysis.Diagnostic {
 	message := fmt.Sprintf("missing cases in switch of type %s: %s",
 		diagnosticEnumTypeName(enumTyp.TypeName, samePkg),
@@ -304,12 +305,12 @@ func makeDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumTyp enumType, allMembe
 // The remaining method returns the member names not accounted for.
 //
 type checklist struct {
-	em    enumMembers
-	names map[string]struct{}
+	em     enumMembers
+	checkl map[string]struct{}
 }
 
 func makeChecklist(em enumMembers, enumPkg *types.Package, includeUnexported bool, ignore *regexp.Regexp) *checklist {
-	names := make(map[string]struct{})
+	checkl := make(map[string]struct{})
 
 	add := func(memberName string) {
 		if memberName == "_" {
@@ -325,7 +326,7 @@ func makeChecklist(em enumMembers, enumPkg *types.Package, includeUnexported boo
 		if ignore != nil && ignore.MatchString(enumPkg.Path()+"."+memberName) {
 			return
 		}
-		names[memberName] = struct{}{}
+		checkl[memberName] = struct{}{}
 	}
 
 	for _, name := range em.Names {
@@ -333,18 +334,18 @@ func makeChecklist(em enumMembers, enumPkg *types.Package, includeUnexported boo
 	}
 
 	return &checklist{
-		em:    em,
-		names: names,
+		em:     em,
+		checkl: checkl,
 	}
 }
 
 func (c *checklist) found(val constantValue) {
 	// Delete all of the same-valued names.
 	for _, name := range c.em.ValueToNames[val] {
-		delete(c.names, name)
+		delete(c.checkl, name)
 	}
 }
 
 func (c *checklist) remaining() map[string]struct{} {
-	return c.names
+	return c.checkl
 }

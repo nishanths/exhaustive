@@ -44,10 +44,10 @@ func isGeneratedFile(file *ast.File) bool {
 	return false
 }
 
-var generatedCodeRx = regexp.MustCompile(`^// Code generated .* DO NOT EDIT\.$`)
+var generatedCodeRe = regexp.MustCompile(`^// Code generated .* DO NOT EDIT\.$`)
 
 func isGeneratedFileComment(s string) bool {
-	return generatedCodeRx.MatchString(s)
+	return generatedCodeRe.MatchString(s)
 }
 
 // ignoreDirective is used to exclude checking of specific switch statements.

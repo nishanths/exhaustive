@@ -195,7 +195,7 @@ func (v *regexpFlag) Set(expr string) error {
 func (v *regexpFlag) value() *regexp.Regexp { return v.r }
 
 func init() {
-	Analyzer.Flags.BoolVar(&fCheckGeneratedFiles, CheckGeneratedFlag, false, "check switch statements in generated files")
+	Analyzer.Flags.BoolVar(&fCheckGenerated, CheckGeneratedFlag, false, "check switch statements in generated files")
 	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, "presence of \"default\" case in switch statements satisfies exhaustiveness, even if all enum members are not listed")
 	Analyzer.Flags.Var(&fIgnoreEnumMembers, IgnoreEnumMembersFlag, "enum members matching `regex` do not have to be listed in switch statements to satisfy exhaustiveness")
 	Analyzer.Flags.BoolVar(&fPackageScopeOnly, PackageScopeOnlyFlag, false, "consider enums only in package scopes, not in inner scopes")
@@ -218,7 +218,7 @@ const (
 )
 
 var (
-	fCheckGeneratedFiles        bool
+	fCheckGenerated             bool
 	fDefaultSignifiesExhaustive bool
 	fIgnoreEnumMembers          regexpFlag
 	fPackageScopeOnly           bool
@@ -227,7 +227,7 @@ var (
 // resetFlags resets the flag variables to their default values.
 // Useful in tests.
 func resetFlags() {
-	fCheckGeneratedFiles = false
+	fCheckGenerated = false
 	fDefaultSignifiesExhaustive = false
 	fIgnoreEnumMembers = regexpFlag{}
 	fPackageScopeOnly = false
@@ -250,7 +250,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 
 	cfg := config{
 		defaultSignifiesExhaustive: fDefaultSignifiesExhaustive,
-		checkGeneratedFiles:        fCheckGeneratedFiles,
+		checkGeneratedFiles:        fCheckGenerated,
 		ignoreEnumMembers:          fIgnoreEnumMembers.value(),
 	}
 	checkSwitchStatements(pass, inspect, cfg)
