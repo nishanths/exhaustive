@@ -187,3 +187,9 @@ func _r(d Direction) {
 	case 5:
 	}
 }
+
+func _s(u bar.Uppercase) {
+	switch u {
+	case bar.ReallyExported:
+	}
+}

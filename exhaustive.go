@@ -48,6 +48,10 @@ denoting constants (e.g. somepkg.Grassland) listed in a switch statement's cases
 can contribute towards satisfying exhaustiveness. Literal values, struct fields,
 re-assignable variables, etc. will not.
 
+The analyzer will produce a diagnostic about unhandled enum members if the
+required memebers are not listed in a switch statement's cases (this applies
+even if the switch statement has a 'default' case).
+
 Type aliases
 
 The analyzer handles type aliases for an enum type in the following manner.
@@ -248,11 +252,10 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		exportFact(pass, typ, members)
 	}
 
-	cfg := config{
+	checkSwitchStatements(pass, inspect, config{
 		defaultSignifiesExhaustive: fDefaultSignifiesExhaustive,
 		checkGeneratedFiles:        fCheckGenerated,
 		ignoreEnumMembers:          fIgnoreEnumMembers.value(),
-	}
-	checkSwitchStatements(pass, inspect, cfg)
+	})
 	return nil, nil
 }
