@@ -23,17 +23,18 @@ type nodeVisitor func(n ast.Node, push bool, stack []ast.Node) (proceed bool, re
 
 // Result values returned by a node visitor constructed via switchStmtChecker.
 const (
-	resultNotPush              = "not push"
-	resultGeneratedFile        = "generated file"
-	resultNoSwitchTag          = "no switch tag"
-	resultTagNotValue          = "switch tag not value type"
-	resultTagNotNamed          = "switch tag not named type"
-	resultTagNoPkg             = "switch tag does not belong to regular package"
-	resultTagNotEnum           = "switch tag not known enum type"
-	resultSwitchIgnoreComment  = "switch statement has ignore comment"
-	resultEnumMembersAccounted = "requisite enum members accounted for"
-	resultDefaultCaseSuffices  = "default case presence satisfies exhaustiveness"
-	resultReportedDiagnostic   = "reported diagnostic"
+	resultNotPush                = "not push"
+	resultGeneratedFile          = "generated file"
+	resultNoSwitchTag            = "no switch tag"
+	resultTagNotValue            = "switch tag not value type"
+	resultTagNotNamed            = "switch tag not named type"
+	resultTagNoPkg               = "switch tag does not belong to regular package"
+	resultTagNotEnum             = "switch tag not known enum type"
+	resultSwitchIgnoreComment    = "switch statement has ignore comment"
+	resultSwitchNoEnforceComment = "switch statement has no enforce comment"
+	resultEnumMembersAccounted   = "requisite enum members accounted for"
+	resultDefaultCaseSuffices    = "default case presence satisfies exhaustiveness"
+	resultReportedDiagnostic     = "reported diagnostic"
 )
 
 // switchStmtChecker returns a node visitor that checks exhaustiveness
@@ -79,7 +80,7 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 		}
 		if cfg.explicitExhaustiveSwitch && !containsEnforceDirective(switchComments) {
 			// Skip checking of this switch statement due to missing enforce directive comment.
-			return true, resultSwitchIgnoreComment
+			return true, resultSwitchNoEnforceComment
 		}
 
 		if sw.Tag == nil {
