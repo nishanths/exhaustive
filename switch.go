@@ -70,10 +70,15 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 		if _, ok := comments[file]; !ok {
 			comments[file] = ast.NewCommentMap(pass.Fset, file, file.Comments)
 		}
-		if containsIgnoreDirective(comments[file][sw]) {
+		switchComments := comments[file][sw]
+		if !cfg.explicitExhaustiveSwitch && containsIgnoreDirective(switchComments) {
 			// Skip checking of this switch statement due to ignore directive comment.
 			// Still return true because there may be nested switch statements
 			// that are not to be ignored.
+			return true, resultSwitchIgnoreComment
+		}
+		if cfg.explicitExhaustiveSwitch && !containsEnforceDirective(switchComments) {
+			// Skip checking of this switch statement due to missing enforce directive comment.
 			return true, resultSwitchIgnoreComment
 		}
 
@@ -131,6 +136,7 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 
 // config is configuration for checkSwitchStatements.
 type config struct {
+	explicitExhaustiveSwitch   bool
 	defaultSignifiesExhaustive bool
 	checkGeneratedFiles        bool
 	ignoreEnumMembers          *regexp.Regexp // can be nil
