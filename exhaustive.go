@@ -114,10 +114,17 @@ All of these flags are optional.
 
     flag                            type    default value
 
+    -explicit-exhaustive-switch     bool    false
     -check-generated                bool    false
     -default-signifies-exhaustive   bool    false
     -ignore-enum-members            string  (none)
     -package-scope-only             bool    false
+
+
+If the -explicit-exhaustive-switch flag is enabled, the analyzer only runs on
+switch statements explicitly marked with the comment text
+("exhaustive:enforce"). Otherwise, it runs on every enum switch statement not
+marked with the comment text ("exhaustive:ignore").
 
 If the -check-generated flag is enabled, switch statements in generated Go
 source files are also checked. Otherwise, by default, switch statements in
@@ -145,11 +152,19 @@ switch on all these enums.
 
 Skip analysis
 
-To skip checking of a specific switch statement, associate the comment shown in
-the example below with the switch statement. Note the lack of whitespace between
-the comment marker ("//") and the comment text ("exhaustive:ignore").
+In implicitly exhaustive switch mode (-explicit-exhaustive-switch=false), skip
+checking of a specific switch statement by associating the comment shown in
+the example below with the switch statement. Note the lack of whitespace
+between the comment marker ("//") and the comment text ("exhaustive:ignore").
 
     //exhaustive:ignore
+    switch v { ... }
+
+In explicitly exhaustive switch mode (-explicit-exhaustive-switch=true), run
+exhaustiveness checks on a specific switch statement by associating the
+comment shown in the example below with the switch statement.
+
+    //exhaustive:enforce
     switch v { ... }
 
 To ignore specific enum members, see the -ignore-enum-members flag.
@@ -199,6 +214,7 @@ func (v *regexpFlag) Set(expr string) error {
 func (v *regexpFlag) value() *regexp.Regexp { return v.r }
 
 func init() {
+	Analyzer.Flags.BoolVar(&fExplicitExhaustiveSwitch, ExplicitExhaustiveSwitchFlag, false, "only run exhaustive check on switches with \"//exhaustive:enforce\" comment")
 	Analyzer.Flags.BoolVar(&fCheckGenerated, CheckGeneratedFlag, false, "check switch statements in generated files")
 	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, "presence of \"default\" case in switch statements satisfies exhaustiveness, even if all enum members are not listed")
 	Analyzer.Flags.Var(&fIgnoreEnumMembers, IgnoreEnumMembersFlag, "enum members matching `regex` do not have to be listed in switch statements to satisfy exhaustiveness")
@@ -212,6 +228,7 @@ func init() {
 // Flag names used by the analyzer. They are exported for use by analyzer
 // driver programs.
 const (
+	ExplicitExhaustiveSwitchFlag   = "explicit-exhaustive-switch"
 	CheckGeneratedFlag             = "check-generated"
 	DefaultSignifiesExhaustiveFlag = "default-signifies-exhaustive"
 	IgnoreEnumMembersFlag          = "ignore-enum-members"
@@ -222,6 +239,7 @@ const (
 )
 
 var (
+	fExplicitExhaustiveSwitch   bool
 	fCheckGenerated             bool
 	fDefaultSignifiesExhaustive bool
 	fIgnoreEnumMembers          regexpFlag
@@ -231,6 +249,7 @@ var (
 // resetFlags resets the flag variables to their default values.
 // Useful in tests.
 func resetFlags() {
+	fExplicitExhaustiveSwitch = false
 	fCheckGenerated = false
 	fDefaultSignifiesExhaustive = false
 	fIgnoreEnumMembers = regexpFlag{}
@@ -253,6 +272,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	}
 
 	checkSwitchStatements(pass, inspect, config{
+		explicitExhaustiveSwitch:   fExplicitExhaustiveSwitch,
 		defaultSignifiesExhaustive: fDefaultSignifiesExhaustive,
 		checkGeneratedFiles:        fCheckGenerated,
 		ignoreEnumMembers:          fIgnoreEnumMembers.value(),

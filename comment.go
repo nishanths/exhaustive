@@ -52,14 +52,23 @@ func isGeneratedFileComment(s string) bool {
 
 // ignoreDirective is used to exclude checking of specific switch statements.
 const ignoreDirective = "//exhaustive:ignore"
+const enforceDirective = "//exhaustive:enforce"
 
-func containsIgnoreDirective(comments []*ast.CommentGroup) bool {
+func containsDirective(comments []*ast.CommentGroup, directive string) bool {
 	for _, c := range comments {
 		for _, cc := range c.List {
-			if strings.HasPrefix(cc.Text, ignoreDirective) {
+			if strings.HasPrefix(cc.Text, directive) {
 				return true
 			}
 		}
 	}
 	return false
+}
+
+func containsEnforceDirective(comments []*ast.CommentGroup) bool {
+	return containsDirective(comments, enforceDirective)
+}
+
+func containsIgnoreDirective(comments []*ast.CommentGroup) bool {
+	return containsDirective(comments, ignoreDirective)
 }
