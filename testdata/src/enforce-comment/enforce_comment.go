@@ -62,3 +62,23 @@ func _nested() {
 		}
 	}
 }
+
+func _reverse_nested() {
+	var d Direction
+
+	// this should report.
+	//exhaustive:enforce
+	switch d { // want "^missing cases in switch of type Direction: E, directionInvalid$"
+	case N:
+	case S:
+	case W:
+	default:
+		// this should not report.
+		switch d {
+		case N:
+		case S:
+		case W:
+		default:
+		}
+	}
+}
