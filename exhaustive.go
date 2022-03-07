@@ -121,10 +121,10 @@ All of these flags are optional.
     -package-scope-only             bool    false
 
 
-If the -explicit-exhaustive-switch flag is enabled, the analyzer runs on every
-enum switch statement not explicitly marked with the comment text
-("exhausive:ignore"). Otherwise, it only runs on switch statements marked with
-the comment text ("exhaustive:enforce").
+If the -explicit-exhaustive-switch flag is enabled, the analyzer only runs on
+switch statements explicitly marked with the comment text
+("exhaustive:enforce"). Otherwise, it runs on every enum switch statement not
+marked with the comment text ("exhaustive:ignore").
 
 If the -check-generated flag is enabled, switch statements in generated Go
 source files are also checked. Otherwise, by default, switch statements in
@@ -152,17 +152,17 @@ switch on all these enums.
 
 Skip analysis
 
-In implicitly exhaustive switch mode, skip checking of a specific switch
-statement by associating the comment shown in the example below with the switch
-statement. Note the lack of whitespace between the comment marker ("//") and
-the comment text ("exhaustive:ignore").
+In implicitly exhaustive switch mode (-explicit-exhaustive-switch=false), skip
+checking of a specific switch statement by associating the comment shown in
+the example below with the switch statement. Note the lack of whitespace
+between the comment marker ("//") and the comment text ("exhaustive:ignore").
 
     //exhaustive:ignore
     switch v { ... }
 
-In explicitly exhaustive switch mode, run exhaustiveness checks on a specific
-switch statement by associating the comment shown in the example below with
-the switch statement.
+In explicitly exhaustive switch mode (-explicit-exhaustive-switch=true), run
+exhaustiveness checks on a specific switch statement by associating the
+comment shown in the example below with the switch statement.
 
     //exhaustive:enforce
     switch v { ... }
