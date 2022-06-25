@@ -162,7 +162,7 @@ func _q() {
 	fi, err := os.Lstat(".")
 	fmt.Println(err)
 
-	switch fi.Mode() { // want "^missing cases in switch of type fs.FileMode: ModeDevice, ModePerm, ModeSetgid, ModeSetuid, ModeType$"
+	switch fi.Mode() { // want "^missing cases in switch of type fs.FileMode: ModeDevice, ModeSetuid, ModeSetgid, ModeType, ModePerm$"
 	case os.ModeDir:
 	case os.ModeAppend:
 	case os.ModeExclusive:

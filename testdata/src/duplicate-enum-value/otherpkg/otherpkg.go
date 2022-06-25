@@ -37,7 +37,7 @@ func _r() {
 	}
 
 	var s d.State
-	switch s { // want "^missing cases in switch of type duplicateenumvalue.State: DefaultState\\|TamilNadu, Kerala$"
+	switch s { // want "^missing cases in switch of type duplicateenumvalue.State: TamilNadu\\|DefaultState, Kerala$"
 	case d.Karnataka:
 	}
 }

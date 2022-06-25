@@ -60,7 +60,7 @@ func TestDiagnosticMissingMembers(t *testing.T) {
 
 	t.Run("missing some: unique or unknown values", func(t *testing.T) {
 		got := diagnosticMissingMembers(map[string]struct{}{"Yamuna": {}, "Kaveri": {}}, em)
-		want := []string{"Kaveri", "Yamuna"}
+		want := []string{"Yamuna", "Kaveri"}
 		if !reflect.DeepEqual(want, got) {
 			t.Errorf("want %v, got %v", want, got)
 		}
@@ -75,7 +75,7 @@ func TestDiagnosticMissingMembers(t *testing.T) {
 
 	t.Run("missing all", func(t *testing.T) {
 		got := diagnosticMissingMembers(map[string]struct{}{"Ganga": {}, "Kaveri": {}, "Yamuna": {}, "Unspecified": {}}, em)
-		want := []string{"Ganga|Unspecified", "Kaveri", "Yamuna"}
+		want := []string{"Ganga|Unspecified", "Yamuna", "Kaveri"}
 		if !reflect.DeepEqual(want, got) {
 			t.Errorf("want %v, got %v", want, got)
 		}
@@ -114,7 +114,7 @@ func TestMakeDiagnostic(t *testing.T) {
 	want := analysis.Diagnostic{
 		Pos:     1,
 		End:     11,
-		Message: "missing cases in switch of type enumpkg.Biome: Desert, Savanna",
+		Message: "missing cases in switch of type enumpkg.Biome: Savanna, Desert",
 	}
 	if !reflect.DeepEqual(want, got) {
 		t.Errorf("want %+v, got %+v", want, got)

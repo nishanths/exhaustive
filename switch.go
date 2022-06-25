@@ -5,7 +5,6 @@ import (
 	"go/ast"
 	"go/types"
 	"regexp"
-	"sort"
 	"strings"
 
 	"golang.org/x/tools/go/analysis"
@@ -262,19 +261,30 @@ func analyzeCaseClauseExpr(e ast.Expr, info *types.Info, found func(val constant
 
 // diagnosticMissingMembers constructs the list of missing enum members,
 // suitable for use in a reported diagnostic message.
+// Order is the same as in enumMembers.Names.
 func diagnosticMissingMembers(missingMembers map[string]struct{}, em enumMembers) []string {
-	missingByConstVal := make(map[constantValue][]string) // missing members, keyed by constant value.
-	for m := range missingMembers {
-		val := em.NameToValue[m]
-		missingByConstVal[val] = append(missingByConstVal[val], m)
+	missingNamesGroupedByValue := make([][]string, len(em.Names)) // empty groups will be filtered out later
+	firstIndex := make(map[constantValue]int, len(em.ValueToNames))
+	for i, name := range em.Names {
+		value := em.NameToValue[name]
+		j, ok := firstIndex[value]
+		if !ok {
+			firstIndex[value] = i
+			j = i
+		}
+
+		if _, missing := missingMembers[name]; missing {
+			missingNamesGroupedByValue[j] = append(missingNamesGroupedByValue[j], name)
+		}
 	}
 
-	var out []string
-	for _, names := range missingByConstVal {
-		sort.Strings(names)
+	out := make([]string, 0, len(missingMembers))
+	for _, names := range missingNamesGroupedByValue {
+		if len(names) == 0 {
+			continue
+		}
 		out = append(out, strings.Join(names, "|"))
 	}
-	sort.Strings(out)
 	return out
 }
 
