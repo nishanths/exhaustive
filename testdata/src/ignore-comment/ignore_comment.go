@@ -54,8 +54,8 @@ func _nested() {
 	case S:
 	case W:
 	default:
-		// this should report.
-		switch d { // want "^missing cases in switch of type Direction: E, directionInvalid$"
+		// this should not report.
+		switch d {
 		case N:
 		case S:
 		case W:
@@ -80,6 +80,22 @@ func _reverse_nested() {
 		case S:
 		case W:
 		default:
+		}
+	}
+}
+
+func _comment_can_relate_to_parent_node() {
+	var d Direction
+
+	//exhaustive:ignore
+	if true {
+		for {
+			switch d {
+			case N:
+			case S:
+			case W:
+			default:
+			}
 		}
 	}
 }
