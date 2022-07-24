@@ -13,6 +13,6 @@ const (
 // The member Standard, though it has the same constant value as User, must
 // still be reported in the diagnostic.
 func _c(a Access) {
-	switch a { // want "^missing cases in switch of type Access: Group, Standard$"
+	switch a { // want "^missing cases in switch of type Access: Standard, Group$"
 	}
 }
