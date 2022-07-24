@@ -80,6 +80,28 @@ func TestDiagnosticMissingMembers(t *testing.T) {
 			t.Errorf("want %v, got %v", want, got)
 		}
 	})
+
+	em = enumMembers{
+		Names: []string{"X", "A", "Unspecified"},
+		NameToValue: map[string]constantValue{
+			"Unspecified": "0",
+			"X":           "0",
+			"A":           "1",
+		},
+		ValueToNames: map[constantValue][]string{
+			"0": {"Unspecified", "X"},
+			"1": {"A"},
+		},
+	}
+	checkEnumMembersLiteral("whatever", em)
+
+	t.Run("AST order", func(t *testing.T) {
+		got := diagnosticMissingMembers(map[string]struct{}{"Unspecified": {}, "X": {}, "A": {}}, em)
+		want := []string{"X|Unspecified", "A"}
+		if !reflect.DeepEqual(want, got) {
+			t.Errorf("want %v, got %v", want, got)
+		}
+	})
 }
 
 // This test mainly exists to ensure stability of the diagnostic message format.

@@ -5,6 +5,7 @@ import (
 	"go/ast"
 	"go/types"
 	"regexp"
+	"sort"
 	"strings"
 
 	"golang.org/x/tools/go/analysis"
@@ -247,29 +248,34 @@ func analyzeCaseClauseExpr(e ast.Expr, info *types.Info, found func(val constant
 // suitable for use in a reported diagnostic message.
 // Order is the same as in enumMembers.Names.
 func diagnosticMissingMembers(missingMembers map[string]struct{}, em enumMembers) []string {
-	missingNamesGroupedByValue := make([][]string, len(em.Names)) // empty groups will be filtered out later
-	firstIndex := make(map[constantValue]int, len(em.ValueToNames))
+	// member name -> AST order index.
+	// used for quick lookup during future sorts.
+	order := make(map[string]int, len(em.Names))
 	for i, name := range em.Names {
-		value := em.NameToValue[name]
-		j, ok := firstIndex[value]
-		if !ok {
-			firstIndex[value] = i
-			j = i
-		}
-
-		if _, missing := missingMembers[name]; missing {
-			missingNamesGroupedByValue[j] = append(missingNamesGroupedByValue[j], name)
-		}
+		order[name] = i
 	}
 
-	out := make([]string, 0, len(missingMembers))
-	for _, names := range missingNamesGroupedByValue {
-		if len(names) == 0 {
-			continue
-		}
-		out = append(out, strings.Join(names, "|"))
+	// sort the given slice by AST order.
+	byASTOrder := func(vs []string) []string {
+		sort.Slice(vs, func(i, j int) bool {
+			return order[vs[i]] < order[vs[j]]
+		})
+		return vs
 	}
-	return out
+
+	// missing members, grouped by constant value.
+	missingByConstVal := make(map[constantValue][]string)
+	for m := range missingMembers {
+		val := em.NameToValue[m]
+		missingByConstVal[val] = append(missingByConstVal[val], m)
+	}
+
+	var out []string
+	for _, names := range missingByConstVal {
+		out = append(out, strings.Join(byASTOrder(names), "|"))
+	}
+
+	return byASTOrder(out)
 }
 
 // diagnosticEnumTypeName returns a string representation of an enum type for
