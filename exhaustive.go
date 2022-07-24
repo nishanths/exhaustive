@@ -176,6 +176,7 @@ package exhaustive
 
 import (
 	"flag"
+	"go/ast"
 	"regexp"
 
 	"golang.org/x/tools/go/analysis"
@@ -271,11 +272,33 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		exportFact(pass, typ, members)
 	}
 
-	checkSwitchStatements(pass, inspect, config{
-		explicitExhaustiveSwitch:   fExplicitExhaustiveSwitch,
-		defaultSignifiesExhaustive: fDefaultSignifiesExhaustive,
-		checkGeneratedFiles:        fCheckGenerated,
-		ignoreEnumMembers:          fIgnoreEnumMembers.value(),
+	generated := make(generatedCache)
+	comments := make(commentsCache)
+
+	checkSwitch := switchStmtChecker(
+		pass,
+		switchConfig{
+			explicitExhaustiveSwitch:   fExplicitExhaustiveSwitch,
+			defaultSignifiesExhaustive: fDefaultSignifiesExhaustive,
+			checkGeneratedFiles:        fCheckGenerated,
+			ignoreEnumMembers:          fIgnoreEnumMembers.value(),
+		},
+		generated,
+		comments,
+	)
+
+	filter := []ast.Node{
+		&ast.SwitchStmt{},
+	}
+
+	inspect.WithStack(filter, func(n ast.Node, push bool, stack []ast.Node) bool {
+		var proceed bool
+		switch n.(type) {
+		case *ast.SwitchStmt:
+			proceed, _ = checkSwitch(n, push, stack)
+		}
+		return proceed
 	})
+
 	return nil, nil
 }

@@ -9,7 +9,6 @@ import (
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/ast/astutil"
-	"golang.org/x/tools/go/ast/inspector"
 )
 
 // nodeVisitor is like the visitor function used by Inspector.WithStack,
@@ -40,10 +39,7 @@ const (
 // of enum switch statements for the supplied pass, and reports diagnostics for
 // switch statements that are non-exhaustive.
 // It expects to only see *ast.SwitchStmt nodes.
-func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
-	generated := make(map[*ast.File]bool)          // cached results
-	comments := make(map[*ast.File]ast.CommentMap) // cached results
-
+func switchStmtChecker(pass *analysis.Pass, cfg switchConfig, generated generatedCache, comments commentsCache) nodeVisitor {
 	return func(n ast.Node, push bool, stack []ast.Node) (bool, string) {
 		if !push {
 			// The proceed return value should not matter; it is ignored by
@@ -54,12 +50,7 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 
 		file := stack[0].(*ast.File)
 
-		// Determine if the file is a generated file, and save the result.
-		// If it is a generated file, don't check the file.
-		if _, ok := generated[file]; !ok {
-			generated[file] = isGeneratedFile(file)
-		}
-		if generated[file] && !cfg.checkGeneratedFiles {
+		if !cfg.checkGeneratedFiles && generated.IsGenerated(file) {
 			// Don't check this file.
 			// Return false because the children nodes of node `n` don't have to be checked.
 			return false, resultGeneratedFile
@@ -67,10 +58,7 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 
 		sw := n.(*ast.SwitchStmt)
 
-		if _, ok := comments[file]; !ok {
-			comments[file] = ast.NewCommentMap(pass.Fset, file, file.Comments)
-		}
-		switchComments := comments[file][sw]
+		switchComments := comments.GetComments(file, pass.Fset)[sw]
 		if !cfg.explicitExhaustiveSwitch && containsIgnoreDirective(switchComments) {
 			// Skip checking of this switch statement due to ignore directive comment.
 			// Still return true because there may be nested switch statements
@@ -114,9 +102,7 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 		checkUnexported := samePkg    // we want to include unexported members in the exhaustiveness check only if we're in the same package
 		checklist := makeChecklist(members, tagPkg, checkUnexported, cfg.ignoreEnumMembers)
 
-		hasDefaultCase := analyzeSwitchClauses(sw, pass.TypesInfo, func(val constantValue) {
-			checklist.found(val)
-		})
+		hasDefaultCase := analyzeSwitchClauses(sw, pass.TypesInfo, checklist.found)
 
 		if len(checklist.remaining()) == 0 {
 			// All enum members accounted for.
@@ -129,28 +115,17 @@ func switchStmtChecker(pass *analysis.Pass, cfg config) nodeVisitor {
 			// So don't report.
 			return true, resultDefaultCaseSuffices
 		}
-		pass.Report(makeDiagnostic(sw, samePkg, enumTyp, members, checklist.remaining()))
+		pass.Report(makeSwitchDiagnostic(sw, samePkg, enumTyp, members, checklist.remaining()))
 		return true, resultReportedDiagnostic
 	}
 }
 
-// config is configuration for checkSwitchStatements.
-type config struct {
+// switchConfig is configuration for switchStmtChecker.
+type switchConfig struct {
 	explicitExhaustiveSwitch   bool
 	defaultSignifiesExhaustive bool
 	checkGeneratedFiles        bool
 	ignoreEnumMembers          *regexp.Regexp // can be nil
-}
-
-// checkSwitchStatements checks exhaustiveness of enum switch statements for the supplied
-// pass. It reports switch statements that are not exhaustive via pass.Report.
-func checkSwitchStatements(pass *analysis.Pass, inspect *inspector.Inspector, cfg config) {
-	f := switchStmtChecker(pass, cfg)
-
-	inspect.WithStack([]ast.Node{&ast.SwitchStmt{}}, func(n ast.Node, push bool, stack []ast.Node) bool {
-		proceed, _ := f(n, push, stack)
-		return proceed
-	})
 }
 
 func isDefaultCase(c *ast.CaseClause) bool {
@@ -300,7 +275,7 @@ func diagnosticEnumTypeName(enumType *types.TypeName, samePkg bool) string {
 // Makes a "missing cases in switch" diagnostic.
 // samePkg should be true if the enum type and the switch statement are defined
 // in the same package.
-func makeDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumTyp enumType, allMembers enumMembers, missingMembers map[string]struct{}) analysis.Diagnostic {
+func makeSwitchDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumTyp enumType, allMembers enumMembers, missingMembers map[string]struct{}) analysis.Diagnostic {
 	message := fmt.Sprintf("missing cases in switch of type %s: %s",
 		diagnosticEnumTypeName(enumTyp.TypeName, samePkg),
 		strings.Join(diagnosticMissingMembers(missingMembers, allMembers), ", "))
