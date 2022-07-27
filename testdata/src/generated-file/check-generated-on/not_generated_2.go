@@ -7,6 +7,10 @@ func _2() {
 	switch d { // want "^missing cases in switch of type Direction: E, S, W, directionInvalid$"
 	case N:
 	}
+
+	_ = map[Direction]int{ // want "^missing map keys of type Direction: E, S, W, directionInvalid$"
+		N: 1,
+	}
 }
 
 // Explanation: comment is too far into the file.

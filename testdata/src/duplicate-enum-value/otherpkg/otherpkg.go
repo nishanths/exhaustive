@@ -16,6 +16,20 @@ func _p() {
 	switch r {
 	case d.DefaultRiver, d.Yamuna, d.Kaveri:
 	}
+
+	// should not report missing DefaultRiver, since it has same value as Ganga
+	_ = map[d.River]int{
+		d.Ganga:  1,
+		d.Yamuna: 2,
+		d.Kaveri: 3,
+	}
+
+	// should not report missing Ganga, since it has same value as DefaultRiver
+	_ = map[d.River]int{
+		d.DefaultRiver: 1,
+		d.Yamuna:       2,
+		d.Kaveri:       3,
+	}
 }
 
 func _q() {
@@ -24,6 +38,13 @@ func _q() {
 	// should not report missing DefaultState, since it has same value as TamilNadu
 	switch s {
 	case d.TamilNadu, d.Kerala, d.Karnataka:
+	}
+
+	// should not report missing DefaultState, since it has same value as TamilNadu
+	_ = map[d.State]int{
+		d.TamilNadu: 1,
+		d.Kerala:    2,
+		d.Karnataka: 3,
 	}
 }
 
@@ -40,6 +61,14 @@ func _r() {
 	switch s { // want "^missing cases in switch of type duplicateenumvalue.State: TamilNadu\\|DefaultState, Kerala$"
 	case d.Karnataka:
 	}
+
+	_ = map[d.River]int{ // want "^missing map keys of type duplicateenumvalue.River: DefaultRiver\\|Ganga, Kaveri$"
+		d.Yamuna: 1,
+	}
+
+	_ = map[d.State]int{ // want "^missing map keys of type duplicateenumvalue.State: TamilNadu\\|DefaultState, Kerala$"
+		d.Karnataka: 1,
+	}
 }
 
 func _s(c d.Chart) {
@@ -47,5 +76,11 @@ func _s(c d.Chart) {
 	case d.Line:
 	case d.Sunburst:
 	case d.Area:
+	}
+
+	_ = map[d.Chart]int{ // want "^missing map keys of type duplicateenumvalue.Chart: Pie$"
+		d.Line:     1,
+		d.Sunburst: 2,
+		d.Area:     3,
 	}
 }

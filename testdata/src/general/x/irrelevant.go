@@ -24,6 +24,10 @@ func _d() {
 	switch a {
 	case PlainIntA:
 	}
+
+	_ = map[int]int{
+		PlainIntA: 1,
+	}
 }
 
 type NamedButNotEnum int
@@ -35,5 +39,19 @@ func _e() {
 	var a NamedButNotEnum
 	switch a {
 	case 1:
+	}
+
+	_ = map[NamedButNotEnum]int{
+		1: 1,
+	}
+}
+
+func emptyMapShouldBeIgnored() {
+	// because it can be used instead of make(...)
+
+	_ = map[barpkg.Phylum]int{}
+
+	_ = map[barpkg.Phylum]int{ // want "^missing map keys of type bar.Phylum: Echinodermata, Mollusca$"
+		barpkg.Chordata: 1,
 	}
 }

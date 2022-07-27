@@ -112,7 +112,10 @@ func TestExhaustive(t *testing.T) {
 
 	// Switch statements without enforce directive comment should not be checked during explicitly exhaustive
 	// switch mode
-	run(t, "enforce-comment/...", func() { fExplicitExhaustiveSwitch = true })
+	run(t, "enforce-comment/...", func() {
+		fExplicitExhaustiveSwitch = true
+		fExplicitExhaustiveMap = true
+	})
 
 	// To satisfy exhaustiveness, it is sufficient for each unique constant
 	// value of the members to be listed, not each member by name.

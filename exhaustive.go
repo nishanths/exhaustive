@@ -1,6 +1,6 @@
 /*
 Package exhaustive provides an analyzer that checks exhaustiveness of enum
-switch statements in Go source code.
+switch statements and map literals in Go source code.
 
 Definition of enum
 
@@ -51,6 +51,11 @@ re-assignable variables, etc. will not.
 The analyzer will produce a diagnostic about unhandled enum members if the
 required memebers are not listed in a switch statement's cases (this applies
 even if the switch statement has a 'default' case).
+
+Map literals
+
+All above relates to map literals as well, if key is an enum type.
+But empty map is ignored because it's an alternative for make(map...).
 
 Type aliases
 
@@ -115,6 +120,7 @@ All of these flags are optional.
     flag                            type    default value
 
     -explicit-exhaustive-switch     bool    false
+    -explicit-exhaustive-map        bool    false
     -check-generated                bool    false
     -default-signifies-exhaustive   bool    false
     -ignore-enum-members            string  (none)
@@ -124,6 +130,11 @@ All of these flags are optional.
 If the -explicit-exhaustive-switch flag is enabled, the analyzer only runs on
 switch statements explicitly marked with the comment text
 ("exhaustive:enforce"). Otherwise, it runs on every enum switch statement not
+marked with the comment text ("exhaustive:ignore").
+
+If the -explicit-exhaustive-map flag is enabled, the analyzer only runs on
+map literals explicitly marked with the comment text
+("exhaustive:enforce"). Otherwise, it runs on every enum map literal not
 marked with the comment text ("exhaustive:ignore").
 
 If the -check-generated flag is enabled, switch statements in generated Go
@@ -216,6 +227,7 @@ func (v *regexpFlag) value() *regexp.Regexp { return v.r }
 
 func init() {
 	Analyzer.Flags.BoolVar(&fExplicitExhaustiveSwitch, ExplicitExhaustiveSwitchFlag, false, "only run exhaustive check on switches with \"//exhaustive:enforce\" comment")
+	Analyzer.Flags.BoolVar(&fExplicitExhaustiveMap, ExplicitExhaustiveMapFlag, false, "only run exhaustive check on map literals with \"//exhaustive:enforce\" comment")
 	Analyzer.Flags.BoolVar(&fCheckGenerated, CheckGeneratedFlag, false, "check switch statements in generated files")
 	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, "presence of \"default\" case in switch statements satisfies exhaustiveness, even if all enum members are not listed")
 	Analyzer.Flags.Var(&fIgnoreEnumMembers, IgnoreEnumMembersFlag, "enum members matching `regex` do not have to be listed in switch statements to satisfy exhaustiveness")
@@ -230,6 +242,7 @@ func init() {
 // driver programs.
 const (
 	ExplicitExhaustiveSwitchFlag   = "explicit-exhaustive-switch"
+	ExplicitExhaustiveMapFlag      = "explicit-exhaustive-map"
 	CheckGeneratedFlag             = "check-generated"
 	DefaultSignifiesExhaustiveFlag = "default-signifies-exhaustive"
 	IgnoreEnumMembersFlag          = "ignore-enum-members"
@@ -241,6 +254,7 @@ const (
 
 var (
 	fExplicitExhaustiveSwitch   bool
+	fExplicitExhaustiveMap      bool
 	fCheckGenerated             bool
 	fDefaultSignifiesExhaustive bool
 	fIgnoreEnumMembers          regexpFlag
@@ -251,6 +265,7 @@ var (
 // Useful in tests.
 func resetFlags() {
 	fExplicitExhaustiveSwitch = false
+	fExplicitExhaustiveMap = false
 	fCheckGenerated = false
 	fDefaultSignifiesExhaustive = false
 	fIgnoreEnumMembers = regexpFlag{}
@@ -259,7 +274,7 @@ func resetFlags() {
 
 var Analyzer = &analysis.Analyzer{
 	Name:      "exhaustive",
-	Doc:       "check exhaustiveness of enum switch statements",
+	Doc:       "check exhaustiveness of enum switch statements and map literals",
 	Run:       run,
 	Requires:  []*analysis.Analyzer{inspect.Analyzer},
 	FactTypes: []analysis.Fact{&enumMembersFact{}},
@@ -287,8 +302,20 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		comments,
 	)
 
+	checkMap := mapChecker(
+		pass,
+		mapConfig{
+			explicitExhaustiveMap: fExplicitExhaustiveMap,
+			checkGeneratedFiles:   fCheckGenerated,
+			ignoreEnumMembers:     fIgnoreEnumMembers.value(),
+		},
+		generated,
+		comments,
+	)
+
 	filter := []ast.Node{
 		&ast.SwitchStmt{},
+		&ast.CompositeLit{},
 	}
 
 	inspect.WithStack(filter, func(n ast.Node, push bool, stack []ast.Node) bool {
@@ -296,6 +323,8 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		switch n.(type) {
 		case *ast.SwitchStmt:
 			proceed, _ = checkSwitch(n, push, stack)
+		case *ast.CompositeLit:
+			proceed, _ = checkMap(n, push, stack)
 		}
 		return proceed
 	})
