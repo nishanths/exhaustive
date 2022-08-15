@@ -1,6 +1,6 @@
 package x
 
-func _k(d Direction) {	
+func _k(d Direction) {
 	// Parenthesized values in case statements.
 	switch d { // want "^missing cases in switch of type Direction: S, directionInvalid$"
 	case (N):
@@ -13,5 +13,11 @@ func _k(d Direction) {
 	case N:
 	case E:
 	case W:
+	}
+
+	_ = map[Direction]int{ // want "^missing map keys of type Direction: S, directionInvalid$"
+		(N): 1,
+		(E): 2,
+		(((W))): 3,
 	}
 }

@@ -10,4 +10,8 @@ func _doc_0() {
 	switch d {
 	case N:
 	}
+
+	_ = map[Direction]int{
+		N: 1,
+	}
 }

@@ -1,28 +1,46 @@
 package quux
 
 import (
-    "typealias/bar"
-    "typealias/foo"
+	"typealias/bar"
+	"typealias/foo"
 )
 
 func x() {
-    var v foo.T1 = foo.ReturnsT1()
-    switch v { // want "^missing cases in switch of type bar.T2: D, E$"
-    case foo.A:
-    case bar.B:
-    case foo.C:
-    case foo.D:
-    case foo.F:
-    case foo.H:
-    }
+	var v foo.T1 = foo.ReturnsT1()
+	switch v { // want "^missing cases in switch of type bar.T2: D, E$"
+	case foo.A:
+	case bar.B:
+	case foo.C:
+	case foo.D:
+	case foo.F:
+	case foo.H:
+	}
 
-    var w bar.T2 = foo.ReturnsT1()
-    switch w { // want "^missing cases in switch of type bar.T2: D, E$"
-    case foo.A:
-    case bar.B:
-    case foo.C:
-    case foo.D:
-    case foo.F:
-    case foo.H:
-    }
+	var w bar.T2 = foo.ReturnsT1()
+	switch w { // want "^missing cases in switch of type bar.T2: D, E$"
+	case foo.A:
+	case bar.B:
+	case foo.C:
+	case foo.D:
+	case foo.F:
+	case foo.H:
+	}
+
+	_ = map[foo.T1]int{ // want "^missing map keys of type bar.T2: D, E$"
+		foo.A: 1,
+		bar.B: 2,
+		foo.C: 3,
+		foo.D: 4,
+		foo.F: 5,
+		foo.H: 6,
+	}
+
+	_ = map[bar.T2]int{ // want "^missing map keys of type bar.T2: D, E$"
+		foo.A: 1,
+		bar.B: 2,
+		foo.C: 3,
+		foo.D: 4,
+		foo.F: 5,
+		foo.H: 6,
+	}
 }

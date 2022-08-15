@@ -47,3 +47,37 @@ func _a() {
 	case X:
 	}
 }
+
+func _b() {
+	type T int
+
+	const (
+		C T = iota
+		D
+	)
+
+	_ = map[T]int{
+		C: 1,
+		D: 2,
+	}
+
+	_ = map[T]int{
+		C: 1,
+	}
+
+	type Q string
+
+	const (
+		X Q = "x"
+		Y Q = "y"
+	)
+
+	_ = map[Q]int{
+		X: 1,
+		Y: 2,
+	}
+
+	_ = map[Q]int{
+		X: 1,
+	}
+}

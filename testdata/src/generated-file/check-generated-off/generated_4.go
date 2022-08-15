@@ -11,4 +11,8 @@ func _4() {
 	switch d {
 	case N:
 	}
+
+	_ = map[Direction]int{
+		N: 1,
+	}
 }

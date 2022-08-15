@@ -49,6 +49,12 @@ func _a() {
 	case W:
 	default:
 	}
+
+	_ = map[Direction]int{ // want "^missing map keys of type Direction: E, directionInvalid$"
+		N: 1,
+		S: 2,
+		W: 3,
+	}
 }
 
 func _b() {
@@ -62,6 +68,11 @@ func _b() {
 	case bar.Chordata:
 	case bar.Echinodermata:
 	}
+
+	_ = map[bar.Phylum]int{ // want "^missing map keys of type bar.Phylum: Mollusca$"
+		bar.Chordata:      1,
+		bar.Echinodermata: 2,
+	}
 }
 
 func _j() {
@@ -71,6 +82,11 @@ func _j() {
 	switch p { // want "^missing cases in switch of type bar.Phylum: Mollusca$"
 	case barpkg.Chordata:
 	case barpkg.Echinodermata:
+	}
+
+	_ = map[barpkg.Phylum]int{ // want "^missing map keys of type bar.Phylum: Mollusca$"
+		barpkg.Chordata:      1,
+		barpkg.Echinodermata: 2,
 	}
 }
 
@@ -136,6 +152,12 @@ func _o() {
 	case bar.Echinodermata:
 	case h.Mollusca:
 	}
+
+	_ = map[bar.Phylum]int{ // want "^missing map keys of type bar.Phylum: Mollusca$"
+		bar.Chordata:      1,
+		bar.Echinodermata: 2,
+		h.Mollusca:        3,
+	}
 }
 
 var ErrFoo = errors.New("foo")
@@ -149,6 +171,11 @@ func _p() {
 	switch err {
 	case nil:
 	case ErrFoo:
+	}
+
+	_ = map[error]int{
+		nil:    1,
+		ErrFoo: 2,
 	}
 }
 
@@ -173,6 +200,19 @@ func _q() {
 	case fs.ModeSticky:
 	case fs.ModeIrregular:
 	}
+
+	_ = map[fs.FileMode]int{ // want "^missing map keys of type fs.FileMode: ModeDevice, ModeSetuid, ModeSetgid, ModeType, ModePerm$"
+		os.ModeDir:        1,
+		os.ModeAppend:     2,
+		os.ModeExclusive:  3,
+		fs.ModeTemporary:  4,
+		fs.ModeSymlink:    5,
+		fs.ModeNamedPipe:  6,
+		os.ModeSocket:     7,
+		fs.ModeCharDevice: 8,
+		fs.ModeSticky:     9,
+		fs.ModeIrregular:  10,
+	}
 }
 
 func _r(d Direction) {
@@ -186,10 +226,42 @@ func _r(d Direction) {
 	case W:
 	case 5:
 	}
+
+	_ = map[Direction]int{ // want "^missing map keys of type Direction: S, directionInvalid$"
+		N: 1,
+		E: 2,
+		3: 3,
+		W: 4,
+		5: 5,
+	}
 }
 
 func _s(u bar.Uppercase) {
 	switch u {
 	case bar.ReallyExported:
+	}
+
+	_ = map[bar.Uppercase]int{
+		bar.ReallyExported: 1,
+	}
+}
+
+func mapTypeAlias() {
+	type myMapAlias = map[Direction]int
+
+	_ = myMapAlias{ // want "^missing map keys of type Direction: S, directionInvalid$"
+		N: 1,
+		E: 2,
+		W: 4,
+	}
+}
+
+func customMapType() {
+	type myMap map[Direction]int
+
+	_ = myMap{ // want "^missing map keys of type Direction: S, directionInvalid$"
+		N: 1,
+		E: 2,
+		W: 4,
 	}
 }

@@ -15,4 +15,8 @@ const (
 func _c(a Access) {
 	switch a { // want "^missing cases in switch of type Access: Standard, Group$"
 	}
+
+	_ = map[Access]int{ // want "^missing map keys of type Access: Standard, Group$"
+		0: 0,
+	}
 }

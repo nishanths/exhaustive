@@ -83,7 +83,7 @@ func TestDiagnosticMissingMembers(t *testing.T) {
 }
 
 // This test mainly exists to ensure stability of the diagnostic message format.
-func TestMakeDiagnostic(t *testing.T) {
+func TestMakeSwitchDiagnostic(t *testing.T) {
 	sw := &ast.SwitchStmt{
 		Switch: 1,
 		Body: &ast.BlockStmt{
@@ -110,7 +110,7 @@ func TestMakeDiagnostic(t *testing.T) {
 	checkEnumMembersLiteral("Biome", allMembers)
 	missingMembers := map[string]struct{}{"Savanna": {}, "Desert": {}}
 
-	got := makeDiagnostic(sw, samePkg, enumTyp, allMembers, missingMembers)
+	got := makeSwitchDiagnostic(sw, samePkg, enumTyp, allMembers, missingMembers)
 	want := analysis.Diagnostic{
 		Pos:     1,
 		End:     11,

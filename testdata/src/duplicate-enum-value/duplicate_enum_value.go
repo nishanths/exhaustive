@@ -36,4 +36,10 @@ func _s(c Chart) {
 	case Sunburst:
 	case Area:
 	}
+
+	_ = map[Chart]int{ // want "^missing map keys of type Chart: Pie\\|circle$"
+		Line:     1,
+		Sunburst: 2,
+		Area:     3,
+	}
 }
