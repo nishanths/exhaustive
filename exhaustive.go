@@ -56,6 +56,7 @@ Map literals
 
 All above relates to map literals as well, if key is an enum type.
 But empty map is ignored because it's an alternative for make(map...).
+The -maps flag must be enabled.
 
 Type aliases
 
@@ -119,6 +120,7 @@ All of these flags are optional.
 
     flag                            type    default value
 
+    -maps                           bool    false
     -explicit-exhaustive-switch     bool    false
     -explicit-exhaustive-map        bool    false
     -check-generated                bool    false
@@ -126,6 +128,8 @@ All of these flags are optional.
     -ignore-enum-members            string  (none)
     -package-scope-only             bool    false
 
+If the -maps flag is enabled, the analyzer additionally checks map literals
+having enum key types for exhaustiveness.
 
 If the -explicit-exhaustive-switch flag is enabled, the analyzer only runs on
 switch statements explicitly marked with the comment text
@@ -226,6 +230,7 @@ func (v *regexpFlag) Set(expr string) error {
 func (v *regexpFlag) value() *regexp.Regexp { return v.r }
 
 func init() {
+	Analyzer.Flags.BoolVar(&fCheckMaps, CheckMapsFlag, false, "additionally check map literals of enum key type for exhaustiveness")
 	Analyzer.Flags.BoolVar(&fExplicitExhaustiveSwitch, ExplicitExhaustiveSwitchFlag, false, "only run exhaustive check on switches with \"//exhaustive:enforce\" comment")
 	Analyzer.Flags.BoolVar(&fExplicitExhaustiveMap, ExplicitExhaustiveMapFlag, false, "only run exhaustive check on map literals with \"//exhaustive:enforce\" comment")
 	Analyzer.Flags.BoolVar(&fCheckGenerated, CheckGeneratedFlag, false, "check switch statements in generated files")
@@ -241,6 +246,7 @@ func init() {
 // Flag names used by the analyzer. They are exported for use by analyzer
 // driver programs.
 const (
+	CheckMapsFlag                  = "maps"
 	ExplicitExhaustiveSwitchFlag   = "explicit-exhaustive-switch"
 	ExplicitExhaustiveMapFlag      = "explicit-exhaustive-map"
 	CheckGeneratedFlag             = "check-generated"
@@ -253,6 +259,7 @@ const (
 )
 
 var (
+	fCheckMaps                  bool
 	fExplicitExhaustiveSwitch   bool
 	fExplicitExhaustiveMap      bool
 	fCheckGenerated             bool
@@ -264,6 +271,7 @@ var (
 // resetFlags resets the flag variables to their default values.
 // Useful in tests.
 func resetFlags() {
+	fCheckMaps = false
 	fExplicitExhaustiveSwitch = false
 	fExplicitExhaustiveMap = false
 	fCheckGenerated = false
@@ -313,12 +321,14 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		comments,
 	)
 
-	filter := []ast.Node{
+	types := []ast.Node{
 		&ast.SwitchStmt{},
-		&ast.CompositeLit{},
+	}
+	if fCheckMaps {
+		types = append(types, &ast.CompositeLit{})
 	}
 
-	inspect.WithStack(filter, func(n ast.Node, push bool, stack []ast.Node) bool {
+	inspect.WithStack(types, func(n ast.Node, push bool, stack []ast.Node) bool {
 		var proceed bool
 		switch n.(type) {
 		case *ast.SwitchStmt:

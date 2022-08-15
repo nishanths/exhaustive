@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"go/ast"
 	"go/types"
-	"golang.org/x/tools/go/analysis"
 	"regexp"
 	"strings"
+
+	"golang.org/x/tools/go/analysis"
 )
 
 // mapConfig is configuration for mapChecker.

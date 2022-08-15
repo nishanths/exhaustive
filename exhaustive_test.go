@@ -76,6 +76,7 @@ func TestExhaustive(t *testing.T) {
 		t.Helper()
 		t.Run(pattern, func(t *testing.T) {
 			resetFlags()
+			fCheckMaps = true // default to true for test
 			for _, f := range setup {
 				f()
 			}
