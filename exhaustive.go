@@ -56,7 +56,7 @@ even if the switch statement has a 'default' case).
 
 All of the above also applies to map literals in which the key type is an enum
 type. Empty map literals are never checked. The -check flag must include
-"maps" for map literals to be checked.
+"map" for map literals to be checked.
 
 # Type aliases
 
