@@ -1,6 +1,7 @@
 package exhaustive
 
 import (
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -76,7 +77,8 @@ func TestExhaustive(t *testing.T) {
 		t.Helper()
 		t.Run(pattern, func(t *testing.T) {
 			resetFlags()
-			fCheckMaps = true // default to true for test
+			// default to checking switch and maps for test.
+			fCheck = fmt.Sprintf("%s,%s", checkSwitch, checkMap)
 			for _, f := range setup {
 				f()
 			}

@@ -19,7 +19,7 @@ import (
 // that the nodeVisitor function took the expected code path.
 type nodeVisitor func(n ast.Node, push bool, stack []ast.Node) (proceed bool, result string)
 
-// Result values returned by a node visitor constructed via switchStmtChecker.
+// Result values returned by a node visitor constructed via switchChecker.
 const (
 	resultNotPush                = "not push"
 	resultGeneratedFile          = "generated file"
@@ -42,11 +42,11 @@ const (
 	resultReportedDiagnostic     = "reported diagnostic"
 )
 
-// switchStmtChecker returns a node visitor that checks exhaustiveness
+// switchChecker returns a node visitor that checks exhaustiveness
 // of enum switch statements for the supplied pass, and reports diagnostics for
 // switch statements that are non-exhaustive.
 // It expects to only see *ast.SwitchStmt nodes.
-func switchStmtChecker(pass *analysis.Pass, cfg switchConfig, generated generatedCache, comments commentsCache) nodeVisitor {
+func switchChecker(pass *analysis.Pass, cfg switchConfig, generated generatedCache, comments commentsCache) nodeVisitor {
 	return func(n ast.Node, push bool, stack []ast.Node) (bool, string) {
 		if !push {
 			// The proceed return value should not matter; it is ignored by
@@ -127,7 +127,7 @@ func switchStmtChecker(pass *analysis.Pass, cfg switchConfig, generated generate
 	}
 }
 
-// switchConfig is configuration for switchStmtChecker.
+// switchConfig is configuration for switchChecker.
 type switchConfig struct {
 	explicitExhaustiveSwitch   bool
 	defaultSignifiesExhaustive bool
@@ -302,7 +302,6 @@ func makeSwitchDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumTyp enumType, al
 // statement's cases.
 //
 // The remaining method returns the member names not accounted for.
-//
 type checklist struct {
 	em     enumMembers
 	checkl map[string]struct{}
