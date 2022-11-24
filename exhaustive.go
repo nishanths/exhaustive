@@ -113,7 +113,7 @@ The following switch statements are equally valid and exhaustive.
 # Type parameters
 
 A switch statement that switches on a value of a type-parameterized type
-is checked for exhaustiveness iff each of the elements of the constraint
+is checked for exhaustiveness iff each of the elements of its constraint
 is an enum type. The following switch statement will be checked,
 assuming M, N, and O are enum types. To satisfy exhaustiveness, all
 members for each of M, N, and O must be listed in the switch statement's
@@ -306,44 +306,29 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		checkGenerated:    fCheckGenerated,
 		ignoreEnumMembers: fIgnoreEnumMembers.regexp(),
 	}
-
 	swChecker := switchChecker(pass, swConf, generated, comments)
 	mapChecker := mapChecker(pass, mapConf, generated, comments)
 
-	nodeType := func(e checkElement) ast.Node {
-		switch e {
+	for _, e := range fCheck.elements {
+		switch checkElement(e) {
 		case elementSwitch:
-			return &ast.SwitchStmt{}
+			inspect.WithStack([]ast.Node{&ast.SwitchStmt{}}, toVisitor(swChecker))
 		case elementMap:
-			return &ast.CompositeLit{}
+			inspect.WithStack([]ast.Node{&ast.CompositeLit{}}, toVisitor(mapChecker))
 		default:
 			panic(fmt.Sprintf("unknown checkElement %v", e))
 		}
 	}
+	return nil, nil
+}
 
-	nodeTypes := func() []ast.Node {
-		var out []ast.Node
-		for _, e := range fCheck.elements {
-			out = append(out, nodeType(checkElement(e)))
-		}
-		return out
-	}
-
-	visitor := func(n ast.Node, push bool, stack []ast.Node) bool {
-		var proceed bool
-		switch n.(type) {
-		case *ast.SwitchStmt:
-			proceed, _ = swChecker(n, push, stack)
-		case *ast.CompositeLit:
-			proceed, _ = mapChecker(n, push, stack)
-		default:
-			panic(fmt.Sprintf("unexpected node type %T", n))
-		}
+// toVisitor converts a nodeVisitor to a function suitable for use
+// with inspect.WithStack.
+func toVisitor(v nodeVisitor) func(ast.Node, bool, []ast.Node) bool {
+	return func(node ast.Node, push bool, stack []ast.Node) bool {
+		proceed, _ := v(node, push, stack)
 		return proceed
 	}
-
-	inspect.WithStack(nodeTypes(), visitor)
-	return nil, nil
 }
 
 // TODO(nishanths): When dropping pre go1.19 support, the following

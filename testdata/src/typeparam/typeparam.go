@@ -34,3 +34,15 @@ func bazz[T ~int](v T) {
 	case T(A):
 	}
 }
+
+type X interface {
+	M | N
+}
+
+type O string
+
+func qux[T X](v T) {
+	switch v {
+	case T(A):
+	}
+}

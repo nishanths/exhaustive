@@ -124,8 +124,10 @@ func switchChecker(pass *analysis.Pass, cfg switchConfig, generated boolCache, c
 			return true, resultReportedDiagnostic
 
 		case *types.TypeParam:
-			log.Printf("%#v", tagType.Obj())
-			log.Printf("%#v", tagType.Constraint().(*types.Interface))
+			log.Printf("%T", tagType.Constraint())
+			log.Printf("%#v", tagType.Constraint())
+			// log.Printf("%#v", tagType.Obj())
+			log.Printf("%#v", tagType.Constraint().Underlying().(*types.Interface))
 			// log.Printf("%#v", tagType.Obj().TypeParams())
 			// log.Printf("%#v", tagType.Obj().TypeArgs())
 			return true, ""
