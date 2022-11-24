@@ -98,7 +98,7 @@ func possibleEnumMember(constName *ast.Ident, info *types.Info) (et enumType, na
 	}
 
 	/*
-		NOTE:
+		Notes:
 
 		type T int
 		const A T = iota // obj.Type() is T
@@ -115,7 +115,7 @@ func possibleEnumMember(constName *ast.Ident, info *types.Info) (et enumType, na
 		type T5 = T3
 		const D T5 = iota // obj.Type() is T4
 
-		// And, in all these cases, validNamedBasic(obj.Type()) == true.
+		In all these cases, validNamedBasic(obj.Type()) == true.
 	*/
 
 	if !validNamedBasic(obj.Type()) {
@@ -157,7 +157,8 @@ func validBasic(basic *types.Basic) bool {
 // type is a valid basic type to form an enum.
 // A type that passes this check meets the definition of an enum type.
 // Note that
-//   validNamedBasic(t) == true => t.(*types.Named)
+//
+//	validNamedBasic(t) == true => t.(*types.Named)
 func validNamedBasic(t types.Type) bool {
 	named, ok := t.(*types.Named)
 	if !ok {

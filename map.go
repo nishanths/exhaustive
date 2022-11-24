@@ -45,7 +45,6 @@ func mapChecker(pass *analysis.Pass, cfg mapConfig, generated boolCache, comment
 			if !ok2 {
 				return true, resultNotMapLiteral
 			}
-
 			mapType, ok = namedType.Underlying().(*types.Map)
 			if !ok {
 				return true, resultNotMapLiteral
@@ -53,13 +52,12 @@ func mapChecker(pass *analysis.Pass, cfg mapConfig, generated boolCache, comment
 		}
 
 		if len(lit.Elts) == 0 {
-			// because it may be used as an alternative for make(map[...]...)
 			return false, resultEmptyMapLiteral
 		}
 
 		keyType, ok := mapType.Key().(*types.Named)
 		if !ok {
-			return true, resultMapKeyIsNotNamedType
+			return true, resultKeyNotNamed
 		}
 
 		fileComments := comments.get(pass.Fset, file)
@@ -90,24 +88,24 @@ func mapChecker(pass *analysis.Pass, cfg mapConfig, generated boolCache, comment
 			// Skip checking of this map literal due to ignore directive comment.
 			// Still return true because there may be nested map literals
 			// that are not to be ignored.
-			return true, resultMapIgnoreComment
+			return true, resultIgnoreComment
 		}
 		if cfg.explicit && !hasComment(relatedComments, enforceComment) {
 			// Skip checking of this map literal due to missing enforce directive comment.
-			return true, resultMapNoEnforceComment
+			return true, resultNoEnforceComment
 		}
 
 		keyPkg := keyType.Obj().Pkg()
 		if keyPkg == nil {
 			// The Go documentation says: nil for labels and objects in the Universe scope.
 			// This happens for the `error` type, for example.
-			return true, resultNilMapKeyTypePkg
+			return true, resultKeyNilPkg
 		}
 
 		enumTyp := enumType{keyType.Obj()}
 		members, ok := importFact(pass, enumTyp)
 		if !ok {
-			return true, resultMapKeyNotEnum
+			return true, resultKeyNotEnum
 		}
 
 		samePkg := keyPkg == pass.Pkg // do the map literal and the map key type (i.e. enum type) live in the same package?
@@ -133,16 +131,12 @@ func mapChecker(pass *analysis.Pass, cfg mapConfig, generated boolCache, comment
 	}
 }
 
-// Makes a "missing map keys" diagnostic.
-// samePkg should be true if the enum type and the map literal are defined in the same package.
-func makeMapDiagnostic(lit *ast.CompositeLit, samePkg bool, enumTyp enumType, allMembers enumMembers, missingMembers map[string]struct{}) analysis.Diagnostic {
-	message := fmt.Sprintf("missing map keys of type %s: %s",
-		diagnosticEnumTypeName(enumTyp.TypeName, samePkg),
-		strings.Join(diagnosticMissingMembers(missingMembers, allMembers), ", "))
-
+func makeMapDiagnostic(lit *ast.CompositeLit, samePkg bool, enumTyp enumType, all enumMembers, missing map[string]struct{}) analysis.Diagnostic {
+	typeName := diagnosticEnumTypeName(enumTyp.TypeName, samePkg)
+	members := strings.Join(diagnosticMissingMembers(missing, all), ", ")
 	return analysis.Diagnostic{
 		Pos:     lit.Pos(),
 		End:     lit.End(),
-		Message: message,
+		Message: fmt.Sprintf("missing keys in map of key type %s: %s", typeName, members),
 	}
 }
