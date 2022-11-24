@@ -96,7 +96,7 @@ Issues and pull requests are welcome. Before making a substantial
 change, please discuss it in an issue.
 
 [repo]: https://pkg.go.dev/github.com/nishanths/exhaustive
-[godoc-svg]: https://pkg.go.dev/github.com/nishanths/exhaustive?status.svg
+[godoc-svg]: https://pkg.go.dev/badge/github.com/nishanths/exhaustive.svg
 [godoc]: https://pkg.go.dev/github.com/nishanths/exhaustive
 [xanalysis]: https://pkg.go.dev/golang.org/x/tools/go/analysis
 [changelog]: https://github.com/nishanths/exhaustive/wiki/CHANGELOG

@@ -56,9 +56,11 @@ When using the default analyzer configuration, the existence of a
 make a switch statement exhaustive. See the
 -default-signifies-exhaustive flag to adjust this behavior.
 
-The definition of exhaustiveness applies to a map literal whose key type
-is an enum type. Empty map literals never checked. Note that the -check
-flag must include "map" for map literals to be checked.
+A similar definition of exhaustiveness applies to a map literal whose
+key type is an enum type. To be exhaustive, the map literal must specify
+keys corresponding to all of the enum members. Empty map literals never
+checked. Note that the -check flag must include "map" for map literals
+to be checked.
 
 # Type aliases
 
