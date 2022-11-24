@@ -25,7 +25,7 @@ func switchWithoutDefault(b Biome) {
 
 func switchParen(b Biome) {
 	switch b {
-	case (Tundra), (Desert):
+	case ((Tundra)), (Desert):
 	}
 }
 
