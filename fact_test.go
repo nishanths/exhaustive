@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"go/ast"
+	"go/token"
 	"reflect"
 	"testing"
 
@@ -15,6 +16,11 @@ func TestEnumMembersFact(t *testing.T) {
 		e := enumMembersFact{
 			Members: enumMembers{
 				Names: []string{"Tundra", "Savanna", "Desert"},
+				NameToPos: map[string]token.Pos{
+					"Tundra":  100,
+					"Savanna": 200,
+					"Desert":  300,
+				},
 				NameToValue: map[string]constantValue{
 					"Tundra":  "1",
 					"Savanna": "2",
@@ -35,6 +41,14 @@ func TestEnumMembersFact(t *testing.T) {
 		e = enumMembersFact{
 			Members: enumMembers{
 				Names: []string{"_", "add", "sub", "mul", "quotient", "remainder"},
+				NameToPos: map[string]token.Pos{
+					"_":         1,
+					"add":       11,
+					"sub":       12,
+					"mul":       33,
+					"quotient":  34,
+					"remainder": 35,
+				},
 				NameToValue: map[string]constantValue{
 					"_":         "0",
 					"add":       "1",
@@ -61,8 +75,8 @@ func TestEnumMembersFact(t *testing.T) {
 // This test exists to prevent regressions where changes made to a fact type used
 // by the Analyzer makes the type fail to gob-encode/decode. Particuarly:
 //
-//  * gob values cannot seem to have nil pointers.
-//  * fields must be exported to survive the encode/decode.
+//   - gob values cannot seem to have nil pointers.
+//   - fields must be exported to survive the encode/decode.
 //
 // The test likely doesn't cover everything that could go wrong during gob
 // encoding/decoding.
@@ -103,8 +117,9 @@ func checkOneFactType(t *testing.T, fact analysis.Fact) {
 		}
 	})
 
-	// Fields should all be exported. And no pointer types should be present
-	// unless you're absolutely sure, since nil pointers don't work with gob.
+	// Ensure that all all fields all exported, and there are no pointer
+	// types. Nil pointer values don't work with gob. We can't guarantee
+	// non-nil values here, so we just disallow all pointer types.
 	t.Run("fields", func(t *testing.T) {
 		switch v := fact.(type) {
 		// NOTE: if there are more fact types, add them here.
@@ -137,21 +152,32 @@ func checkTypeEnumMembers(t *testing.T, enumMembersType reflect.Type) {
 
 	assertTypeFields(t, enumMembersType, []wantField{
 		{"Names", "[]string"},
+		{"NameToPos", "map[string]token.Pos"},
 		{"NameToValue", "map[string]exhaustive.constantValue"},
 		{"ValueToNames", "map[exhaustive.constantValue][]string"},
 	})
 
-	field, ok := enumMembersType.FieldByName("NameToValue")
+	// Check that types such as token.Pos and constantValue have basic
+	// underlying types (e.g. int, string).
+
+	// check token.Pos.
+	field, ok := enumMembersType.FieldByName("NameToPos")
 	if !ok {
 		t.Errorf("failed to find field")
 		return
 	}
 	cvType := field.Type.Elem()
-	checkTypeConstantValue(t, cvType)
-}
+	if cvType.Kind() != reflect.Int {
+		t.Errorf("unexpected kind %v", cvType.Kind())
+	}
 
-func checkTypeConstantValue(t *testing.T, cvType reflect.Type) {
-	t.Helper()
+	// check constantValue.
+	field, ok = enumMembersType.FieldByName("NameToValue")
+	if !ok {
+		t.Errorf("failed to find field")
+		return
+	}
+	cvType = field.Type.Elem()
 	if cvType.Kind() != reflect.String {
 		t.Errorf("unexpected kind %v", cvType.Kind())
 	}

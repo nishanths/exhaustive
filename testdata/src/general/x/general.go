@@ -8,7 +8,6 @@ import (
 	"fmt"
 	bar "general/y"
 	barpkg "general/y"
-	"io/fs"
 	"net/http"
 	"os"
 	"reflect"
@@ -43,14 +42,14 @@ func _a() {
 	// check since enum is in same package.
 
 	var d Direction
-	switch d { // want "^missing cases in switch of type Direction: E, directionInvalid$"
+	switch d { // want "^missing cases in switch of type x.Direction: x.E, x.directionInvalid$"
 	case N:
 	case S:
 	case W:
 	default:
 	}
 
-	_ = map[Direction]int{ // want "^missing keys in map of key type Direction: E, directionInvalid$"
+	_ = map[Direction]int{ // want "^missing keys in map of key type x.Direction: x.E, x.directionInvalid$"
 		N: 1,
 		S: 2,
 		W: 3,
@@ -64,12 +63,12 @@ func _b() {
 	// check since enum is in external package.
 
 	var p bar.Phylum
-	switch p { // want "^missing cases in switch of type bar.Phylum: Mollusca$"
+	switch p { // want "^missing cases in switch of type bar.Phylum: bar.Mollusca$"
 	case bar.Chordata:
 	case bar.Echinodermata:
 	}
 
-	_ = map[bar.Phylum]int{ // want "^missing keys in map of key type bar.Phylum: Mollusca$"
+	_ = map[bar.Phylum]int{ // want "^missing keys in map of key type bar.Phylum: bar.Mollusca$"
 		bar.Chordata:      1,
 		bar.Echinodermata: 2,
 	}
@@ -79,12 +78,12 @@ func _j() {
 	// Named imports still report real package name.
 
 	var p barpkg.Phylum
-	switch p { // want "^missing cases in switch of type bar.Phylum: Mollusca$"
+	switch p { // want "^missing cases in switch of type bar.Phylum: bar.Mollusca$"
 	case barpkg.Chordata:
 	case barpkg.Echinodermata:
 	}
 
-	_ = map[barpkg.Phylum]int{ // want "^missing keys in map of key type bar.Phylum: Mollusca$"
+	_ = map[barpkg.Phylum]int{ // want "^missing keys in map of key type bar.Phylum: bar.Mollusca$"
 		barpkg.Chordata:      1,
 		barpkg.Echinodermata: 2,
 	}
@@ -94,7 +93,7 @@ func _f() {
 	// Multiple values in single case.
 
 	var d Direction
-	switch d { // want "^missing cases in switch of type Direction: W$"
+	switch d { // want "^missing cases in switch of type x.Direction: x.W$"
 	case E, directionInvalid, S:
 	default:
 	case N:
@@ -106,16 +105,16 @@ func _g() {
 
 	var d Direction
 	if true {
-		switch d { // want "^missing cases in switch of type Direction: S, directionInvalid$"
+		switch d { // want "^missing cases in switch of type x.Direction: x.S, x.directionInvalid$"
 		case (N):
 		case (E):
 		case (W):
 		}
 	}
 
-	switch d { // want "^missing cases in switch of type Direction: E, S, W, directionInvalid$"
+	switch d { // want "^missing cases in switch of type x.Direction: x.E, x.S, x.W, x.directionInvalid$"
 	case N:
-		switch d { // want "^missing cases in switch of type Direction: N, S, W$"
+		switch d { // want "^missing cases in switch of type x.Direction: x.N, x.S, x.W$"
 		case E, directionInvalid:
 		}
 	}
@@ -147,13 +146,13 @@ func _o() {
 	var p bar.Phylum
 	var h holdsPhylum
 
-	switch p { // want "^missing cases in switch of type bar.Phylum: Mollusca$"
+	switch p { // want "^missing cases in switch of type bar.Phylum: bar.Mollusca$"
 	case bar.Chordata:
 	case bar.Echinodermata:
 	case h.Mollusca:
 	}
 
-	_ = map[bar.Phylum]int{ // want "^missing keys in map of key type bar.Phylum: Mollusca$"
+	_ = map[bar.Phylum]int{ // want "^missing keys in map of key type bar.Phylum: bar.Mollusca$"
 		bar.Chordata:      1,
 		bar.Echinodermata: 2,
 		h.Mollusca:        3,
@@ -179,47 +178,11 @@ func _p() {
 	}
 }
 
-func _q() {
-	// Type alias:
-	// type os.FileMode = fs.FileMode
-	//
-	// Of interest, note that e.g. listing os.ModeSocket in a case clause is
-	// equivalent to listing fs.ModeSocket (both have the same constant value).
-
-	fi, err := os.Lstat(".")
-	fmt.Println(err)
-
-	switch fi.Mode() { // want "^missing cases in switch of type fs.FileMode: ModeDevice, ModeSetuid, ModeSetgid, ModeType, ModePerm$"
-	case os.ModeDir:
-	case os.ModeAppend:
-	case os.ModeExclusive:
-	case fs.ModeTemporary:
-	case fs.ModeSymlink:
-	case fs.ModeNamedPipe, os.ModeSocket:
-	case fs.ModeCharDevice:
-	case fs.ModeSticky:
-	case fs.ModeIrregular:
-	}
-
-	_ = map[fs.FileMode]int{ // want "^missing keys in map of key type fs.FileMode: ModeDevice, ModeSetuid, ModeSetgid, ModeType, ModePerm$"
-		os.ModeDir:        1,
-		os.ModeAppend:     2,
-		os.ModeExclusive:  3,
-		fs.ModeTemporary:  4,
-		fs.ModeSymlink:    5,
-		fs.ModeNamedPipe:  6,
-		os.ModeSocket:     7,
-		fs.ModeCharDevice: 8,
-		fs.ModeSticky:     9,
-		fs.ModeIrregular:  10,
-	}
-}
-
 func _r(d Direction) {
 	// Raw constants (i.e. not identifier or sel expr)
 	// in case clauses do not count.
 
-	switch d { // want "^missing cases in switch of type Direction: S, directionInvalid$"
+	switch d { // want "^missing cases in switch of type x.Direction: x.S, x.directionInvalid$"
 	case N:
 	case E:
 	case 3:
@@ -227,7 +190,7 @@ func _r(d Direction) {
 	case 5:
 	}
 
-	_ = map[Direction]int{ // want "^missing keys in map of key type Direction: S, directionInvalid$"
+	_ = map[Direction]int{ // want "^missing keys in map of key type x.Direction: x.S, x.directionInvalid$"
 		N: 1,
 		E: 2,
 		3: 3,
@@ -246,10 +209,23 @@ func _s(u bar.Uppercase) {
 	}
 }
 
+func _ufunc0() Direction            { return directionInvalid }
+func _ufunc1(d Direction) Direction { return d }
+
+func _u() {
+	switch _ufunc0() { // want "^missing cases in switch of type x.Direction: x.W, x.directionInvalid$"
+	case N, E, S:
+	}
+
+	switch _ufunc1(Direction(0)) { // want "^missing cases in switch of type x.Direction: x.W, x.directionInvalid$"
+	case N, E, S:
+	}
+}
+
 func mapTypeAlias() {
 	type myMapAlias = map[Direction]int
 
-	_ = myMapAlias{ // want "^missing keys in map of key type Direction: S, directionInvalid$"
+	_ = myMapAlias{ // want "^missing keys in map of key type x.Direction: x.S, x.directionInvalid$"
 		N: 1,
 		E: 2,
 		W: 4,
@@ -259,9 +235,17 @@ func mapTypeAlias() {
 func customMapType() {
 	type myMap map[Direction]int
 
-	_ = myMap{ // want "^missing keys in map of key type Direction: S, directionInvalid$"
+	_ = myMap{ // want "^missing keys in map of key type x.Direction: x.S, x.directionInvalid$"
 		N: 1,
 		E: 2,
 		W: 4,
+	}
+}
+
+func mapKeyFuncCall() {
+	_ = map[Direction]int{ // want "^missing keys in map of key type x.Direction: x.N, x.E, x.W, x.directionInvalid$"
+		_ufunc0():               1,
+		_ufunc1(Direction(100)): 1,
+		S:                       1,
 	}
 }

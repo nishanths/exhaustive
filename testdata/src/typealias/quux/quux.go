@@ -7,7 +7,7 @@ import (
 
 func x() {
 	var v foo.T1 = foo.ReturnsT1()
-	switch v { // want "^missing cases in switch of type bar.T2: D, E$"
+	switch v { // want "^missing cases in switch of type bar.T2: bar.D, bar.E$"
 	case foo.A:
 	case bar.B:
 	case foo.C:
@@ -17,7 +17,7 @@ func x() {
 	}
 
 	var w bar.T2 = foo.ReturnsT1()
-	switch w { // want "^missing cases in switch of type bar.T2: D, E$"
+	switch w { // want "^missing cases in switch of type bar.T2: bar.D, bar.E$"
 	case foo.A:
 	case bar.B:
 	case foo.C:
@@ -26,7 +26,7 @@ func x() {
 	case foo.H:
 	}
 
-	_ = map[foo.T1]int{ // want "^missing keys in map of key type bar.T2: D, E$"
+	_ = map[foo.T1]int{ // want "^missing keys in map of key type bar.T2: bar.D, bar.E$"
 		foo.A: 1,
 		bar.B: 2,
 		foo.C: 3,
@@ -35,7 +35,7 @@ func x() {
 		foo.H: 6,
 	}
 
-	_ = map[bar.T2]int{ // want "^missing keys in map of key type bar.T2: D, E$"
+	_ = map[bar.T2]int{ // want "^missing keys in map of key type bar.T2: bar.D, bar.E$"
 		foo.A: 1,
 		bar.B: 2,
 		foo.C: 3,

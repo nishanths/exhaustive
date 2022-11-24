@@ -53,32 +53,32 @@ func _r() {
 	// missing.
 
 	var r d.River
-	switch r { // want "^missing cases in switch of type duplicateenumvalue.River: DefaultRiver\\|Ganga, Kaveri$"
+	switch r { // want `^missing cases in switch of type duplicateenumvalue.River: duplicateenumvalue.DefaultRiver\|duplicateenumvalue.Ganga, duplicateenumvalue.Kaveri$`
 	case d.Yamuna:
 	}
 
 	var s d.State
-	switch s { // want "^missing cases in switch of type duplicateenumvalue.State: TamilNadu\\|DefaultState, Kerala$"
+	switch s { // want `^missing cases in switch of type duplicateenumvalue.State: duplicateenumvalue.TamilNadu\|duplicateenumvalue.DefaultState, duplicateenumvalue.Kerala$`
 	case d.Karnataka:
 	}
 
-	_ = map[d.River]int{ // want "^missing keys in map of key type duplicateenumvalue.River: DefaultRiver\\|Ganga, Kaveri$"
+	_ = map[d.River]int{ // want `^missing keys in map of key type duplicateenumvalue.River: duplicateenumvalue.DefaultRiver\|duplicateenumvalue.Ganga, duplicateenumvalue.Kaveri$`
 		d.Yamuna: 1,
 	}
 
-	_ = map[d.State]int{ // want "^missing keys in map of key type duplicateenumvalue.State: TamilNadu\\|DefaultState, Kerala$"
+	_ = map[d.State]int{ // want `^missing keys in map of key type duplicateenumvalue.State: duplicateenumvalue.TamilNadu\|duplicateenumvalue.DefaultState, duplicateenumvalue.Kerala$`
 		d.Karnataka: 1,
 	}
 }
 
 func _s(c d.Chart) {
-	switch c { // want "^missing cases in switch of type duplicateenumvalue.Chart: Pie$"
+	switch c { // want "^missing cases in switch of type duplicateenumvalue.Chart: duplicateenumvalue.Pie$"
 	case d.Line:
 	case d.Sunburst:
 	case d.Area:
 	}
 
-	_ = map[d.Chart]int{ // want "^missing keys in map of key type duplicateenumvalue.Chart: Pie$"
+	_ = map[d.Chart]int{ // want "^missing keys in map of key type duplicateenumvalue.Chart: duplicateenumvalue.Pie$"
 		d.Line:     1,
 		d.Sunburst: 2,
 		d.Area:     3,

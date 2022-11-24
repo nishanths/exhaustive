@@ -2,7 +2,7 @@ package x
 
 import bar "general/y"
 
-// These switches are exhaustive, expect no diagnostics.
+// These are exhaustive, expect no diagnostics.
 
 func _l() {
 	var d Direction

@@ -13,36 +13,43 @@ import (
 // constantValue is a constant.Value.ExactString().
 type constantValue string
 
-// Represents an enum type (or a potential enum type).
-// It is a defined (named) type's name.
+// enumType represents an enum type as defined by this program, which
+// effectively is a defined (named) type.
 type enumType struct{ *types.TypeName }
 
 func (et enumType) String() string           { return et.TypeName.String() } // for debugging
 func (et enumType) scope() *types.Scope      { return et.TypeName.Parent() } // scope that the type is declared in
 func (et enumType) factObject() types.Object { return et.TypeName }          // types.Object for fact export
 
-// enumMembers is the members for a single enum type.
+// enumMembers is set of enum members for a single enum type.
 // The zero value is ready to use.
 type enumMembers struct {
-	Names        []string                   // enum member names, AST order
+	Names        []string                   // enum member names
+	NameToPos    map[string]token.Pos       // member name -> AST position
 	NameToValue  map[string]constantValue   // enum member name -> constant value
 	ValueToNames map[constantValue][]string // constant value -> enum member names
 }
 
-func (em *enumMembers) add(name string, val constantValue) {
+// add adds an enum member to the set.
+func (em *enumMembers) add(name string, val constantValue, pos token.Pos) {
+	if em.NameToPos == nil {
+		em.NameToPos = make(map[string]token.Pos)
+	}
 	if em.NameToValue == nil {
 		em.NameToValue = make(map[string]constantValue)
 	}
 	if em.ValueToNames == nil {
 		em.ValueToNames = make(map[constantValue][]string)
 	}
-
 	em.Names = append(em.Names, name)
+	em.NameToPos[name] = pos
 	em.NameToValue[name] = val
 	em.ValueToNames[val] = append(em.ValueToNames[val], name)
 }
 
-func (em enumMembers) String() string { return em.factString() } // for debugging
+func (em enumMembers) String() string {
+	return em.factString()
+}
 
 func (em enumMembers) factString() string {
 	var buf strings.Builder
@@ -74,7 +81,7 @@ func findEnums(pkgScopeOnly bool, pkg *types.Package, inspect *inspector.Inspect
 					continue
 				}
 				v := result[enumTyp]
-				v.add(memberName, val)
+				v.add(memberName, val, name.Pos())
 				result[enumTyp] = v
 			}
 		}

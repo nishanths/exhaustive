@@ -1,6 +1,6 @@
 package bar
 
-type Phylum int // want Phylum:"^Chordata,Echinodermata,Mollusca,platyhelminthes$"
+type Phylum uint8 // want Phylum:"^Chordata,Echinodermata,Mollusca,platyhelminthes$"
 
 const (
 	Chordata Phylum = iota

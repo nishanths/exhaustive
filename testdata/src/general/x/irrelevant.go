@@ -47,11 +47,5 @@ func _e() {
 }
 
 func emptyMapShouldBeIgnored() {
-	// because it can be used instead of make(...)
-
 	_ = map[barpkg.Phylum]int{}
-
-	_ = map[barpkg.Phylum]int{ // want "^missing keys in map of key type bar.Phylum: Echinodermata, Mollusca$"
-		barpkg.Chordata: 1,
-	}
 }

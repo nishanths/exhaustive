@@ -1,9 +1,9 @@
 package absent
 
-import dse "default-signifies-exhaustive"
+import "default-signifies-exhaustive"
 
 func _a(t dse.T) {
-	switch t { // want "^missing cases in switch of type dse.T: B$"
+	switch t { // want "^missing cases in switch of type dse.T: dse.B$"
 	case dse.A:
 	}
 }

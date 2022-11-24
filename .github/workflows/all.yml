@@ -1,0 +1,37 @@
+on: [push, pull_request]
+name: all
+jobs:
+  main:
+    strategy:
+      matrix:
+        go-version: [1.14, 1.16, 1.18, 1.x]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: install go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go-version }}
+
+    - name: checkout code
+      uses: actions/checkout@v2
+
+    - name: build
+      run: make build
+
+    # for earlier go versions, staticcheck build fails due to
+    #   ../../../go/pkg/mod/honnef.co/go/tools@v0.3.3/go/ir/builder.go:36:2: //go:build comment without // +build comment
+    - name: install vet tools (>= go1.17)
+      if: ${{ matrix.go-version >= '1.17' }}
+      run: |
+        go install github.com/nishanths/exhaustive/cmd/exhaustive@latest
+        go install github.com/gordonklaus/ineffassign@latest
+        go install github.com/kisielk/errcheck@latest
+        go install honnef.co/go/tools/cmd/staticcheck@latest
+
+    - name: vet (>= go1.17)
+      if: ${{ matrix.go-version >= '1.17' }}
+      run: make vet
+
+    - name: test
+      run: make test

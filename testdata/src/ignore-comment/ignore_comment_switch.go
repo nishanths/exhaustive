@@ -15,7 +15,7 @@ func _a() {
 	}
 
 	// this should report.
-	switch d { // want "^missing cases in switch of type Direction: E, directionInvalid$"
+	switch d { // want "^missing cases in switch of type ignorecomment.Direction: ignorecomment.E, ignorecomment.directionInvalid$"
 	case N:
 	case S:
 	case W:
@@ -36,7 +36,7 @@ func _b() {
 	}
 
 	// this should report.
-	switch d { // want "^missing cases in switch of type Direction: E, directionInvalid$"
+	switch d { // want "^missing cases in switch of type ignorecomment.Direction: ignorecomment.E, ignorecomment.directionInvalid$"
 	case N:
 	case S:
 	case W:
@@ -49,7 +49,7 @@ func _c0() {
 
 	// this should report: according to go/ast, the comment is not considered to
 	// be associated with the switch statement node.
-	switch d { //exhaustive:ignore // want "^missing cases in switch of type Direction: E, directionInvalid$"
+	switch d { //exhaustive:ignore // want "^missing cases in switch of type ignorecomment.Direction: ignorecomment.E, ignorecomment.directionInvalid$"
 	case N:
 	case S:
 	case W:
@@ -57,7 +57,7 @@ func _c0() {
 	}
 
 	// this should report.
-	switch d { // want "^missing cases in switch of type Direction: E, directionInvalid$"
+	switch d { // want "^missing cases in switch of type ignorecomment.Direction: ignorecomment.E, ignorecomment.directionInvalid$"
 	case N:
 	case S:
 	case W:
@@ -70,7 +70,7 @@ func _c1() {
 
 	// this should report: according to go/ast, the comment is not considered to
 	// be associated with the switch statement node.
-	switch d { // want "^missing cases in switch of type Direction: E, directionInvalid$"
+	switch d { // want "^missing cases in switch of type ignorecomment.Direction: ignorecomment.E, ignorecomment.directionInvalid$"
 	//exhaustive:ignore
 	case N:
 	case S:
@@ -79,7 +79,7 @@ func _c1() {
 	}
 
 	// this should report.
-	switch d { // want "^missing cases in switch of type Direction: E, directionInvalid$"
+	switch d { // want "^missing cases in switch of type ignorecomment.Direction: ignorecomment.E, ignorecomment.directionInvalid$"
 	case N:
 	case S:
 	case W:
@@ -89,7 +89,7 @@ func _c1() {
 
 func _d() {
 	// this should report.
-	switch (func() Direction { // want "^missing cases in switch of type Direction: E, directionInvalid$"
+	switch (func() Direction { // want "^missing cases in switch of type ignorecomment.Direction: ignorecomment.E, ignorecomment.directionInvalid$"
 		// this should not report.
 		var x Direction
 		//exhaustive:ignore
@@ -107,7 +107,7 @@ func _d() {
 	var d Direction
 
 	// this should report.
-	switch d { // want "^missing cases in switch of type Direction: E, directionInvalid$"
+	switch d { // want "^missing cases in switch of type ignorecomment.Direction: ignorecomment.E, ignorecomment.directionInvalid$"
 	case N:
 	case S:
 	case W:
@@ -126,7 +126,7 @@ func _nested() {
 	case W:
 	default:
 		// this should report.
-		switch d { // want "^missing cases in switch of type Direction: E, directionInvalid$"
+		switch d { // want "^missing cases in switch of type ignorecomment.Direction: ignorecomment.E, ignorecomment.directionInvalid$"
 		case N:
 		case S:
 		case W:
@@ -139,7 +139,7 @@ func _reverse_nested() {
 	var d Direction
 
 	// this should report.
-	switch d { // want "^missing cases in switch of type Direction: E, directionInvalid$"
+	switch d { // want "^missing cases in switch of type ignorecomment.Direction: ignorecomment.E, ignorecomment.directionInvalid$"
 	case N:
 	case S:
 	case W:

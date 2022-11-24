@@ -1,32 +1,35 @@
 # exhaustive [![Godoc][godoc-svg]][repo]
 
-Checks exhaustiveness of enum switch statements in Go source code.
+Package exhaustive defines an analyzer that checks exhaustiveness of switch
+statements of enum-like constants in Go source code. The analyzer can be
+configured to additionally check exhaustiveness of map keys for map literals
+whose key type is enum-like.
+
+For documentation on the flags, the definition of enum, and the definition of
+exhaustiveness, see [pkg.go.dev][godoc-doc]. For a changelog, see
+[CHANGELOG][changelog] in the GitHub wiki.
+
+The exported `analysis.Analyzer` uses the
+[`golang.org/x/tools/go/analysis`][xanalysis] API. This should make it
+possible to integrate `exhaustive` in your own analysis driver program.
+
+## Install
+
+Install the command line program:
 
 ```
 go install github.com/nishanths/exhaustive/cmd/exhaustive@latest
 ```
 
-For documentation on flags, the definition of enum, and the definition
-of exhaustiveness, see [pkg.go.dev][godoc-doc]. For a changelog, see
-[CHANGELOG][changelog] in the wiki.
+## Usage
 
-The program may additionally be configured to check for exhaustiveness
-of map literals with enum key types. See examples below.
+```
+exhaustive [flags] [packages]
+```
 
-The package provides an `analysis.Analyzer` value that follows the
-guidelines in the [`golang.org/x/tools/go/analysis`][xanalysis] package.
-This should make it possible to integrate `exhaustive` with your own
-analysis driver programs.
+## Example
 
-## Bugs
-
-`exhaustive` does not report missing cases in a switch statement that
-switches on a type-parameterized type. See [this issue][issue-typeparam]
-for details.
-
-## Examples
-
-Given the enum
+Given the enum:
 
 ```go
 package token
@@ -42,7 +45,7 @@ const (
 )
 ```
 
-and code that switches on the enum
+and code that switches on the enum:
 
 ```go
 package calc
@@ -65,19 +68,19 @@ var m = map[token.Token]string{
 }
 ```
 
-running `exhaustive` with default options will print
+running `exhaustive` with default options will print:
 
 ```
-% exhaustive path/to/pkg/calc
+% exhaustive
 calc.go:6:2: missing cases in switch of type token.Token: Quotient, Remainder
 %
 ```
 
-To additionally check exhaustiveness of map literals, use
-`-check=switch,map`.
+To additionally check exhaustiveness of map literal keys, use
+`-check=switch,map`:
 
 ```
-% exhaustive -check=switch,map path/to/pkg/calc
+% exhaustive -check=switch,map
 calc.go:6:2: missing cases in switch of type token.Token: Quotient, Remainder
 calc.go:14:9: missing keys in map of key type token.Token: Quotient, Remainder
 %
@@ -85,8 +88,8 @@ calc.go:14:9: missing keys in map of key type token.Token: Quotient, Remainder
 
 ## Contributing
 
-Issues and pull requests are welcome. Before making a substantial
-change please discuss it in an issue.
+Issues and changes are welcome. Please discuss substantial changes
+in an issue first.
 
 [repo]: https://pkg.go.dev/github.com/nishanths/exhaustive
 [godoc-svg]: https://pkg.go.dev/badge/github.com/nishanths/exhaustive.svg

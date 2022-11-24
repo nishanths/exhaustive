@@ -7,29 +7,29 @@ var _ = map[Direction]int{
 }
 
 //exhaustive:enforce
-var _ = map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+var _ = map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 	N: 1,
 }
 
 //exhaustive:enforce
 var (
-	_ = map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+	_ = map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 		N: 1,
 	}
-	_ = &map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+	_ = &map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 		N: 1,
 	}
-	_ = map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+	_ = map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 		N: 1,
 	}[N]
-	_ = fmt.Errorf("%v", map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+	_ = fmt.Errorf("%v", map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 		N: 1,
 	})
 )
 
 var (
 	//exhaustive:enforce
-	_ = map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+	_ = map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 		N: 1,
 	}
 	_ = &map[Direction]int{
@@ -46,13 +46,13 @@ func returnMap() map[Direction]int {
 		// some other comment
 		//exhaustive:enforce
 		// some other comment
-		return map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+		return map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 			N: 1,
 		}
 
 	case 2:
 		//exhaustive:enforce ... more arbitrary comment content (e.g. an explanation) ...
-		return map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+		return map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 			N: 1,
 		}
 
@@ -85,13 +85,13 @@ func returnValueFromMap(d Direction) int {
 		// some other comment
 		//exhaustive:enforce
 		// some other comment
-		return map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+		return map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 			N: 1,
 		}[d]
 
 	case 2:
 		//exhaustive:enforce ... more arbitrary comment content (e.g. an explanation) ...
-		return map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+		return map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 			N: 1,
 		}[d]
 
@@ -124,13 +124,13 @@ func returnFuncCallWithMap() error {
 		// some other comment
 		//exhaustive:enforce
 		// some other comment
-		return fmt.Errorf("%v", map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+		return fmt.Errorf("%v", map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 			N: 1,
 		})
 
 	case 2:
 		//exhaustive:enforce ... more arbitrary comment content (e.g. an explanation) ...
-		return fmt.Errorf("%v", map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+		return fmt.Errorf("%v", map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 			N: 1,
 		})
 
@@ -163,13 +163,13 @@ func returnPointerToMap() *map[Direction]int {
 		// some other comment
 		//exhaustive:enforce
 		// some other comment
-		return &map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+		return &map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 			N: 1,
 		}
 
 	case 2:
 		//exhaustive:enforce ... more arbitrary comment content (e.g. an explanation) ...
-		return &map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+		return &map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 			N: 1,
 		}
 
@@ -200,22 +200,22 @@ func assignMapLiteral() {
 	// some other comment
 	//exhaustive:enforce
 	// some other comment
-	_ = map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+	_ = map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 		N: 1,
 	}
 
 	//exhaustive:enforce ... more arbitrary comment content (e.g. an explanation) ...
-	_ = map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+	_ = map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 		N: 1,
 	}
 
 	//exhaustive:enforce
-	a := map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+	a := map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 		N: 1,
 	}
 
 	//exhaustive:enforce
-	b, ok := map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+	b, ok := map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 		N: 1,
 	}, 10
 
@@ -243,22 +243,22 @@ func assignValueFromMapLiteral(d Direction) {
 	// some other comment
 	//exhaustive:enforce
 	// some other comment
-	_ = map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+	_ = map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 		N: 1,
 	}[d]
 
 	//exhaustive:enforce ... more arbitrary comment content (e.g. an explanation) ...
-	_ = map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+	_ = map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 		N: 1,
 	}[d]
 
 	//exhaustive:enforce
-	a := map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+	a := map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 		N: 1,
 	}[N]
 
 	//exhaustive:enforce
-	b, ok := map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+	b, ok := map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 		N: 1,
 	}[N]
 
@@ -289,29 +289,29 @@ func localVarDeclaration() {
 	}
 
 	//exhaustive:enforce
-	var _ = map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+	var _ = map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 		N: 1,
 	}
 
 	//exhaustive:enforce
 	var (
-		_ = map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+		_ = map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 			N: 1,
 		}
-		_ = &map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+		_ = &map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 			N: 1,
 		}
-		_ = map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+		_ = map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 			N: 1,
 		}[N]
-		_ = fmt.Errorf("%v", map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+		_ = fmt.Errorf("%v", map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 			N: 1,
 		})
 	)
 
 	var (
 		//exhaustive:enforce
-		_ = map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+		_ = map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 			N: 1,
 		}
 		_ = &map[Direction]int{
