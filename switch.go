@@ -5,7 +5,6 @@ import (
 	"go/ast"
 	"go/types"
 	"regexp"
-	"sort"
 	"strings"
 
 	"golang.org/x/tools/go/analysis"
@@ -151,17 +150,17 @@ func denotesPackage(ident *ast.Ident, info *types.Info) (*types.Package, bool) {
 	return n.Imported(), true
 }
 
-// analyzeSwitchClauses analyzes the clauses in the supplied switch statement.
-// The info param should typically be pass.TypesInfo. The found function is
-// called for each enum member name found in the switch statement.
-// The hasDefaultCase return value indicates whether the switch statement has a
-// default clause.
+// analyzeSwitchClauses analyzes the clauses in the supplied switch
+// statement. The info param typically is pass.TypesInfo. The found
+// function is called for each enum member name found in the switch
+// statement. The hasDefaultCase return value indicates whether the
+// switch statement has a default clause.
 func analyzeSwitchClauses(sw *ast.SwitchStmt, info *types.Info, found func(val constantValue)) (hasDefaultCase bool) {
 	for _, stmt := range sw.Body.List {
 		caseCl := stmt.(*ast.CaseClause)
 		if isDefaultCase(caseCl) {
 			hasDefaultCase = true
-			continue // nothing more to do if it's the default case
+			continue
 		}
 		for _, expr := range caseCl.List {
 			analyzeCaseClauseExpr(expr, info, found)
@@ -183,38 +182,40 @@ func analyzeCaseClauseExpr(e ast.Expr, info *types.Info, found func(val constant
 		// There are two scenarios.
 		// See related test cases in typealias/quux/quux.go.
 		//
-		// ### Scenario 1
+		// ## Scenario 1
 		//
-		// Tag package and constant package are the same.
+		// Tag package and constant package are the same. This is
+		// simple; we just use fs.ModeDir's value.
 		//
-		// For example:
+		// Example:
+		//
 		//   var mode fs.FileMode
 		//   switch mode {
 		//   case fs.ModeDir:
 		//   }
 		//
-		// This is simple: we just use fs.ModeDir's value.
+		// ## Scenario 2
 		//
-		// ### Scenario 2
+		// Tag package and constant package are different. In this
+		// scenario, too, we accept the case clause expr constant value,
+		// as is. If the Go type checker is okay with the name being
+		// listed in the case clause, we don't care much further.
 		//
-		// Tag package and constant package are different.
+		// Example:
 		//
-		// For example:
 		//   var mode fs.FileMode
 		//   switch mode {
 		//   case os.ModeDir:
 		//   }
 		//
 		// Or equivalently:
-		//   var mode os.FileMode // in effect, fs.FileMode because of type alias in package os
+		//
+		//   // The type of mode is effectively fs.FileMode,
+		//   // due to type alias.
+		//   var mode os.FileMode
 		//   switch mode {
 		//   case os.ModeDir:
 		//   }
-		//
-		// In this scenario, too, we accept the case clause expr constant
-		// value, as is. If the Go type checker is okay with the
-		// name being listed in the case clause, we don't care much further.
-		//
 		found(determineConstVal(ident, info))
 	}
 
@@ -244,114 +245,16 @@ func analyzeCaseClauseExpr(e ast.Expr, info *types.Info, found func(val constant
 	}
 }
 
-// diagnosticMissingMembers constructs the list of missing enum members,
-// suitable for use in a reported diagnostic message.
-// Order is the same as in enumMembers.Names.
-func diagnosticMissingMembers(missingMembers map[string]struct{}, em enumMembers) []string {
-	// member name -> AST order index.
-	// used for quick lookup during future sorts.
-	order := make(map[string]int, len(em.Names))
-	for i, name := range em.Names {
-		order[name] = i
-	}
-
-	// sort the given slice by AST order.
-	byASTOrder := func(vs []string) []string {
-		sort.Slice(vs, func(i, j int) bool {
-			return order[vs[i]] < order[vs[j]]
-		})
-		return vs
-	}
-
-	// missing members, grouped by constant value.
-	missingByConstVal := make(map[constantValue][]string)
-	for m := range missingMembers {
-		val := em.NameToValue[m]
-		missingByConstVal[val] = append(missingByConstVal[val], m)
-	}
-
-	var out []string
-	for _, names := range missingByConstVal {
-		out = append(out, strings.Join(byASTOrder(names), "|"))
-	}
-
-	return byASTOrder(out)
-}
-
-// diagnosticEnumTypeName returns a string representation of an enum type for
-// use in reported diagnostics.
-func diagnosticEnumTypeName(enumType *types.TypeName, samePkg bool) string {
-	if samePkg {
-		return enumType.Name()
-	}
-	return enumType.Pkg().Name() + "." + enumType.Name()
-}
-
-// Makes a "missing cases in switch" diagnostic.
-// samePkg should be true if the enum type and the switch statement are defined
+// Makes a diagnostic for a non-exhaustive switch statement. samePkg
+// should be true if the enum type and the switch statement are defined
 // in the same package.
-func makeSwitchDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumTyp enumType, allMembers enumMembers, missingMembers map[string]struct{}) analysis.Diagnostic {
-	message := fmt.Sprintf("missing cases in switch of type %s: %s",
-		diagnosticEnumTypeName(enumTyp.TypeName, samePkg),
-		strings.Join(diagnosticMissingMembers(missingMembers, allMembers), ", "))
+func makeSwitchDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumTyp enumType, all enumMembers, missing map[string]struct{}) analysis.Diagnostic {
+	typeName := diagnosticEnumTypeName(enumTyp.TypeName, samePkg)
+	members := strings.Join(diagnosticMissingMembers(missing, all), ", ")
 
 	return analysis.Diagnostic{
 		Pos:     sw.Pos(),
 		End:     sw.End(),
-		Message: message,
+		Message: fmt.Sprintf("missing cases in switch of type %s: %s", typeName, members),
 	}
-}
-
-// A checklist holds a set of enum member names that have to be
-// accounted for to satisfy exhaustiveness in an enum switch statement.
-//
-// The found method checks off member names from the set, based on
-// constant value, when a constant value is encoutered in the switch
-// statement's cases.
-//
-// The remaining method returns the member names not accounted for.
-type checklist struct {
-	em     enumMembers
-	checkl map[string]struct{}
-}
-
-func makeChecklist(em enumMembers, enumPkg *types.Package, includeUnexported bool, ignore *regexp.Regexp) *checklist {
-	checkl := make(map[string]struct{})
-
-	add := func(memberName string) {
-		if memberName == "_" {
-			// Blank identifier is often used to skip entries in iota lists.
-			// Also, it can't be referenced anywhere (including in a switch
-			// statement's cases), so it doesn't make sense to include it
-			// as required member to satisfy exhaustiveness.
-			return
-		}
-		if !ast.IsExported(memberName) && !includeUnexported {
-			return
-		}
-		if ignore != nil && ignore.MatchString(enumPkg.Path()+"."+memberName) {
-			return
-		}
-		checkl[memberName] = struct{}{}
-	}
-
-	for _, name := range em.Names {
-		add(name)
-	}
-
-	return &checklist{
-		em:     em,
-		checkl: checkl,
-	}
-}
-
-func (c *checklist) found(val constantValue) {
-	// Delete all of the same-valued names.
-	for _, name := range c.em.ValueToNames[val] {
-		delete(c.checkl, name)
-	}
-}
-
-func (c *checklist) remaining() map[string]struct{} {
-	return c.checkl
 }
