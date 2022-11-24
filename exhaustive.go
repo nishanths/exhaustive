@@ -1,7 +1,8 @@
 /*
 Package exhaustive defines an analyzer that checks exhaustiveness of
-enum switch statements in Go source code. It optionally be configured to
-additionally check exhaustiveness of map literals with enum key types.
+enum switch statements in Go source code. It can be configured to
+additionally check exhaustiveness of map literals that have enum key
+types.
 
 # Definition of enum
 
@@ -55,9 +56,9 @@ When using the default analyzer configuration, the existence of a
 make a switch statement exhaustive. See the
 -default-signifies-exhaustive flag to adjust this behavior.
 
-The same definition of exhaustiveness applies to a map literal whose the
-key type is an enum type. Empty map literals never checked. Note that
-the -check flag must include "map" for map literals to be checked.
+The definition of exhaustiveness applies to a map literal whose key type
+is an enum type. Empty map literals never checked. Note that the -check
+flag must include "map" for map literals to be checked.
 
 # Type aliases
 

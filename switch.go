@@ -224,15 +224,18 @@ func analyzeCaseClauseExpr(e ast.Expr, info *types.Info, found func(val constant
 
 	case *ast.SelectorExpr:
 		x := astutil.Unparen(e.X)
-		// Ensure we only see the form `pkg.Const`, and not e.g. `structVal.f`
-		// or `structVal.inner.f`.
-		// Check that X, which is everything except the rightmost *ast.Ident (or
-		// Sel), is also an *ast.Ident.
+		// Ensure we only see the form pkg.Const, and not e.g.
+		// structVal.f or structVal.inner.f.
+		//
+		// For this purpose, first we check that X, which is everything
+		// except the rightmost field selector *ast.Ident (the Sel
+		// field), is also an *ast.Ident.
 		xIdent, ok := x.(*ast.Ident)
 		if !ok {
 			return
 		}
-		// Doesn't matter which package, just that it denotes a package.
+		// Second , check that it's a package. It doesn't matter which
+		// package, just that it denotes some package.
 		if _, ok := denotesPackage(xIdent, info); !ok {
 			return
 		}
