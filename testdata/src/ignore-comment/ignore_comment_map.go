@@ -2,7 +2,7 @@ package ignorecomment
 
 import "fmt"
 
-var _ = map[Direction]int{ // want "^missing map keys of type Direction: E, S, W, directionInvalid$"
+var _ = map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
 	N: 1,
 }
 
@@ -32,10 +32,10 @@ var (
 	_ = map[Direction]int{
 		N: 1,
 	}
-	_ = &map[Direction]int{ // want "^missing map keys of type Direction: E, S, W, directionInvalid$"
+	_ = &map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
 		N: 1,
 	}
-	_ = fmt.Errorf("%v", map[Direction]int{ // want "^missing map keys of type Direction: E, S, W, directionInvalid$"
+	_ = fmt.Errorf("%v", map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
 		N: 1,
 	})
 )
@@ -57,21 +57,21 @@ func returnMap() map[Direction]int {
 		}
 
 	case 3:
-		return map[Direction]int{ // want "^missing map keys of type Direction: E, S, W, directionInvalid$"
+		return map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
 			N: 1,
 		}
 
 	case 4:
 		// this should report: according to go/ast, the comment is not considered to
 		// be associated with the return node.
-		return map[Direction]int{ //exhaustive:ignore // want "^missing map keys of type Direction: E, S, W, directionInvalid$"
+		return map[Direction]int{ //exhaustive:ignore // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
 			N: 1,
 		}
 
 	case 5:
 		// this should report: according to go/ast, the comment is not considered to
 		// be associated with the return node.
-		return map[Direction]int{ // want "^missing map keys of type Direction: E, S, W, directionInvalid$"
+		return map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
 			//exhaustive:ignore
 			N: 1,
 		}
@@ -96,21 +96,21 @@ func returnValueFromMap(d Direction) int {
 		}[d]
 
 	case 3:
-		return map[Direction]int{ // want "^missing map keys of type Direction: E, S, W, directionInvalid$"
+		return map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
 			N: 1,
 		}[d]
 
 	case 4:
 		// this should report: according to go/ast, the comment is not considered to
 		// be associated with the return node.
-		return map[Direction]int{ //exhaustive:ignore // want "^missing map keys of type Direction: E, S, W, directionInvalid$"
+		return map[Direction]int{ //exhaustive:ignore // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
 			N: 1,
 		}[d]
 
 	case 5:
 		// this should report: according to go/ast, the comment is not considered to
 		// be associated with the return node.
-		return map[Direction]int{ // want "^missing map keys of type Direction: E, S, W, directionInvalid$"
+		return map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
 			//exhaustive:ignore
 			N: 1,
 		}[d]
@@ -135,21 +135,21 @@ func returnFuncCallWithMap() error {
 		})
 
 	case 3:
-		return fmt.Errorf("%v", map[Direction]int{ // want "^missing map keys of type Direction: E, S, W, directionInvalid$"
+		return fmt.Errorf("%v", map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
 			N: 1,
 		})
 
 	case 4:
 		// this should report: according to go/ast, the comment is not considered to
 		// be associated with the return node.
-		return fmt.Errorf("%v", map[Direction]int{ //exhaustive:ignore // want "^missing map keys of type Direction: E, S, W, directionInvalid$"
+		return fmt.Errorf("%v", map[Direction]int{ //exhaustive:ignore // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
 			N: 1,
 		})
 
 	case 5:
 		// this should report: according to go/ast, the comment is not considered to
 		// be associated with the return node.
-		return fmt.Errorf("%v", map[Direction]int{ // want "^missing map keys of type Direction: E, S, W, directionInvalid$"
+		return fmt.Errorf("%v", map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
 			//exhaustive:ignore
 			N: 1,
 		})
@@ -174,21 +174,21 @@ func returnPointerToMap() *map[Direction]int {
 		}
 
 	case 3:
-		return &map[Direction]int{ // want "^missing map keys of type Direction: E, S, W, directionInvalid$"
+		return &map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
 			N: 1,
 		}
 
 	case 4:
 		// this should report: according to go/ast, the comment is not considered to
 		// be associated with the return node.
-		return &map[Direction]int{ //exhaustive:ignore // want "^missing map keys of type Direction: E, S, W, directionInvalid$"
+		return &map[Direction]int{ //exhaustive:ignore // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
 			N: 1,
 		}
 
 	case 5:
 		// this should report: according to go/ast, the comment is not considered to
 		// be associated with the return node.
-		return &map[Direction]int{ // want "^missing map keys of type Direction: E, S, W, directionInvalid$"
+		return &map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
 			//exhaustive:ignore
 			N: 1,
 		}
@@ -221,19 +221,19 @@ func assignMapLiteral() {
 
 	_, _, _ = a, b, ok
 
-	_ = map[Direction]int{ // want "^missing map keys of type Direction: E, S, W, directionInvalid$"
+	_ = map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
 		N: 1,
 	}
 
 	// this should report: according to go/ast, the comment is not considered to
 	// be associated with the assign node.
-	_ = map[Direction]int{ //exhaustive:ignore // want "^missing map keys of type Direction: E, S, W, directionInvalid$"
+	_ = map[Direction]int{ //exhaustive:ignore // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
 		N: 1,
 	}
 
 	// this should report: according to go/ast, the comment is not considered to
 	// be associated with the assign node.
-	_ = map[Direction]int{ // want "^missing map keys of type Direction: E, S, W, directionInvalid$"
+	_ = map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
 		//exhaustive:ignore
 		N: 1,
 	}
@@ -265,26 +265,26 @@ func assignValueFromMapLiteral(d Direction) {
 	_, _, _ = a, b, ok
 
 	// this should report.
-	_ = map[Direction]int{ // want "^missing map keys of type Direction: E, S, W, directionInvalid$"
+	_ = map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
 		N: 1,
 	}[d]
 
 	// this should report: according to go/ast, the comment is not considered to
 	// be associated with the assign node.
-	_ = map[Direction]int{ //exhaustive:ignore // want "^missing map keys of type Direction: E, S, W, directionInvalid$"
+	_ = map[Direction]int{ //exhaustive:ignore // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
 		N: 1,
 	}[d]
 
 	// this should report: according to go/ast, the comment is not considered to
 	// be associated with the assign node.
-	_ = map[Direction]int{ // want "^missing map keys of type Direction: E, S, W, directionInvalid$"
+	_ = map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
 		//exhaustive:ignore
 		N: 1,
 	}[d]
 }
 
 func localVarDeclaration() {
-	var _ = map[Direction]int{ // want "^missing map keys of type Direction: E, S, W, directionInvalid$"
+	var _ = map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
 		N: 1,
 	}
 
@@ -314,10 +314,10 @@ func localVarDeclaration() {
 		_ = map[Direction]int{
 			N: 1,
 		}
-		_ = &map[Direction]int{ // want "^missing map keys of type Direction: E, S, W, directionInvalid$"
+		_ = &map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
 			N: 1,
 		}
-		_ = fmt.Errorf("%v", map[Direction]int{ // want "^missing map keys of type Direction: E, S, W, directionInvalid$"
+		_ = fmt.Errorf("%v", map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
 			N: 1,
 		})
 	)

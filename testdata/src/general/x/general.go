@@ -50,7 +50,7 @@ func _a() {
 	default:
 	}
 
-	_ = map[Direction]int{ // want "^missing map keys of type Direction: E, directionInvalid$"
+	_ = map[Direction]int{ // want "^missing keys in map of key type Direction: E, directionInvalid$"
 		N: 1,
 		S: 2,
 		W: 3,
@@ -69,7 +69,7 @@ func _b() {
 	case bar.Echinodermata:
 	}
 
-	_ = map[bar.Phylum]int{ // want "^missing map keys of type bar.Phylum: Mollusca$"
+	_ = map[bar.Phylum]int{ // want "^missing keys in map of key type bar.Phylum: Mollusca$"
 		bar.Chordata:      1,
 		bar.Echinodermata: 2,
 	}
@@ -84,7 +84,7 @@ func _j() {
 	case barpkg.Echinodermata:
 	}
 
-	_ = map[barpkg.Phylum]int{ // want "^missing map keys of type bar.Phylum: Mollusca$"
+	_ = map[barpkg.Phylum]int{ // want "^missing keys in map of key type bar.Phylum: Mollusca$"
 		barpkg.Chordata:      1,
 		barpkg.Echinodermata: 2,
 	}
@@ -153,7 +153,7 @@ func _o() {
 	case h.Mollusca:
 	}
 
-	_ = map[bar.Phylum]int{ // want "^missing map keys of type bar.Phylum: Mollusca$"
+	_ = map[bar.Phylum]int{ // want "^missing keys in map of key type bar.Phylum: Mollusca$"
 		bar.Chordata:      1,
 		bar.Echinodermata: 2,
 		h.Mollusca:        3,
@@ -164,7 +164,7 @@ var ErrFoo = errors.New("foo")
 
 func _p() {
 	// Switch tag variable's type has nil package (lives in Universe scope).
-	// Expect things to not panic and to not fail unexpectedly.
+	// Expect to not panic and to not fail unexpectedly.
 
 	var err error
 
@@ -201,7 +201,7 @@ func _q() {
 	case fs.ModeIrregular:
 	}
 
-	_ = map[fs.FileMode]int{ // want "^missing map keys of type fs.FileMode: ModeDevice, ModeSetuid, ModeSetgid, ModeType, ModePerm$"
+	_ = map[fs.FileMode]int{ // want "^missing keys in map of key type fs.FileMode: ModeDevice, ModeSetuid, ModeSetgid, ModeType, ModePerm$"
 		os.ModeDir:        1,
 		os.ModeAppend:     2,
 		os.ModeExclusive:  3,
@@ -227,7 +227,7 @@ func _r(d Direction) {
 	case 5:
 	}
 
-	_ = map[Direction]int{ // want "^missing map keys of type Direction: S, directionInvalid$"
+	_ = map[Direction]int{ // want "^missing keys in map of key type Direction: S, directionInvalid$"
 		N: 1,
 		E: 2,
 		3: 3,
@@ -249,7 +249,7 @@ func _s(u bar.Uppercase) {
 func mapTypeAlias() {
 	type myMapAlias = map[Direction]int
 
-	_ = myMapAlias{ // want "^missing map keys of type Direction: S, directionInvalid$"
+	_ = myMapAlias{ // want "^missing keys in map of key type Direction: S, directionInvalid$"
 		N: 1,
 		E: 2,
 		W: 4,
@@ -259,7 +259,7 @@ func mapTypeAlias() {
 func customMapType() {
 	type myMap map[Direction]int
 
-	_ = myMap{ // want "^missing map keys of type Direction: S, directionInvalid$"
+	_ = myMap{ // want "^missing keys in map of key type Direction: S, directionInvalid$"
 		N: 1,
 		E: 2,
 		W: 4,

@@ -26,7 +26,7 @@ func x() {
 	case foo.H:
 	}
 
-	_ = map[foo.T1]int{ // want "^missing map keys of type bar.T2: D, E$"
+	_ = map[foo.T1]int{ // want "^missing keys in map of key type bar.T2: D, E$"
 		foo.A: 1,
 		bar.B: 2,
 		foo.C: 3,
@@ -35,7 +35,7 @@ func x() {
 		foo.H: 6,
 	}
 
-	_ = map[bar.T2]int{ // want "^missing map keys of type bar.T2: D, E$"
+	_ = map[bar.T2]int{ // want "^missing keys in map of key type bar.T2: D, E$"
 		foo.A: 1,
 		bar.B: 2,
 		foo.C: 3,

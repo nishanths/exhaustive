@@ -11,7 +11,7 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// Check that an enumMembers literal is correctly defined in a test case.
+// checks that an enumMembers literal is correctly defined in tests.
 func checkEnumMembersLiteral(id string, v enumMembers) {
 	if len(v.Names) != len(v.NameToValue) {
 		panic(fmt.Sprintf("%s: wrong lengths: %d != %d (test definition bug)", id, len(v.Names), len(v.NameToValue)))
@@ -88,7 +88,7 @@ func TestFindEnums(t *testing.T) {
 	}
 }
 
-// See func checkEnums.
+// see func checkEnums.
 type checkEnum struct {
 	typeName string
 	members  enumMembers

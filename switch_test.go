@@ -11,7 +11,8 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// TODO(testing): write tests that assert on the "result" returned by switchStmtChecker.
+// TODO(testing): write tests that assert on the "result" returned by
+// switchStmtChecker.
 
 func TestDiagnosticEnumTypeName(t *testing.T) {
 	t.Run("same package", func(t *testing.T) {

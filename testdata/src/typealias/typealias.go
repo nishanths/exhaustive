@@ -92,7 +92,7 @@ func _e() {
 	switch t10() { // want "^missing cases in switch of type typealias.T11: T11_A, T11_B$"
 	}
 
-	_ = map[typealias.T10]int{ // want "^missing map keys of type typealias.T11: T11_A, T11_B$"
+	_ = map[typealias.T10]int{ // want "^missing keys in map of key type typealias.T11: T11_A, T11_B$"
 		0: 0,
 	}
 }
@@ -108,7 +108,7 @@ func _g() {
 	switch t15() { // want "^missing cases in switch of type typealias.T11: T11_A, T11_B$"
 	}
 
-	_ = map[typealias.T15]int{ // want "^missing map keys of type typealias.T11: T11_A, T11_B$"
+	_ = map[typealias.T15]int{ // want "^missing keys in map of key type typealias.T11: T11_A, T11_B$"
 		0: 0,
 	}
 }
@@ -149,7 +149,7 @@ func _i() {
 	switch t13() { // want "^missing cases in switch of type otherpkg.T11: T11_A, T11_B, T11_C$"
 	}
 
-	_ = map[typealias.T13]int{ // want "^missing map keys of type otherpkg.T11: T11_A, T11_B, T11_C$"
+	_ = map[typealias.T13]int{ // want "^missing keys in map of key type otherpkg.T11: T11_A, T11_B, T11_C$"
 		0: 0,
 	}
 }
@@ -165,7 +165,7 @@ func _k() {
 	switch t17() { // want "^missing cases in switch of type otherpkg.T11: T11_A, T11_B, T11_C$"
 	}
 
-	_ = map[typealias.T17]int{ // want "^missing map keys of type otherpkg.T11: T11_A, T11_B, T11_C$"
+	_ = map[typealias.T17]int{ // want "^missing keys in map of key type otherpkg.T11: T11_A, T11_B, T11_C$"
 		0: 0,
 	}
 }
@@ -185,7 +185,7 @@ func _l() {
 	switch v { // want "^missing cases in switch of type anotherpkg.T1: T1_A$"
 	}
 
-	_ = map[typealias.T18]int{ // want "^missing map keys of type anotherpkg.T1: T1_A$"
+	_ = map[typealias.T18]int{ // want "^missing keys in map of key type anotherpkg.T1: T1_A$"
 		0: 0,
 	}
 }

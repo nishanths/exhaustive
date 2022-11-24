@@ -15,7 +15,7 @@ func _k(d Direction) {
 	case W:
 	}
 
-	_ = map[Direction]int{ // want "^missing map keys of type Direction: S, directionInvalid$"
+	_ = map[Direction]int{ // want "^missing keys in map of key type Direction: S, directionInvalid$"
 		(N): 1,
 		(E): 2,
 		(((W))): 3,

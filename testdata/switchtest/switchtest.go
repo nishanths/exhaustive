@@ -1,3 +1,4 @@
+// Package switchtest is used by switch_test.go.
 package switchtest
 
 import "fmt"
@@ -24,7 +25,7 @@ func switchWithoutDefault(b Biome) {
 
 func switchParen(b Biome) {
 	switch b {
-	case ((Tundra)), (Desert):
+	case (Tundra), (Desert):
 	}
 }
 
