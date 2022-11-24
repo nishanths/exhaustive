@@ -6,12 +6,12 @@ Checks exhaustiveness of enum switch statements in Go source code.
 go install github.com/nishanths/exhaustive/cmd/exhaustive@latest
 ```
 
+The program can additionally be configured to check for exhaustiveness
+of map literals with enum key types. See examples below.
+
 For documentation on flags, the definition of enum, and the definition
 of exhaustiveness, see [pkg.go.dev][godoc-doc]. For a changelog, see
 [CHANGELOG][changelog] in the wiki.
-
-The program may additionally be configured to check for exhaustiveness
-of map literals with enum key types. See examples below.
 
 The package provides an `analysis.Analyzer` value that follows the
 guidelines in the [`golang.org/x/tools/go/analysis`][xanalysis] package.

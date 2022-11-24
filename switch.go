@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/types"
+	"log"
 	"regexp"
 	"strings"
 
@@ -85,44 +86,52 @@ func switchChecker(pass *analysis.Pass, cfg switchConfig, generated boolCache, c
 			return true, resultTagNotValue
 		}
 
-		tagType, ok := t.Type.(*types.Named)
-		if !ok {
-			return true, resultTagNotNamed
-		}
+		switch tagType := t.Type.(type) {
+		case *types.Named:
+			tagPkg := tagType.Obj().Pkg()
+			if tagPkg == nil {
+				// The Go documentation says: nil for labels and objects in the Universe scope.
+				// This happens for the `error` type, for example.
+				return true, resultTagNilPkg
+			}
 
-		tagPkg := tagType.Obj().Pkg()
-		if tagPkg == nil {
-			// The Go documentation says: nil for labels and objects in the Universe scope.
-			// This happens for the `error` type, for example.
-			return true, resultTagNilPkg
-		}
+			enumTyp := enumType{tagType.Obj()}
+			members, ok := importFact(pass, enumTyp)
+			if !ok {
+				// switch tag's type is not a known enum type.
+				return true, resultTagNotEnum
+			}
 
-		enumTyp := enumType{tagType.Obj()}
-		members, ok := importFact(pass, enumTyp)
-		if !ok {
-			// switch tag's type is not a known enum type.
-			return true, resultTagNotEnum
-		}
+			samePkg := tagPkg == pass.Pkg // do the switch statement and the switch tag type (i.e. enum type) live in the same package?
+			checkUnexported := samePkg    // we want to include unexported members in the exhaustiveness check only if we're in the same package
+			checklist := makeChecklist(members, tagPkg, checkUnexported, cfg.ignoreEnumMembers)
 
-		samePkg := tagPkg == pass.Pkg // do the switch statement and the switch tag type (i.e. enum type) live in the same package?
-		checkUnexported := samePkg    // we want to include unexported members in the exhaustiveness check only if we're in the same package
-		checklist := makeChecklist(members, tagPkg, checkUnexported, cfg.ignoreEnumMembers)
+			hasDefaultCase := analyzeSwitchClauses(sw, pass.TypesInfo, checklist.found)
 
-		hasDefaultCase := analyzeSwitchClauses(sw, pass.TypesInfo, checklist.found)
+			if len(checklist.remaining()) == 0 {
+				// All enum members accounted for.
+				// Nothing to report.
+				return true, resultEnumMembersAccounted
+			}
+			if hasDefaultCase && cfg.defaultSignifiesExhaustive {
+				// Though enum members are not accounted for,
+				// the existence of the default case signifies exhaustiveness.
+				// So don't report.
+				return true, resultDefaultCaseSuffices
+			}
+			pass.Report(makeSwitchDiagnostic(sw, samePkg, enumTyp, members, checklist.remaining()))
+			return true, resultReportedDiagnostic
 
-		if len(checklist.remaining()) == 0 {
-			// All enum members accounted for.
-			// Nothing to report.
-			return true, resultEnumMembersAccounted
+		case *types.TypeParam:
+			log.Printf("%#v", tagType.Obj())
+			log.Printf("%#v", tagType.Constraint().(*types.Interface))
+			// log.Printf("%#v", tagType.Obj().TypeParams())
+			// log.Printf("%#v", tagType.Obj().TypeArgs())
+			return true, ""
+
+		default:
+			panic(fmt.Sprintf("unhandled type %T", t.Type))
 		}
-		if hasDefaultCase && cfg.defaultSignifiesExhaustive {
-			// Though enum members are not accounted for,
-			// the existence of the default case signifies exhaustiveness.
-			// So don't report.
-			return true, resultDefaultCaseSuffices
-		}
-		pass.Report(makeSwitchDiagnostic(sw, samePkg, enumTyp, members, checklist.remaining()))
-		return true, resultReportedDiagnostic
 	}
 }
 
@@ -236,7 +245,7 @@ func analyzeCaseClauseExpr(e ast.Expr, info *types.Info, found func(val constant
 		if !ok {
 			return
 		}
-		// Second , check that it's a package. It doesn't matter which
+		// Second, check that it's a package. It doesn't matter which
 		// package, just that it denotes some package.
 		if _, ok := denotesPackage(xIdent, info); !ok {
 			return

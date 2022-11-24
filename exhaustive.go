@@ -58,7 +58,7 @@ make a switch statement exhaustive. See the
 
 A similar definition of exhaustiveness applies to a map literal whose
 key type is an enum type. To be exhaustive, the map literal must specify
-keys corresponding to all of the enum members. Empty map literals never
+keys corresponding to all of the enum members. Empty map literals are never
 checked. Note that the -check flag must include "map" for map literals
 to be checked.
 
@@ -93,8 +93,7 @@ newpkg.T2) will never result in new diagnostics from the analyzer, as
 long as the set of enum member constant values of the RHS type is a
 subset of the set of enum member constant values of the old LHS type.
 
-On a more advanced note, note that both of the following switch
-statements are equally valid and exhaustive.
+The following switch statements are equally valid and exhaustive.
 
 	// The type of v is effectively newpkg.T2 due to alias.
 	var v pkg.T1

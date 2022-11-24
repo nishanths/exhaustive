@@ -73,6 +73,11 @@ func TestRegexpFlag(t *testing.T) {
 
 func TestExhaustive(t *testing.T) {
 	run := func(t *testing.T, pattern string, setup ...func()) {
+		// NOSUBMIT(nishanths): temporary code for debugging.
+		if pattern != "typeparam/..." {
+			return
+		}
+
 		t.Helper()
 		t.Run(pattern, func(t *testing.T) {
 			resetFlags()
@@ -111,12 +116,12 @@ func TestExhaustive(t *testing.T) {
 	run(t, "scope/allscope/...")
 	run(t, "scope/pkgscope/...", func() { fPackageScopeOnly = true })
 
-	// Switch statements with ignore directive comment should not be checked during implicitly exhaustive switch
-	// mode
+	// Program elements with ignore comment should not be
+	// checked during implicitly exhaustive mode.
 	run(t, "ignore-comment/...")
 
-	// Switch statements without enforce directive comment should not be checked during explicitly exhaustive
-	// switch mode
+	// Program elements without enforce comment should not be
+	// checked in explicitly exhaustive mode.
 	run(t, "enforce-comment/...", func() {
 		fExplicitExhaustiveSwitch = true
 		fExplicitExhaustiveMap = true
@@ -126,10 +131,10 @@ func TestExhaustive(t *testing.T) {
 	// value of the members to be listed, not each member by name.
 	run(t, "duplicate-enum-value/...")
 
-	// Type alias switch statements.
 	run(t, "typealias/...")
+	run(t, "typeparam/...")
 
-	// General tests (a mixture).
+	// mixture of general tests.
 	run(t, "general/...")
 }
 
