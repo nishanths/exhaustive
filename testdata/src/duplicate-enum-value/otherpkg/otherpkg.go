@@ -62,11 +62,11 @@ func _r() {
 	case d.Karnataka:
 	}
 
-	_ = map[d.River]int{ // want "^missing map keys of type duplicateenumvalue.River: DefaultRiver\\|Ganga, Kaveri$"
+	_ = map[d.River]int{ // want "^missing keys in map of key type duplicateenumvalue.River: DefaultRiver\\|Ganga, Kaveri$"
 		d.Yamuna: 1,
 	}
 
-	_ = map[d.State]int{ // want "^missing map keys of type duplicateenumvalue.State: TamilNadu\\|DefaultState, Kerala$"
+	_ = map[d.State]int{ // want "^missing keys in map of key type duplicateenumvalue.State: TamilNadu\\|DefaultState, Kerala$"
 		d.Karnataka: 1,
 	}
 }
@@ -78,7 +78,7 @@ func _s(c d.Chart) {
 	case d.Area:
 	}
 
-	_ = map[d.Chart]int{ // want "^missing map keys of type duplicateenumvalue.Chart: Pie$"
+	_ = map[d.Chart]int{ // want "^missing keys in map of key type duplicateenumvalue.Chart: Pie$"
 		d.Line:     1,
 		d.Sunburst: 2,
 		d.Area:     3,

@@ -64,7 +64,7 @@ func _b() {
 		D: 2,
 	}
 
-	_ = map[T]int{ // want "^missing map keys of type T: D$"
+	_ = map[T]int{ // want "^missing keys in map of key type T: D$"
 		C: 1,
 	}
 
@@ -81,7 +81,7 @@ func _b() {
 		Y: 2,
 	}
 
-	_ = map[Q]int{ // want "^missing map keys of type Q: Y$"
+	_ = map[Q]int{ // want "^missing keys in map of key type Q: Y$"
 		X: 1,
 	}
 }

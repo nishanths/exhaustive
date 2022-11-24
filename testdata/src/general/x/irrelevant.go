@@ -51,7 +51,7 @@ func emptyMapShouldBeIgnored() {
 
 	_ = map[barpkg.Phylum]int{}
 
-	_ = map[barpkg.Phylum]int{ // want "^missing map keys of type bar.Phylum: Echinodermata, Mollusca$"
+	_ = map[barpkg.Phylum]int{ // want "^missing keys in map of key type bar.Phylum: Echinodermata, Mollusca$"
 		barpkg.Chordata: 1,
 	}
 }

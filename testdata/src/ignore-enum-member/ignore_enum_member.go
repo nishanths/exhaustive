@@ -16,7 +16,7 @@ func _a() {
 	case Exchange_EXCHANGE_BITMEX:
 	}
 
-	_ = map[Exchange]int{ // want "^missing map keys of type Exchange: Exchange_EXCHANGE_BINANCE$"
+	_ = map[Exchange]int{ // want "^missing keys in map of key type Exchange: Exchange_EXCHANGE_BINANCE$"
 		Exchange_EXCHANGE_BITMEX: 1,
 	}
 }
@@ -27,7 +27,7 @@ func _b() {
 	case barpkg.Chordata:
 	}
 
-	_ = map[barpkg.Phylum]int{ // want "^missing map keys of type bar.Phylum: Mollusca$"
+	_ = map[barpkg.Phylum]int{ // want "^missing keys in map of key type bar.Phylum: Mollusca$"
 		barpkg.Chordata: 1,
 	}
 }

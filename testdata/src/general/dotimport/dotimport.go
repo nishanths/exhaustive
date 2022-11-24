@@ -12,7 +12,7 @@ func _dot() {
 	case Echinodermata:
 	}
 
-	_ = map[Phylum]int{ // want "^missing map keys of type bar.Phylum: Chordata, Mollusca$"
+	_ = map[Phylum]int{ // want "^missing keys in map of key type bar.Phylum: Chordata, Mollusca$"
 		Echinodermata: 1,
 	}
 }
@@ -24,7 +24,7 @@ func _mixed() {
 	case barpkg.Chordata:
 	}
 
-	_ = map[bar.Phylum]int{ // want "^missing map keys of type bar.Phylum: Mollusca$"
+	_ = map[bar.Phylum]int{ // want "^missing keys in map of key type bar.Phylum: Mollusca$"
 		Echinodermata:   1,
 		barpkg.Chordata: 2,
 	}

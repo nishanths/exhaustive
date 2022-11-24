@@ -7,7 +7,7 @@ func _doc_2() {
 	case N:
 	}
 
-	_ = map[Direction]int{ // want "^missing map keys of type Direction: E, S, W, directionInvalid$"
+	_ = map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
 		N: 1,
 	}
 }
