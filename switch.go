@@ -42,11 +42,10 @@ const (
 	resultReportedDiagnostic     = "reported diagnostic"
 )
 
-// switchChecker returns a node visitor that checks exhaustiveness
-// of enum switch statements for the supplied pass, and reports diagnostics for
-// switch statements that are non-exhaustive.
-// It expects to only see *ast.SwitchStmt nodes.
-func switchChecker(pass *analysis.Pass, cfg switchConfig, generated generatedCache, comments commentsCache) nodeVisitor {
+// switchChecker returns a node visitor that checks exhaustiveness of
+// enum switch statements for the supplied pass, and reports
+// diagnostics. The node visitor expects only *ast.SwitchStmt nodes.
+func switchChecker(pass *analysis.Pass, cfg switchConfig, generated boolCache, comments commentCache) nodeVisitor {
 	return func(n ast.Node, push bool, stack []ast.Node) (bool, string) {
 		if !push {
 			// The proceed return value should not matter; it is ignored by
@@ -57,7 +56,7 @@ func switchChecker(pass *analysis.Pass, cfg switchConfig, generated generatedCac
 
 		file := stack[0].(*ast.File)
 
-		if !cfg.checkGeneratedFiles && generated.IsGenerated(file) {
+		if !cfg.checkGenerated && generated.get(file) {
 			// Don't check this file.
 			// Return false because the children nodes of node `n` don't have to be checked.
 			return false, resultGeneratedFile
@@ -65,14 +64,14 @@ func switchChecker(pass *analysis.Pass, cfg switchConfig, generated generatedCac
 
 		sw := n.(*ast.SwitchStmt)
 
-		switchComments := comments.GetComments(file, pass.Fset)[sw]
-		if !cfg.explicitExhaustiveSwitch && containsIgnoreDirective(switchComments) {
+		switchComments := comments.get(pass.Fset, file)[sw]
+		if !cfg.explicit && hasComment(switchComments, ignoreComment) {
 			// Skip checking of this switch statement due to ignore directive comment.
 			// Still return true because there may be nested switch statements
 			// that are not to be ignored.
 			return true, resultSwitchIgnoreComment
 		}
-		if cfg.explicitExhaustiveSwitch && !containsEnforceDirective(switchComments) {
+		if cfg.explicit && !hasComment(switchComments, enforceComment) {
 			// Skip checking of this switch statement due to missing enforce directive comment.
 			return true, resultSwitchNoEnforceComment
 		}
@@ -129,9 +128,9 @@ func switchChecker(pass *analysis.Pass, cfg switchConfig, generated generatedCac
 
 // switchConfig is configuration for switchChecker.
 type switchConfig struct {
-	explicitExhaustiveSwitch   bool
+	explicit                   bool
 	defaultSignifiesExhaustive bool
-	checkGeneratedFiles        bool
+	checkGenerated             bool
 	ignoreEnumMembers          *regexp.Regexp // can be nil
 }
 

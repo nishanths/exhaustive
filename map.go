@@ -12,15 +12,15 @@ import (
 
 // mapConfig is configuration for mapChecker.
 type mapConfig struct {
-	explicitExhaustiveMap bool
-	checkGeneratedFiles   bool
-	ignoreEnumMembers     *regexp.Regexp // can be nil
+	explicit          bool
+	checkGenerated    bool
+	ignoreEnumMembers *regexp.Regexp // can be nil
 }
 
-// mapChecker returns a node visitor that checks exhaustiveness
-// of enum keys in map literal for the supplied pass, and reports diagnostics if non-exhaustive.
-// It expects to only see *ast.CompositeLit nodes.
-func mapChecker(pass *analysis.Pass, cfg mapConfig, generated generatedCache, comments commentsCache) nodeVisitor {
+// mapChecker returns a node visitor that checks for exhaustiveness of
+// map literals for the supplied pass, and reports diagnostics. The
+// node visitor expects only *ast.CompositeLit nodes.
+func mapChecker(pass *analysis.Pass, cfg mapConfig, generated boolCache, comments commentCache) nodeVisitor {
 	return func(n ast.Node, push bool, stack []ast.Node) (bool, string) {
 		if !push {
 			// The proceed return value should not matter; it is ignored by
@@ -31,7 +31,7 @@ func mapChecker(pass *analysis.Pass, cfg mapConfig, generated generatedCache, co
 
 		file := stack[0].(*ast.File)
 
-		if !cfg.checkGeneratedFiles && generated.IsGenerated(file) {
+		if !cfg.checkGenerated && generated.get(file) {
 			// Don't check this file.
 			// Return false because the children nodes of node `n` don't have to be checked.
 			return false, resultGeneratedFile
@@ -62,7 +62,7 @@ func mapChecker(pass *analysis.Pass, cfg mapConfig, generated generatedCache, co
 			return true, resultMapKeyIsNotNamedType
 		}
 
-		fileComments := comments.GetComments(file, pass.Fset)
+		fileComments := comments.get(pass.Fset, file)
 		var relatedComments []*ast.CommentGroup
 		for i := range stack {
 			// iterate over stack in the reverse order (from bottom to top)
@@ -86,13 +86,13 @@ func mapChecker(pass *analysis.Pass, cfg mapConfig, generated generatedCache, co
 			break
 		}
 
-		if !cfg.explicitExhaustiveMap && containsIgnoreDirective(relatedComments) {
+		if !cfg.explicit && hasComment(relatedComments, ignoreComment) {
 			// Skip checking of this map literal due to ignore directive comment.
 			// Still return true because there may be nested map literals
 			// that are not to be ignored.
 			return true, resultMapIgnoreComment
 		}
-		if cfg.explicitExhaustiveMap && !containsEnforceDirective(relatedComments) {
+		if cfg.explicit && !hasComment(relatedComments, enforceComment) {
 			// Skip checking of this map literal due to missing enforce directive comment.
 			return true, resultMapNoEnforceComment
 		}

@@ -1,7 +1,6 @@
 package exhaustive
 
 import (
-	"fmt"
 	"regexp"
 	"testing"
 
@@ -11,7 +10,7 @@ import (
 func TestRegexpFlag(t *testing.T) {
 	t.Run("not set", func(t *testing.T) {
 		var v regexpFlag
-		if got := v.value(); got != nil {
+		if got := v.regexp(); got != nil {
 			t.Errorf("want nil, got %+v", got)
 		}
 		if got := v.String(); got != "" {
@@ -24,7 +23,7 @@ func TestRegexpFlag(t *testing.T) {
 		if err := v.Set(""); err != nil {
 			t.Errorf("error unexpectedly non-nil: %v", err)
 		}
-		if got := v.value(); got != nil {
+		if got := v.regexp(); got != nil {
 			t.Errorf("want nil, got %+v", got)
 		}
 		if got := v.String(); got != "" {
@@ -37,7 +36,7 @@ func TestRegexpFlag(t *testing.T) {
 		if err := v.Set("("); err == nil {
 			t.Errorf("error unexpectedly nil")
 		}
-		if got := v.value(); got != nil {
+		if got := v.regexp(); got != nil {
 			t.Errorf("want nil, got %+v", got)
 		}
 		if got := v.String(); got != "" {
@@ -50,10 +49,10 @@ func TestRegexpFlag(t *testing.T) {
 		if err := v.Set("^foo$"); err != nil {
 			t.Errorf("error unexpectedly non-nil: %v", err)
 		}
-		if v.value() == nil {
+		if v.regexp() == nil {
 			t.Errorf("unexpectedly nil")
 		}
-		if !v.value().MatchString("foo") {
+		if !v.regexp().MatchString("foo") {
 			t.Errorf("did not match")
 		}
 		if got, want := v.String(), regexp.MustCompile("^foo$").String(); got != want {
@@ -77,8 +76,11 @@ func TestExhaustive(t *testing.T) {
 		t.Helper()
 		t.Run(pattern, func(t *testing.T) {
 			resetFlags()
-			// default to checking switch and maps for test.
-			fCheck = fmt.Sprintf("%s,%s", checkSwitch, checkMap)
+			// default to checking switch and map for test.
+			fCheck = stringsFlag{
+				[]string{string(elementSwitch), string(elementMap)},
+				nil,
+			}
 			for _, f := range setup {
 				f()
 			}
