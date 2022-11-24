@@ -28,3 +28,9 @@ func bar[T M | N](v T) {
 	case T(D):
 	}
 }
+
+func bazz[T ~int](v T) {
+	switch v {
+	case T(A):
+	}
+}

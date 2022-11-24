@@ -23,17 +23,12 @@ type mapConfig struct {
 func mapChecker(pass *analysis.Pass, cfg mapConfig, generated boolCache, comments commentCache) nodeVisitor {
 	return func(n ast.Node, push bool, stack []ast.Node) (bool, string) {
 		if !push {
-			// The proceed return value should not matter; it is ignored by
-			// inspector package for pop calls.
-			// Nevertheless, return true to be on the safe side for the future.
 			return true, resultNotPush
 		}
 
 		file := stack[0].(*ast.File)
 
 		if !cfg.checkGenerated && generated.get(file) {
-			// Don't check this file.
-			// Return false because the children nodes of node `n` don't have to be checked.
 			return false, resultGeneratedFile
 		}
 
@@ -85,20 +80,17 @@ func mapChecker(pass *analysis.Pass, cfg mapConfig, generated boolCache, comment
 		}
 
 		if !cfg.explicit && hasComment(relatedComments, ignoreComment) {
-			// Skip checking of this map literal due to ignore directive comment.
-			// Still return true because there may be nested map literals
-			// that are not to be ignored.
+			// Skip checking of this map literal due to ignore
+			// comment. Still return true because there may be nested
+			// map literals that are not to be ignored.
 			return true, resultIgnoreComment
 		}
 		if cfg.explicit && !hasComment(relatedComments, enforceComment) {
-			// Skip checking of this map literal due to missing enforce directive comment.
 			return true, resultNoEnforceComment
 		}
 
 		keyPkg := keyType.Obj().Pkg()
 		if keyPkg == nil {
-			// The Go documentation says: nil for labels and objects in the Universe scope.
-			// This happens for the `error` type, for example.
 			return true, resultKeyNilPkg
 		}
 
@@ -121,8 +113,6 @@ func mapChecker(pass *analysis.Pass, cfg mapConfig, generated boolCache, comment
 		}
 
 		if len(checklist.remaining()) == 0 {
-			// All enum members accounted for.
-			// Nothing to report.
 			return true, resultEnumMembersAccounted
 		}
 

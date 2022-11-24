@@ -4,7 +4,7 @@ enum switch statements in Go source code. It can be configured to
 additionally check exhaustiveness of map literals that have enum key
 types.
 
-# Definition of enum
+# Definition of enum types and enum members
 
 The Go language spec does not provide an explicit definition for an
 enum. By convention, and for the purpose of this analyzer, an enum type
@@ -30,8 +30,8 @@ enum members.
 Enum member constants for a particular enum type do not necessarily all
 have to be declared in the same const block. The constant values may be
 specified using iota, using literal values, or using any valid means for
-declaring a Go constant. It is valid for multiple enum member constants
-for a particular enum type to have the same constant value.
+declaring a Go constant. It is allowed for multiple enum member
+constants for a particular enum type to have the same constant value.
 
 # Definition of exhaustiveness
 
@@ -110,6 +110,20 @@ The following switch statements are equally valid and exhaustive.
 	case newpkg.B:
 	}
 
+# Type parameters
+
+A switch statement that switches on a value of a type-parameterized type
+is checked for exhaustiveness iff each of the elements of the constraint
+is an enum type. The following switch statement will be checked,
+assuming M, N, and O are enum types. To satisfy exhaustiveness, all
+members for each of M, N, and O must be listed in the switch statement's
+cases.
+
+	func bar[T M | N | O](v T) {
+		switch v {
+		}
+	}
+
 # Flags
 
 Flags supported by the analyzer are described below. All flags are
@@ -134,16 +148,15 @@ If the -explicit-exhaustive-switch flag is enabled, the analyzer only
 checks enum switch statements associated with a comment beginning with
 "//exhaustive:enforce". By default the flag is disabled, which means
 that the analyzer checks every enum switch statement not associated with
-a comment beginning with "//exhaustive:ignore".
+a comment beginning with "//exhaustive:ignore". The
+-explicit-exhaustive-map flag is the map literal counterpart of the
+-explicit-exhaustive-switch flag.
 
 	//exhaustive:ignore
 	switch v {
 	case A:
 	case B:
 	}
-
-The -explicit-exhaustive-map flag is the map literal counterpart of the
--explicit-exhaustive-switch flag.
 
 If the -check-generated flag is enabled, switch statements or map
 literals in generated Go source files are also checked. Otherwise, by
