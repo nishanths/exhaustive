@@ -46,8 +46,8 @@ func diagnosticMissingMembers(missingMembers map[string]struct{}, em enumMembers
 
 	var groups []string
 	for _, names := range byConstVal(missingMembers, em.NameToValue) {
-		group := inASTOrder(names, astPositions)
-		groups = append(groups, strings.Join(group, "|"))
+		group := strings.Join(inASTOrder(names, astPositions), "|")
+		groups = append(groups, group)
 	}
 	return inASTOrder(groups, astPositions)
 }
