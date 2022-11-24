@@ -19,7 +19,6 @@ type checklist struct {
 
 func makeChecklist(em enumMembers, enumPkg *types.Package, includeUnexported bool, ignore *regexp.Regexp) *checklist {
 	checkl := make(map[string]struct{})
-
 	add := func(memberName string) {
 		if memberName == "_" {
 			// Blank identifier is often used to skip entries in iota lists.

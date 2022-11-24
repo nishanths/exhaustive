@@ -19,27 +19,27 @@ import (
 // that the nodeVisitor function took the expected code path.
 type nodeVisitor func(n ast.Node, push bool, stack []ast.Node) (proceed bool, result string)
 
-// Result values returned by a node visitor constructed via switchChecker.
+// Result values returned by a node visitors.
 const (
-	resultNotPush                = "not push"
-	resultGeneratedFile          = "generated file"
-	resultNoSwitchTag            = "no switch tag"
-	resultEmptyMapLiteral        = "empty map literal"
-	resultNotMapLiteral          = "not map literal"
-	resultMapKeyIsNotNamedType   = "map key is not named type"
-	resultNilMapKeyTypePkg       = "nil map key type package"
-	resultMapKeyNotEnum          = "map key not known enum type"
-	resultMapIgnoreComment       = "map literal has ignore comment"
-	resultMapNoEnforceComment    = "map literal has no enforce comment"
-	resultTagNotValue            = "switch tag not value type"
-	resultTagNotNamed            = "switch tag not named type"
-	resultTagNoPkg               = "switch tag does not belong to regular package"
-	resultTagNotEnum             = "switch tag not known enum type"
-	resultSwitchIgnoreComment    = "switch statement has ignore comment"
-	resultSwitchNoEnforceComment = "switch statement has no enforce comment"
-	resultEnumMembersAccounted   = "requisite enum members accounted for"
-	resultDefaultCaseSuffices    = "default case presence satisfies exhaustiveness"
-	resultReportedDiagnostic     = "reported diagnostic"
+	resultEmptyMapLiteral = "empty map literal"
+	resultNotMapLiteral   = "not map literal"
+	resultKeyNotNamed     = "map key not named type"
+	resultKeyNilPkg       = "nil map key package"
+	resultKeyNotEnum      = "map key not known enum type"
+
+	resultNoSwitchTag = "no switch tag"
+	resultTagNotValue = "switch tag not value type"
+	resultTagNotNamed = "switch tag not named type"
+	resultTagNilPkg   = "nil switch tag package"
+	resultTagNotEnum  = "switch tag not known enum type"
+
+	resultNotPush              = "not push"
+	resultGeneratedFile        = "generated file"
+	resultIgnoreComment        = "has ignore comment"
+	resultNoEnforceComment     = "has no enforce comment"
+	resultEnumMembersAccounted = "required enum members accounted for"
+	resultDefaultCaseSuffices  = "default case presence satisfies exhaustiveness"
+	resultReportedDiagnostic   = "reported diagnostic"
 )
 
 // switchChecker returns a node visitor that checks exhaustiveness of
@@ -69,11 +69,11 @@ func switchChecker(pass *analysis.Pass, cfg switchConfig, generated boolCache, c
 			// Skip checking of this switch statement due to ignore directive comment.
 			// Still return true because there may be nested switch statements
 			// that are not to be ignored.
-			return true, resultSwitchIgnoreComment
+			return true, resultIgnoreComment
 		}
 		if cfg.explicit && !hasComment(switchComments, enforceComment) {
 			// Skip checking of this switch statement due to missing enforce directive comment.
-			return true, resultSwitchNoEnforceComment
+			return true, resultNoEnforceComment
 		}
 
 		if sw.Tag == nil {
@@ -94,7 +94,7 @@ func switchChecker(pass *analysis.Pass, cfg switchConfig, generated boolCache, c
 		if tagPkg == nil {
 			// The Go documentation says: nil for labels and objects in the Universe scope.
 			// This happens for the `error` type, for example.
-			return true, resultTagNoPkg
+			return true, resultTagNilPkg
 		}
 
 		enumTyp := enumType{tagType.Obj()}
