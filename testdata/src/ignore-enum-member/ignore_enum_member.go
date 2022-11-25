@@ -12,22 +12,22 @@ const (
 
 func _a() {
 	var e Exchange
-	switch e { // want "^missing cases in switch of type Exchange: Exchange_EXCHANGE_BINANCE$"
+	switch e { // want "^missing cases in switch of type ignoreenummember.Exchange: ignoreenummember.Exchange_EXCHANGE_BINANCE$"
 	case Exchange_EXCHANGE_BITMEX:
 	}
 
-	_ = map[Exchange]int{ // want "^missing keys in map of key type Exchange: Exchange_EXCHANGE_BINANCE$"
+	_ = map[Exchange]int{ // want "^missing keys in map of key type ignoreenummember.Exchange: ignoreenummember.Exchange_EXCHANGE_BINANCE$"
 		Exchange_EXCHANGE_BITMEX: 1,
 	}
 }
 
 func _b() {
 	var p barpkg.Phylum
-	switch p { // want "^missing cases in switch of type bar.Phylum: Mollusca$"
+	switch p { // want "^missing cases in switch of type bar.Phylum: bar.Mollusca$"
 	case barpkg.Chordata:
 	}
 
-	_ = map[barpkg.Phylum]int{ // want "^missing keys in map of key type bar.Phylum: Mollusca$"
+	_ = map[barpkg.Phylum]int{ // want "^missing keys in map of key type bar.Phylum: bar.Mollusca$"
 		barpkg.Chordata: 1,
 	}
 }

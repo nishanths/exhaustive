@@ -28,7 +28,7 @@ func _a() {
 	case C, D:
 	}
 
-	switch t { // want "^missing cases in switch of type T: D$"
+	switch t { // want "^missing cases in switch of type allscope.T: allscope.D$"
 	case C:
 	}
 
@@ -45,7 +45,7 @@ func _a() {
 	case X, Y:
 	}
 
-	switch q { // want "^missing cases in switch of type Q: Y$"
+	switch q { // want "^missing cases in switch of type allscope.Q: allscope.Y$"
 	case X:
 	}
 }
@@ -64,7 +64,7 @@ func _b() {
 		D: 2,
 	}
 
-	_ = map[T]int{ // want "^missing keys in map of key type T: D$"
+	_ = map[T]int{ // want "^missing keys in map of key type allscope.T: allscope.D$"
 		C: 1,
 	}
 
@@ -81,7 +81,7 @@ func _b() {
 		Y: 2,
 	}
 
-	_ = map[Q]int{ // want "^missing keys in map of key type Q: Y$"
+	_ = map[Q]int{ // want "^missing keys in map of key type allscope.Q: allscope.Y$"
 		X: 1,
 	}
 }

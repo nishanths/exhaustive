@@ -31,13 +31,13 @@ const (
 )
 
 func _s(c Chart) {
-	switch c { // want "^missing cases in switch of type Chart: Pie\\|circle$"
+	switch c { // want "^missing cases in switch of type duplicateenumvalue.Chart: duplicateenumvalue.Pie\\|duplicateenumvalue.circle$"
 	case Line:
 	case Sunburst:
 	case Area:
 	}
 
-	_ = map[Chart]int{ // want "^missing keys in map of key type Chart: Pie\\|circle$"
+	_ = map[Chart]int{ // want "^missing keys in map of key type duplicateenumvalue.Chart: duplicateenumvalue.Pie\\|duplicateenumvalue.circle$"
 		Line:     1,
 		Sunburst: 2,
 		Area:     3,

@@ -3,11 +3,11 @@ package generated
 
 func _doc_1() {
 	var d Direction
-	switch d { // want "^missing cases in switch of type Direction: E, S, W, directionInvalid$"
+	switch d { // want "^missing cases in switch of type generated.Direction: generated.E, generated.S, generated.W, generated.directionInvalid$"
 	case N:
 	}
 
-	_ = map[Direction]int{ // want "^missing keys in map of key type Direction: E, S, W, directionInvalid$"
+	_ = map[Direction]int{ // want "^missing keys in map of key type generated.Direction: generated.E, generated.S, generated.W, generated.directionInvalid$"
 		N: 1,
 	}
 }

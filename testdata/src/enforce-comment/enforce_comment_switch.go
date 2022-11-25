@@ -14,7 +14,7 @@ func _a() {
 	// some other comment
 	//exhaustive:enforce
 	// some other comment
-	switch d { // want "^missing cases in switch of type Direction: E, directionInvalid$"
+	switch d { // want "^missing cases in switch of type enforcecomment.Direction: enforcecomment.E, enforcecomment.directionInvalid$"
 	case N:
 	case S:
 	case W:
@@ -35,7 +35,7 @@ func _b() {
 
 	// this should report
 	//exhaustive:enforce
-	switch d { // want "^missing cases in switch of type Direction: E, directionInvalid$"
+	switch d { // want "^missing cases in switch of type enforcecomment.Direction: enforcecomment.E, enforcecomment.directionInvalid$"
 	case N:
 	case S:
 	case W:
@@ -54,7 +54,7 @@ func _nested() {
 	default:
 		// this should report.
 		//exhaustive:enforce
-		switch d { // want "^missing cases in switch of type Direction: E, directionInvalid$"
+		switch d { // want "^missing cases in switch of type enforcecomment.Direction: enforcecomment.E, enforcecomment.directionInvalid$"
 		case N:
 		case S:
 		case W:
@@ -68,7 +68,7 @@ func _reverse_nested() {
 
 	// this should report.
 	//exhaustive:enforce
-	switch d { // want "^missing cases in switch of type Direction: E, directionInvalid$"
+	switch d { // want "^missing cases in switch of type enforcecomment.Direction: enforcecomment.E, enforcecomment.directionInvalid$"
 	case N:
 	case S:
 	case W:
