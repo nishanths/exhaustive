@@ -4,12 +4,9 @@ import (
 	"fmt"
 	"go/ast"
 	"go/types"
-	"log"
 	"regexp"
-	"strings"
 
 	"golang.org/x/tools/go/analysis"
-	"golang.org/x/tools/go/ast/astutil"
 )
 
 // nodeVisitor is like the visitor function used by Inspector.WithStack,
@@ -20,19 +17,27 @@ import (
 // that the nodeVisitor function took the expected code path.
 type nodeVisitor func(n ast.Node, push bool, stack []ast.Node) (proceed bool, result string)
 
-// Result values returned by a node visitors.
+// toVisitor converts the nodeVisitor to a function suitable for use
+// with Inspector.WithStack.
+func toVisitor(v nodeVisitor) func(ast.Node, bool, []ast.Node) bool {
+	return func(node ast.Node, push bool, stack []ast.Node) bool {
+		proceed, _ := v(node, push, stack)
+		return proceed
+	}
+}
+
+// Result values returned by node visitors.
 const (
 	resultEmptyMapLiteral = "empty map literal"
 	resultNotMapLiteral   = "not map literal"
-	resultKeyNotNamed     = "map key not named type"
+	resultKeyNotNamed     = "map key not named type" // TODO(nishanths) this will need to be removed
 	resultKeyNilPkg       = "nil map key package"
-	resultKeyNotEnum      = "map key not known enum type"
+	resultKeyNotEnum      = "not all map key type terms are known enum types"
 
 	resultNoSwitchTag = "no switch tag"
 	resultTagNotValue = "switch tag not value type"
-	resultTagNotNamed = "switch tag not named type"
 	resultTagNilPkg   = "nil switch tag package"
-	resultTagNotEnum  = "switch tag not known enum type"
+	resultTagNotEnum  = "not all switch tag terms are known enum types"
 
 	resultNotPush              = "not push"
 	resultGeneratedFile        = "generated file"
@@ -87,55 +92,42 @@ func switchChecker(pass *analysis.Pass, cfg switchConfig, generated boolCache, c
 			return true, resultTagNotValue
 		}
 
-		switch tagType := t.Type.(type) {
-		case *types.Named:
-			tagPkg := tagType.Obj().Pkg()
-			if tagPkg == nil {
-				// The Go documentation says: nil for labels and objects in the Universe scope.
-				// This happens for the `error` type, for example.
-				return true, resultTagNilPkg
-			}
-
-			enumTyp := enumType{tagType.Obj()}
-			members, ok := importFact(pass, enumTyp)
-			if !ok {
-				// switch tag's type is not a known enum type.
-				return true, resultTagNotEnum
-			}
-
-			samePkg := tagPkg == pass.Pkg // do the switch statement and the switch tag type (i.e. enum type) live in the same package?
-			checkUnexported := samePkg    // we want to include unexported members in the exhaustiveness check only if we're in the same package
-			checklist := makeChecklist(members, tagPkg, checkUnexported, cfg.ignoreEnumMembers)
-
-			hasDefaultCase := analyzeSwitchClauses(sw, pass.TypesInfo, checklist.found)
-
-			if len(checklist.remaining()) == 0 {
-				// All enum members accounted for.
-				// Nothing to report.
-				return true, resultEnumMembersAccounted
-			}
-			if hasDefaultCase && cfg.defaultSignifiesExhaustive {
-				// Though enum members are not accounted for,
-				// the existence of the default case signifies exhaustiveness.
-				// So don't report.
-				return true, resultDefaultCaseSuffices
-			}
-			pass.Report(makeSwitchDiagnostic(sw, samePkg, enumTyp, members, checklist.remaining()))
-			return true, resultReportedDiagnostic
-
-		case *types.TypeParam:
-			log.Printf("%T", tagType.Constraint())
-			log.Printf("%#v", tagType.Constraint())
-			// log.Printf("%#v", tagType.Obj())
-			log.Printf("%#v", tagType.Constraint().Underlying().(*types.Interface))
-			// log.Printf("%#v", tagType.Obj().TypeParams())
-			// log.Printf("%#v", tagType.Obj().TypeArgs())
-			return true, ""
-
-		default:
-			panic(fmt.Sprintf("unhandled type %T", t.Type))
+		es, all := composingEnumTypes(pass, t.Type)
+		if !all {
+			return true, resultTagNotEnum // TODO(nishanths) could be other reasons e.g. nil pkg, make this more generic
 		}
+
+		var checkl checklist
+		checkl.ignore(cfg.ignoreEnumMembers)
+
+		for _, e := range es {
+			samePkg := pass.Pkg == e.et.Pkg() // do the switch statement and the enum type exist in the same package?
+			checkl.add(e.et, e.em, samePkg)
+		}
+
+		def := analyzeSwitchClauses(sw, pass.TypesInfo, checkl.found)
+		if len(checkl.remaining()) == 0 {
+			// All enum members accounted for.
+			// Nothing to report.
+			return true, resultEnumMembersAccounted
+		}
+		if def && cfg.defaultSignifiesExhaustive {
+			// Though enum members are not accounted for, the
+			// existence of the default case signifies
+			// exhaustiveness.  So don't report.
+			return true, resultDefaultCaseSuffices
+		}
+		pass.Report(makeSwitchDiagnostic(sw, toTypes(es), checkl.remaining()))
+		return true, resultReportedDiagnostic
 	}
+}
+
+func toTypes(es []typeAndMembers) []enumType {
+	out := make([]enumType, len(es))
+	for i := range es {
+		out[i] = es[i].et
+	}
+	return out
 }
 
 // switchConfig is configuration for switchChecker.
@@ -150,24 +142,12 @@ func isDefaultCase(c *ast.CaseClause) bool {
 	return c.List == nil // see doc comment on List field
 }
 
-func denotesPackage(ident *ast.Ident, info *types.Info) (*types.Package, bool) {
-	obj := info.ObjectOf(ident)
-	if obj == nil {
-		return nil, false
-	}
-	n, ok := obj.(*types.PkgName)
-	if !ok {
-		return nil, false
-	}
-	return n.Imported(), true
-}
-
 // analyzeSwitchClauses analyzes the clauses in the supplied switch
-// statement. The info param typically is pass.TypesInfo. The found
+// statement. The info param typically is pass.TypesInfo. The each
 // function is called for each enum member name found in the switch
 // statement. The hasDefaultCase return value indicates whether the
 // switch statement has a default clause.
-func analyzeSwitchClauses(sw *ast.SwitchStmt, info *types.Info, found func(val constantValue)) (hasDefaultCase bool) {
+func analyzeSwitchClauses(sw *ast.SwitchStmt, info *types.Info, each func(val constantValue)) (hasDefaultCase bool) {
 	for _, stmt := range sw.Body.List {
 		caseCl := stmt.(*ast.CaseClause)
 		if isDefaultCase(caseCl) {
@@ -175,98 +155,22 @@ func analyzeSwitchClauses(sw *ast.SwitchStmt, info *types.Info, found func(val c
 			continue
 		}
 		for _, expr := range caseCl.List {
-			analyzeCaseClauseExpr(expr, info, found)
+			if val, ok := exprValue(expr, info); ok {
+				each(val)
+			}
 		}
 	}
 	return hasDefaultCase
 }
 
-func analyzeCaseClauseExpr(e ast.Expr, info *types.Info, found func(val constantValue)) {
-	handleIdent := func(ident *ast.Ident) {
-		obj := info.Uses[ident]
-		if obj == nil {
-			return
-		}
-		if _, ok := obj.(*types.Const); !ok {
-			return
-		}
-
-		// There are two scenarios.
-		// See related test cases in typealias/quux/quux.go.
-		//
-		// ## Scenario 1
-		//
-		// Tag package and constant package are the same. This is
-		// simple; we just use fs.ModeDir's value.
-		//
-		// Example:
-		//
-		//   var mode fs.FileMode
-		//   switch mode {
-		//   case fs.ModeDir:
-		//   }
-		//
-		// ## Scenario 2
-		//
-		// Tag package and constant package are different. In this
-		// scenario, too, we accept the case clause expr constant value,
-		// as is. If the Go type checker is okay with the name being
-		// listed in the case clause, we don't care much further.
-		//
-		// Example:
-		//
-		//   var mode fs.FileMode
-		//   switch mode {
-		//   case os.ModeDir:
-		//   }
-		//
-		// Or equivalently:
-		//
-		//   // The type of mode is effectively fs.FileMode,
-		//   // due to type alias.
-		//   var mode os.FileMode
-		//   switch mode {
-		//   case os.ModeDir:
-		//   }
-		found(determineConstVal(ident, info))
-	}
-
-	e = astutil.Unparen(e)
-	switch e := e.(type) {
-	case *ast.Ident:
-		handleIdent(e)
-
-	case *ast.SelectorExpr:
-		x := astutil.Unparen(e.X)
-		// Ensure we only see the form pkg.Const, and not e.g.
-		// structVal.f or structVal.inner.f.
-		//
-		// For this purpose, first we check that X, which is everything
-		// except the rightmost field selector *ast.Ident (the Sel
-		// field), is also an *ast.Ident.
-		xIdent, ok := x.(*ast.Ident)
-		if !ok {
-			return
-		}
-		// Second, check that it's a package. It doesn't matter which
-		// package, just that it denotes some package.
-		if _, ok := denotesPackage(xIdent, info); !ok {
-			return
-		}
-		handleIdent(e.Sel)
-	}
-}
-
-// Makes a diagnostic for a non-exhaustive switch statement. samePkg
-// should be true if the enum type and the switch statement are defined
-// in the same package.
-func makeSwitchDiagnostic(sw *ast.SwitchStmt, samePkg bool, enumTyp enumType, all enumMembers, missing map[string]struct{}) analysis.Diagnostic {
-	typeName := diagnosticEnumTypeName(enumTyp.TypeName, samePkg)
-	members := strings.Join(diagnosticMissingMembers(missing, all), ", ")
-
+func makeSwitchDiagnostic(sw *ast.SwitchStmt, enumTypes []enumType, missing map[member]struct{}) analysis.Diagnostic {
 	return analysis.Diagnostic{
-		Pos:     sw.Pos(),
-		End:     sw.End(),
-		Message: fmt.Sprintf("missing cases in switch of type %s: %s", typeName, members),
+		Pos: sw.Pos(),
+		End: sw.End(),
+		Message: fmt.Sprintf(
+			"missing cases in switch of type %s: %s",
+			diagnosticEnumTypes(enumTypes),
+			diagnosticGroups(groupMissing(missing, enumTypes)),
+		),
 	}
 }

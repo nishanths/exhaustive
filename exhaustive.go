@@ -6,7 +6,7 @@ types.
 
 # Definition of enum types and enum members
 
-The Go language spec does not provide an explicit definition for an
+The [Go language spec] does not provide an explicit definition for an
 enum. By convention, and for the purpose of this analyzer, an enum type
 is any named type that meets these requirements:
 
@@ -98,8 +98,6 @@ The following switch statements are equally valid and exhaustive.
 	// The type of v is effectively newpkg.T2 due to alias.
 	var v pkg.T1
 
-	// pkg.A is a valid substitute for newpkg.A (same constant value).
-	// Similarly for pkg.B.
 	switch v {
 	case pkg.A:
 	case pkg.B:
@@ -112,17 +110,20 @@ The following switch statements are equally valid and exhaustive.
 
 # Type parameters
 
-A switch statement that switches on a value of a type-parameterized type
-is checked for exhaustiveness iff each of the elements of its constraint
-is an enum type. The following switch statement will be checked,
-assuming M, N, and O are enum types. To satisfy exhaustiveness, all
-members for each of M, N, and O must be listed in the switch statement's
-cases.
+A switch statement that switches on a value whose type is a type
+parameter is checked for exhaustiveness if and only if each term of the
+type constraint is an enum type. The following switch statement will be
+checked, assuming M, N, and O are enum types. To satisfy exhaustiveness,
+all enum members for each of M, N, and O must be listed in the switch
+statement's cases.
 
-	func bar[T M | N | O](v T) {
+	func bar[T M | I](v T) {
 		switch v {
 		}
 	}
+
+	type I interface{ N | J }
+	type J interface{ O }
 
 # Flags
 
@@ -148,8 +149,9 @@ If the -explicit-exhaustive-switch flag is enabled, the analyzer only
 checks enum switch statements associated with a comment beginning with
 "//exhaustive:enforce". By default the flag is disabled, which means
 that the analyzer checks every enum switch statement not associated with
-a comment beginning with "//exhaustive:ignore". The
--explicit-exhaustive-map flag is the map literal counterpart of the
+a comment beginning with "//exhaustive:ignore".
+
+The -explicit-exhaustive-map flag is the map literal counterpart of the
 -explicit-exhaustive-switch flag.
 
 	//exhaustive:ignore
@@ -158,21 +160,21 @@ a comment beginning with "//exhaustive:ignore". The
 	case B:
 	}
 
-If the -check-generated flag is enabled, switch statements or map
-literals in generated Go source files are also checked. Otherwise, by
-default, generated files are not checked. Refer to
+If the -check-generated flag is enabled, switch statements and map
+literals in generated Go source files are checked. Otherwise, by
+default, generated files are ignored. Refer to
 https://golang.org/s/generatedcode for the definition of generated
 files.
 
 If the -default-signifies-exhaustive flag is enabled, the presence of a
-'default' case in a switch statement always satisfies exhaustiveness,
-even if all enum members are not listed. It is recommended that you do
-not enable this flag. Enabling it usually defeats the purpose of
-exhaustiveness checking.
+'default' case in a switch statement immeidiately satisfies
+exhaustiveness, even if all enum members are not listed. It is
+recommended that you don't enable this flag; enabling it usually
+defeats the purpose of exhaustiveness checking.
 
 The -ignore-enum-members flag specifies a regular expression in Go
-package regexp syntax. Enum members matching the regular expression
-do not have to be listed in switch statement cases to satisfy
+package regexp syntax. Enum members matching the regular expression do
+not have to be listed in switch statement cases to satisfy
 exhaustiveness. The specified regular expression is matched against an
 enum member name inclusive of the enum package import path: for example,
 if the enum package import path is "example.com/eco" and the member name
@@ -180,10 +182,12 @@ is "Tundra", the specified regular expression will be matched against
 the string "example.com/eco.Tundra".
 
 If the -package-scope-only flag is enabled, the analyzer only finds
-enums defined in package-level scopes, and consequently only switch
-statements and map literals that use package-level enums will be checked
-for exhaustiveness. By default, the analyzer finds enums defined in all
-scopes, and checks switch statements that switch on all these enums.
+enums defined in package scope, and consequently only switch statements
+and map literals that use package-scoped enums will be checked for
+exhaustiveness. By default, the analyzer finds enums defined in all
+scopes (e.g. in function bodies).
+
+[Go language spec]: https://go.dev/ref/spec
 */
 package exhaustive
 
@@ -204,10 +208,10 @@ func init() {
 	Analyzer.Flags.BoolVar(&fCheckGenerated, CheckGeneratedFlag, false, "check generated files")
 	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, `presence of "default" case in a switch statement unconditionally satisfies exhaustiveness`)
 	Analyzer.Flags.Var(&fIgnoreEnumMembers, IgnoreEnumMembersFlag, "enum members matching `regexp` do not have to be listed to satisfy exhaustiveness")
-	Analyzer.Flags.BoolVar(&fPackageScopeOnly, PackageScopeOnlyFlag, false, "find enums only in package-level scopes, not in inner scopes")
+	Analyzer.Flags.BoolVar(&fPackageScopeOnly, PackageScopeOnlyFlag, false, "find enums only in package scope, not in inner scopes")
 
 	var unused string
-	Analyzer.Flags.StringVar(&unused, IgnorePatternFlag, "", "no effect (deprecated); see -"+IgnoreEnumMembersFlag+" instead")
+	Analyzer.Flags.StringVar(&unused, IgnorePatternFlag, "", "no effect (deprecated); use -"+IgnoreEnumMembersFlag)
 	Analyzer.Flags.StringVar(&unused, CheckingStrategyFlag, "", "no effect (deprecated)")
 }
 
@@ -222,7 +226,7 @@ const (
 	IgnoreEnumMembersFlag          = "ignore-enum-members"
 	PackageScopeOnlyFlag           = "package-scope-only"
 
-	IgnorePatternFlag    = "ignore-pattern"    // Deprecated: see IgnoreEnumMembersFlag instead.
+	IgnorePatternFlag    = "ignore-pattern"    // Deprecated: use IgnoreEnumMembersFlag.
 	CheckingStrategyFlag = "checking-strategy" // Deprecated.
 )
 
@@ -235,8 +239,7 @@ const (
 )
 
 func validCheckElement(s string) error {
-	e := checkElement(s) // temporarily for check
-	switch e {
+	switch checkElement(s) {
 	case elementSwitch:
 		return nil
 	case elementMap:
@@ -309,6 +312,10 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	swChecker := switchChecker(pass, swConf, generated, comments)
 	mapChecker := mapChecker(pass, mapConf, generated, comments)
 
+	// NOTE: should not share the same inspect.WithStack call for all
+	// program elements: the visitor function for a program element may
+	// exit traversal early, but this shouldn't affect traversal for
+	// other program elements.
 	for _, e := range fCheck.elements {
 		switch checkElement(e) {
 		case elementSwitch:
@@ -320,15 +327,6 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		}
 	}
 	return nil, nil
-}
-
-// toVisitor converts a nodeVisitor to a function suitable for use
-// with inspect.WithStack.
-func toVisitor(v nodeVisitor) func(ast.Node, bool, []ast.Node) bool {
-	return func(node ast.Node, push bool, stack []ast.Node) bool {
-		proceed, _ := v(node, push, stack)
-		return proceed
-	}
 }
 
 // TODO(nishanths): When dropping pre go1.19 support, the following

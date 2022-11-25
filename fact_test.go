@@ -61,8 +61,8 @@ func TestEnumMembersFact(t *testing.T) {
 // This test exists to prevent regressions where changes made to a fact type used
 // by the Analyzer makes the type fail to gob-encode/decode. Particuarly:
 //
-//  * gob values cannot seem to have nil pointers.
-//  * fields must be exported to survive the encode/decode.
+//   - gob values cannot seem to have nil pointers.
+//   - fields must be exported to survive the encode/decode.
 //
 // The test likely doesn't cover everything that could go wrong during gob
 // encoding/decoding.
@@ -103,8 +103,9 @@ func checkOneFactType(t *testing.T, fact analysis.Fact) {
 		}
 	})
 
-	// Fields should all be exported. And no pointer types should be present
-	// unless you're absolutely sure, since nil pointers don't work with gob.
+	// Ensure that all all fields all exported, and there are no pointer
+	// types. Nil pointer values don't work with gob. We can't guarantee
+	// non-nil values here, so we just disallow all pointer types.
 	t.Run("fields", func(t *testing.T) {
 		switch v := fact.(type) {
 		// NOTE: if there are more fact types, add them here.

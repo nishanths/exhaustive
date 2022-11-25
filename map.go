@@ -100,17 +100,10 @@ func mapChecker(pass *analysis.Pass, cfg mapConfig, generated boolCache, comment
 			return true, resultKeyNotEnum
 		}
 
-		samePkg := keyPkg == pass.Pkg // do the map literal and the map key type (i.e. enum type) live in the same package?
-		checkUnexported := samePkg    // we want to include unexported members in the exhaustiveness check only if we're in the same package
-		checklist := makeChecklist(members, keyPkg, checkUnexported, cfg.ignoreEnumMembers)
-
-		for _, e := range lit.Elts {
-			expr, ok := e.(*ast.KeyValueExpr)
-			if !ok {
-				continue // is it possible for valid map literal?
-			}
-			analyzeCaseClauseExpr(expr.Key, pass.TypesInfo, checklist.found)
-		}
+		samePkg := pass.Pkg == keyPkg // do the map literal and the map key type exist in the same package?
+		checklist := newChecklist(cfg.ignoreEnumMembers)
+		checklist.add(et, em, keyPkg, samePkg)
+		analyzeMapLiteral(lit, pass.TypesInfo, checklist.found)
 
 		if len(checklist.remaining()) == 0 {
 			return true, resultEnumMembersAccounted
@@ -121,12 +114,24 @@ func mapChecker(pass *analysis.Pass, cfg mapConfig, generated boolCache, comment
 	}
 }
 
+func analyzeMapLiteral(lit *ast.CompositeLit, info *types.Info, each func(constantValue)) {
+	for _, e := range lit.Elts {
+		expr, ok := e.(*ast.KeyValueExpr)
+		if !ok {
+			continue
+		}
+		if val, ok := exprValue(expr.Key, info); ok {
+			each(val)
+		}
+	}
+}
+
 func makeMapDiagnostic(lit *ast.CompositeLit, samePkg bool, enumTyp enumType, all enumMembers, missing map[string]struct{}) analysis.Diagnostic {
-	typeName := diagnosticEnumTypeName(enumTyp.TypeName, samePkg)
-	members := strings.Join(diagnosticMissingMembers(missing, all), ", ")
+	typeName := diagnosticEnumType(enumTyp.TypeName, samePkg)
+	groups := strings.Join(groupsToStrings(diagnosticMissingMembers(missing, enumTypes)), ",")
 	return analysis.Diagnostic{
 		Pos:     lit.Pos(),
 		End:     lit.End(),
-		Message: fmt.Sprintf("missing keys in map of key type %s: %s", typeName, members),
+		Message: fmt.Sprintf("missing keys in map of key type %s: %s", typeName, groups),
 	}
 }

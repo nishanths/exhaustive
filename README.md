@@ -18,12 +18,6 @@ guidelines in the [`golang.org/x/tools/go/analysis`][xanalysis] package.
 This should make it possible to integrate `exhaustive` with your own
 analysis driver programs.
 
-## Bugs
-
-`exhaustive` does not report missing cases in a switch statement that
-switches on a type-parameterized type. See [this issue][issue-typeparam]
-for details.
-
 ## Examples
 
 Given the enum
