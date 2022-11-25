@@ -230,7 +230,8 @@ func (c *checklist) add(et enumType, em enumMembers, includeUnexported bool) {
 		}
 		mem := member{
 			em.NameToPos[name],
-			et, name,
+			et,
+			name,
 			em.NameToValue[name],
 		}
 		if c.checkl == nil {
@@ -281,7 +282,7 @@ func groupMissing(missing map[member]struct{}, types []enumType) []group {
 		return ret
 	}
 
-	typesOrder := indices(types)
+	typesOrder := indices(types) // for quick lookup
 	astBefore := func(x, y member) bool {
 		if typesOrder[x.typ] < typesOrder[y.typ] {
 			return true
@@ -313,6 +314,8 @@ func groupMissing(missing map[member]struct{}, types []enumType) []group {
 		groups[i] = g
 	}
 	// sort groups themselves in AST order.
+	// the index [0] access is safe, because there will be at least one
+	// element per group.
 	sort.Slice(groups, func(i, j int) bool { return astBefore(groups[i][0], groups[j][0]) })
 
 	return groups

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"go/ast"
+	"go/token"
 	"reflect"
 	"testing"
 
@@ -15,6 +16,11 @@ func TestEnumMembersFact(t *testing.T) {
 		e := enumMembersFact{
 			Members: enumMembers{
 				Names: []string{"Tundra", "Savanna", "Desert"},
+				NameToPos: map[string]token.Pos{
+					"Tundra":  100,
+					"Savanna": 200,
+					"Desert":  300,
+				},
 				NameToValue: map[string]constantValue{
 					"Tundra":  "1",
 					"Savanna": "2",
@@ -35,6 +41,14 @@ func TestEnumMembersFact(t *testing.T) {
 		e = enumMembersFact{
 			Members: enumMembers{
 				Names: []string{"_", "add", "sub", "mul", "quotient", "remainder"},
+				NameToPos: map[string]token.Pos{
+					"_":         1,
+					"add":       11,
+					"sub":       12,
+					"mul":       33,
+					"quotient":  34,
+					"remainder": 35,
+				},
 				NameToValue: map[string]constantValue{
 					"_":         "0",
 					"add":       "1",
@@ -138,6 +152,7 @@ func checkTypeEnumMembers(t *testing.T, enumMembersType reflect.Type) {
 
 	assertTypeFields(t, enumMembersType, []wantField{
 		{"Names", "[]string"},
+		{"NameToPos", "map[string]token.Pos"},
 		{"NameToValue", "map[string]exhaustive.constantValue"},
 		{"ValueToNames", "map[exhaustive.constantValue][]string"},
 	})

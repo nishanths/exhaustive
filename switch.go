@@ -101,8 +101,7 @@ func switchChecker(pass *analysis.Pass, cfg switchConfig, generated boolCache, c
 		checkl.ignore(cfg.ignoreEnumMembers)
 
 		for _, e := range es {
-			samePkg := pass.Pkg == e.et.Pkg() // do the switch statement and the enum type exist in the same package?
-			checkl.add(e.et, e.em, samePkg)
+			checkl.add(e.et, e.em, pass.Pkg == e.et.Pkg())
 		}
 
 		def := analyzeSwitchClauses(sw, pass.TypesInfo, checkl.found)

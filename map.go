@@ -5,7 +5,6 @@ import (
 	"go/ast"
 	"go/types"
 	"regexp"
-	"strings"
 
 	"golang.org/x/tools/go/analysis"
 )
@@ -50,19 +49,16 @@ func mapChecker(pass *analysis.Pass, cfg mapConfig, generated boolCache, comment
 			return false, resultEmptyMapLiteral
 		}
 
-		keyType, ok := mapType.Key().(*types.Named)
-		if !ok {
-			return true, resultKeyNotNamed
-		}
-
 		fileComments := comments.get(pass.Fset, file)
 		var relatedComments []*ast.CommentGroup
 		for i := range stack {
-			// iterate over stack in the reverse order (from bottom to top)
+			// iterate over stack in the reverse order (from inner
+			// node to outer node)
 			node := stack[len(stack)-1-i]
 			switch node.(type) {
 			// need to check comments associated with following nodes,
-			// because logic of ast package doesn't allow to associate comment with *ast.CompositeLit
+			// because logic of ast package doesn't associate comment
+			// with *ast.CompositeLit as required.
 			case *ast.CompositeLit, // stack[len(stack)-1]
 				*ast.ReturnStmt, // return ...
 				*ast.IndexExpr,  // map[enum]...{...}[key]
@@ -74,9 +70,10 @@ func mapChecker(pass *analysis.Pass, cfg mapConfig, generated boolCache, comment
 				*ast.ValueSpec:  // var declaration
 				relatedComments = append(relatedComments, fileComments[node]...)
 				continue
+			default:
+				// stop iteration on the first inappropriate node
+				break
 			}
-			// stop iteration on the first inappropriate node
-			break
 		}
 
 		if !cfg.explicit && hasComment(relatedComments, ignoreComment) {
@@ -89,27 +86,23 @@ func mapChecker(pass *analysis.Pass, cfg mapConfig, generated boolCache, comment
 			return true, resultNoEnforceComment
 		}
 
-		keyPkg := keyType.Obj().Pkg()
-		if keyPkg == nil {
-			return true, resultKeyNilPkg
+		es, all := composingEnumTypes(pass, mapType.Key())
+		if !all {
+			return true, resultKeyNotEnum // TODO(nishanths) could be other reasons e.g. nil pkg, make this more generic
 		}
 
-		enumTyp := enumType{keyType.Obj()}
-		members, ok := importFact(pass, enumTyp)
-		if !ok {
-			return true, resultKeyNotEnum
+		var checkl checklist
+		checkl.ignore(cfg.ignoreEnumMembers)
+
+		for _, e := range es {
+			checkl.add(e.et, e.em, pass.Pkg == e.et.Pkg())
 		}
 
-		samePkg := pass.Pkg == keyPkg // do the map literal and the map key type exist in the same package?
-		checklist := newChecklist(cfg.ignoreEnumMembers)
-		checklist.add(et, em, keyPkg, samePkg)
-		analyzeMapLiteral(lit, pass.TypesInfo, checklist.found)
-
-		if len(checklist.remaining()) == 0 {
+		analyzeMapLiteral(lit, pass.TypesInfo, checkl.found)
+		if len(checkl.remaining()) == 0 {
 			return true, resultEnumMembersAccounted
 		}
-
-		pass.Report(makeMapDiagnostic(lit, samePkg, enumTyp, members, checklist.remaining()))
+		pass.Report(makeMapDiagnostic(lit, toTypes(es), checkl.remaining()))
 		return true, resultReportedDiagnostic
 	}
 }
@@ -126,12 +119,14 @@ func analyzeMapLiteral(lit *ast.CompositeLit, info *types.Info, each func(consta
 	}
 }
 
-func makeMapDiagnostic(lit *ast.CompositeLit, samePkg bool, enumTyp enumType, all enumMembers, missing map[string]struct{}) analysis.Diagnostic {
-	typeName := diagnosticEnumType(enumTyp.TypeName, samePkg)
-	groups := strings.Join(groupsToStrings(diagnosticMissingMembers(missing, enumTypes)), ",")
+func makeMapDiagnostic(lit *ast.CompositeLit, enumTypes []enumType, missing map[member]struct{}) analysis.Diagnostic {
 	return analysis.Diagnostic{
-		Pos:     lit.Pos(),
-		End:     lit.End(),
-		Message: fmt.Sprintf("missing keys in map of key type %s: %s", typeName, groups),
+		Pos: lit.Pos(),
+		End: lit.End(),
+		Message: fmt.Sprintf(
+			"missing keys in map of key type %s: %s",
+			diagnosticEnumTypes(enumTypes),
+			diagnosticGroups(groupMissing(missing, enumTypes)),
+		),
 	}
 }

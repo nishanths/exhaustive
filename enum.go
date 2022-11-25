@@ -24,7 +24,7 @@ func (et enumType) factObject() types.Object { return et.TypeName }          // 
 // enumMembers is set of enum members for a single enum type.
 // The zero value is ready to use.
 type enumMembers struct {
-	Names        []string                   // enum member names, in AST order
+	Names        []string                   // enum member names
 	NameToPos    map[string]token.Pos       // member name -> AST position
 	NameToValue  map[string]constantValue   // enum member name -> constant value
 	ValueToNames map[constantValue][]string // constant value -> enum member names

@@ -1,11 +1,24 @@
 package exhaustive
 
 import (
+	"go/token"
 	"go/types"
 	"reflect"
 	"regexp"
 	"testing"
 )
+
+func groupStrings(groups []group) [][]string {
+	var out [][]string
+	for i := range groups {
+		var x []string
+		for j := range groups[i] {
+			x = append(x, diagnosticMember(groups[i][j]))
+		}
+		out = append(out, x)
+	}
+	return out
+}
 
 func TestRegexpFlag(t *testing.T) {
 	t.Run("not set", func(t *testing.T) {
@@ -72,10 +85,18 @@ func TestRegexpFlag(t *testing.T) {
 }
 
 func TestChecklist(t *testing.T) {
-	enumPkg := types.NewPackage("github.com/example/bar-go", "bar")
-
+	et := enumType{types.NewTypeName(50, types.NewPackage("github.com/example/bar-go", "bar"), "T", nil)}
 	em := enumMembers{
 		Names: []string{"A", "B", "C", "D", "E", "F", "G"},
+		NameToPos: map[string]token.Pos{
+			"A": 0,
+			"B": 0,
+			"C": 0,
+			"D": 0,
+			"E": 0,
+			"F": 0,
+			"G": 0,
+		},
 		NameToValue: map[string]constantValue{
 			"A": "1",
 			"B": "2",
@@ -95,17 +116,21 @@ func TestChecklist(t *testing.T) {
 	}
 	checkEnumMembersLiteral("TestChecklist", em)
 
-	checkRemaining := func(t *testing.T, h *checklist, want map[string]struct{}) {
+	checkRemaining := func(t *testing.T, h checklist, want map[string]struct{}) {
 		t.Helper()
-		rem := h.remaining()
+		rem := make(map[string]struct{})
+		for k := range h.remaining() {
+			rem[k.name] = struct{}{}
+		}
 		if !reflect.DeepEqual(want, rem) {
 			t.Errorf("want %+v, got %+v", want, rem)
 		}
 	}
 
 	t.Run("main operations", func(t *testing.T) {
-		checklist := makeChecklist(em, enumPkg, false, nil)
-		checkRemaining(t, checklist, map[string]struct{}{
+		var c checklist
+		c.add(et, em, false)
+		checkRemaining(t, c, map[string]struct{}{
 			"A": {},
 			"B": {},
 			"C": {},
@@ -115,8 +140,8 @@ func TestChecklist(t *testing.T) {
 			"G": {},
 		})
 
-		checklist.found(`1`)
-		checkRemaining(t, checklist, map[string]struct{}{
+		c.found(`1`)
+		checkRemaining(t, c, map[string]struct{}{
 			"B": {},
 			"C": {},
 			"D": {},
@@ -125,51 +150,52 @@ func TestChecklist(t *testing.T) {
 			"G": {},
 		})
 
-		checklist.found(`2`)
-		checkRemaining(t, checklist, map[string]struct{}{
+		c.found(`2`)
+		checkRemaining(t, c, map[string]struct{}{
 			"C": {},
 			"E": {},
 			"G": {},
 		})
 
 		// repeated call should be a no-op.
-		checklist.found(`2`)
-		checkRemaining(t, checklist, map[string]struct{}{
+		c.found(`2`)
+		checkRemaining(t, c, map[string]struct{}{
 			"C": {},
 			"E": {},
 			"G": {},
 		})
 
-		checklist.found(`2`)
-		checkRemaining(t, checklist, map[string]struct{}{
+		c.found(`2`)
+		checkRemaining(t, c, map[string]struct{}{
 			"C": {},
 			"E": {},
 			"G": {},
 		})
 
-		checklist.found(`5`)
-		checkRemaining(t, checklist, map[string]struct{}{
+		c.found(`5`)
+		checkRemaining(t, c, map[string]struct{}{
 			"E": {},
 			"G": {},
 		})
 
 		// unknown value
-		checklist.found(`100000`)
-		checkRemaining(t, checklist, map[string]struct{}{
+		c.found(`100000`)
+		checkRemaining(t, c, map[string]struct{}{
 			"E": {},
 			"G": {},
 		})
 
-		checklist.found(`3`)
-		checkRemaining(t, checklist, map[string]struct{}{
+		c.found(`3`)
+		checkRemaining(t, c, map[string]struct{}{
 			"G": {},
 		})
 	})
 
 	t.Run("ignore regexp", func(t *testing.T) {
-		t.Run("nil means no filtering", func(t *testing.T) {
-			checklist := makeChecklist(em, enumPkg, false, nil)
-			checkRemaining(t, checklist, map[string]struct{}{
+		t.Run("no filtering", func(t *testing.T) {
+			var c checklist
+			c.add(et, em, false)
+			checkRemaining(t, c, map[string]struct{}{
 				"A": {},
 				"B": {},
 				"C": {},
@@ -181,8 +207,10 @@ func TestChecklist(t *testing.T) {
 		})
 
 		t.Run("basic", func(t *testing.T) {
-			checklist := makeChecklist(em, enumPkg, false, regexp.MustCompile(`^github.com/example/bar-go.G$`))
-			checkRemaining(t, checklist, map[string]struct{}{
+			var c checklist
+			c.ignore(regexp.MustCompile(`^github.com/example/bar-go.G$`))
+			c.add(et, em, false)
+			checkRemaining(t, c, map[string]struct{}{
 				"A": {},
 				"B": {},
 				"C": {},
@@ -193,13 +221,17 @@ func TestChecklist(t *testing.T) {
 		})
 
 		t.Run("matches multiple", func(t *testing.T) {
-			checklist := makeChecklist(em, enumPkg, false, regexp.MustCompile(`^github.com/example/bar-go`))
-			checkRemaining(t, checklist, map[string]struct{}{})
+			var c checklist
+			c.ignore(regexp.MustCompile(`^github.com/example/bar-go`))
+			c.add(et, em, false)
+			checkRemaining(t, c, map[string]struct{}{})
 		})
 
 		t.Run("uses package path, not package name", func(t *testing.T) {
-			checklist := makeChecklist(em, enumPkg, false, regexp.MustCompile(`bar.G`))
-			checkRemaining(t, checklist, map[string]struct{}{
+			var c checklist
+			c.ignore(regexp.MustCompile(`bar.G`))
+			c.add(et, em, false)
+			checkRemaining(t, c, map[string]struct{}{
 				"A": {},
 				"B": {},
 				"C": {},
@@ -214,6 +246,16 @@ func TestChecklist(t *testing.T) {
 	t.Run("blank identifier", func(t *testing.T) {
 		em := enumMembers{
 			Names: []string{"A", "B", "C", "D", "E", "F", "G", "_"},
+			NameToPos: map[string]token.Pos{
+				"A": 0,
+				"B": 0,
+				"C": 0,
+				"D": 0,
+				"E": 0,
+				"F": 0,
+				"G": 0,
+				"_": 0,
+			},
 			NameToValue: map[string]constantValue{
 				"A": "1",
 				"B": "2",
@@ -235,8 +277,9 @@ func TestChecklist(t *testing.T) {
 		}
 		checkEnumMembersLiteral("TestChecklist blank identifier", em)
 
-		checklist := makeChecklist(em, enumPkg, true, nil)
-		checkRemaining(t, checklist, map[string]struct{}{
+		var c checklist
+		c.add(et, em, true)
+		checkRemaining(t, c, map[string]struct{}{
 			"A": {},
 			"B": {},
 			"C": {},
@@ -250,6 +293,16 @@ func TestChecklist(t *testing.T) {
 	t.Run("unexported", func(t *testing.T) {
 		em := enumMembers{
 			Names: []string{"A", "B", "C", "D", "E", "F", "G", "lowercase"},
+			NameToPos: map[string]token.Pos{
+				"A":         0,
+				"B":         0,
+				"C":         0,
+				"D":         0,
+				"E":         0,
+				"F":         0,
+				"G":         0,
+				"lowercase": 0,
+			},
 			NameToValue: map[string]constantValue{
 				"A":         "1",
 				"B":         "2",
@@ -272,8 +325,9 @@ func TestChecklist(t *testing.T) {
 		checkEnumMembersLiteral("TestChecklist lowercase", em)
 
 		t.Run("include", func(t *testing.T) {
-			checklist := makeChecklist(em, enumPkg, true, nil)
-			checkRemaining(t, checklist, map[string]struct{}{
+			var c checklist
+			c.add(et, em, true)
+			checkRemaining(t, c, map[string]struct{}{
 				"A":         {},
 				"B":         {},
 				"C":         {},
@@ -286,8 +340,9 @@ func TestChecklist(t *testing.T) {
 		})
 
 		t.Run("don't include", func(t *testing.T) {
-			checklist := makeChecklist(em, enumPkg, false, nil)
-			checkRemaining(t, checklist, map[string]struct{}{
+			var c checklist
+			c.add(et, em, false)
+			checkRemaining(t, c, map[string]struct{}{
 				"A": {},
 				"B": {},
 				"C": {},
@@ -309,71 +364,79 @@ func TestDiagnosticEnumType(t *testing.T) {
 	}
 }
 
-func TestDiagnosticMissingMembers(t *testing.T) {
-	em := enumMembers{
-		Names: []string{"Ganga", "Yamuna", "Kaveri", "Unspecified"},
-		NameToValue: map[string]constantValue{
-			"Unspecified": "0",
-			"Ganga":       "0",
-			"Kaveri":      "1",
-			"Yamuna":      "2",
-		},
-		ValueToNames: map[constantValue][]string{
-			"0": {"Unspecified", "Ganga"},
-			"1": {"Kaveri"},
-			"2": {"Yamuna"},
-		},
+func TestGroupMissing(t *testing.T) {
+	f := func(missing map[member]struct{}, types []enumType) [][]string {
+		return groupStrings(groupMissing(missing, types))
 	}
-	checkEnumMembersLiteral("River", em)
+
+	tn := types.NewTypeName(50, types.NewPackage("example.org/enumpkg-go", "enumpkg"), "River", nil)
+	et := enumType{tn}
+
+	members := []member{
+		0: {10, et, "Ganga", "0"},
+		1: {20, et, "Yamuna", "2"},
+		2: {30, et, "Kaveri", "1"},
+		3: {60, et, "Unspecified", "0"},
+	}
 
 	t.Run("missing some: same-valued", func(t *testing.T) {
-		got := diagnosticMissingMembers(map[string]struct{}{"Ganga": {}, "Unspecified": {}, "Kaveri": {}}, em)
-		want := []string{"Ganga|Unspecified", "Kaveri"}
+		got := f(map[member]struct{}{
+			members[0]: struct{}{},
+			members[3]: struct{}{},
+			members[2]: struct{}{},
+		}, []enumType{et})
+		want := [][]string{{"enumpkg.Ganga", "enumpkg.Unspecified"}, {"enumpkg.Kaveri"}}
 		if !reflect.DeepEqual(want, got) {
 			t.Errorf("want %v, got %v", want, got)
 		}
 	})
 
 	t.Run("missing some: unique or unknown values", func(t *testing.T) {
-		got := diagnosticMissingMembers(map[string]struct{}{"Yamuna": {}, "Kaveri": {}}, em)
-		want := []string{"Yamuna", "Kaveri"}
+		got := f(map[member]struct{}{
+			members[1]: struct{}{},
+			members[2]: struct{}{},
+		}, []enumType{et})
+		want := [][]string{{"enumpkg.Yamuna"}, {"enumpkg.Kaveri"}}
 		if !reflect.DeepEqual(want, got) {
 			t.Errorf("want %v, got %v", want, got)
 		}
 	})
 
 	t.Run("missing none", func(t *testing.T) {
-		got := diagnosticMissingMembers(nil, em)
+		got := f(nil, []enumType{et})
 		if len(got) != 0 {
 			t.Errorf("want zero elements, got %d", len(got))
 		}
 	})
 
 	t.Run("missing all", func(t *testing.T) {
-		got := diagnosticMissingMembers(map[string]struct{}{"Ganga": {}, "Kaveri": {}, "Yamuna": {}, "Unspecified": {}}, em)
-		want := []string{"Ganga|Unspecified", "Yamuna", "Kaveri"}
+		got := f(map[member]struct{}{
+			members[0]: struct{}{},
+			members[2]: struct{}{},
+			members[1]: struct{}{},
+			members[3]: struct{}{},
+		}, []enumType{et})
+		want := [][]string{{"enumpkg.Ganga", "enumpkg.Unspecified"}, {"enumpkg.Yamuna"}, {"enumpkg.Kaveri"}}
 		if !reflect.DeepEqual(want, got) {
 			t.Errorf("want %v, got %v", want, got)
 		}
 	})
 
-	em = enumMembers{
-		Names: []string{"X", "A", "Unspecified"},
-		NameToValue: map[string]constantValue{
-			"Unspecified": "0",
-			"X":           "0",
-			"A":           "1",
-		},
-		ValueToNames: map[constantValue][]string{
-			"0": {"Unspecified", "X"},
-			"1": {"A"},
-		},
+	tn = types.NewTypeName(50, types.NewPackage("example.org/xkcd-go", "xkcd"), "T", nil)
+	et = enumType{tn}
+	members = []member{
+		0: {12, et, "X", "0"},
+		1: {13, et, "A", "1"},
+		2: {14, et, "Unspecified", "0"},
 	}
-	checkEnumMembersLiteral("whatever", em)
 
 	t.Run("AST order", func(t *testing.T) {
-		got := diagnosticMissingMembers(map[string]struct{}{"Unspecified": {}, "X": {}, "A": {}}, em)
-		want := []string{"X|Unspecified", "A"}
+		got := f(map[member]struct{}{
+			members[2]: struct{}{},
+			members[0]: struct{}{},
+			members[1]: struct{}{},
+		}, []enumType{et})
+		want := [][]string{{"xkcd.X", "xkcd.Unspecified"}, {"xkcd.A"}}
 		if !reflect.DeepEqual(want, got) {
 			t.Errorf("want %v, got %v", want, got)
 		}

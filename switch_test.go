@@ -13,7 +13,8 @@ import (
 // TODO(testing): write tests that assert on the "result" returned by
 // switchStmtChecker.
 
-// This test mainly exists to ensure stability of the diagnostic message format.
+// This test mainly exists to ensure stability of the diagnostic message
+// format.
 func TestMakeSwitchDiagnostic(t *testing.T) {
 	sw := &ast.SwitchStmt{
 		Switch: 1,
@@ -22,30 +23,18 @@ func TestMakeSwitchDiagnostic(t *testing.T) {
 		},
 		// other fields shouldn't matter
 	}
-	samePkg := false
 	tn := types.NewTypeName(50, types.NewPackage("example.org/enumpkg", "enumpkg"), "Biome", nil)
-	enumTyp := enumType{tn}
-	allMembers := enumMembers{
-		Names: []string{"Tundra", "Savanna", "Desert"},
-		NameToValue: map[string]constantValue{
-			"Tundra":  "1",
-			"Savanna": "2",
-			"Desert":  "3",
-		},
-		ValueToNames: map[constantValue][]string{
-			"1": {"Tundra"},
-			"2": {"Savanna"},
-			"3": {"Desert"},
-		},
+	et := enumType{tn}
+	missing := map[member]struct{}{
+		{102, et, "Savanna", "2"}: struct{}{},
+		{109, et, "Desert", "3"}:  struct{}{},
 	}
-	checkEnumMembersLiteral("Biome", allMembers)
-	missingMembers := map[string]struct{}{"Savanna": {}, "Desert": {}}
 
-	got := makeSwitchDiagnostic(sw, samePkg, enumTyp, allMembers, missingMembers)
+	got := makeSwitchDiagnostic(sw, []enumType{et}, missing)
 	want := analysis.Diagnostic{
 		Pos:     1,
 		End:     11,
-		Message: "missing cases in switch of type enumpkg.Biome: Savanna, Desert",
+		Message: "missing cases in switch of type enumpkg.Biome: enumpkg.Savanna, enumpkg.Desert",
 	}
 	if !reflect.DeepEqual(want, got) {
 		t.Errorf("want %+v, got %+v", want, got)
