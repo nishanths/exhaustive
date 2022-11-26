@@ -7,7 +7,12 @@ build:
 
 .PHONY: test
 test:
-	go test -cover ./...
+	go test ./...
+
+.PHONY: cover
+cover:
+	go test -cover -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out
 
 .PHONY: install-vet
 install-vet:

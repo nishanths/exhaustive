@@ -113,7 +113,7 @@ func analyzeMapLiteral(lit *ast.CompositeLit, info *types.Info, each func(consta
 		if !ok {
 			continue
 		}
-		if val, ok := exprValue(expr.Key, info); ok {
+		if val, ok := exprConstVal(expr.Key, info); ok {
 			each(val)
 		}
 	}

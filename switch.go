@@ -30,7 +30,6 @@ func toVisitor(v nodeVisitor) func(ast.Node, bool, []ast.Node) bool {
 const (
 	resultEmptyMapLiteral = "empty map literal"
 	resultNotMapLiteral   = "not map literal"
-	resultKeyNotNamed     = "map key not named type" // TODO(nishanths) this will need to be removed
 	resultKeyNilPkg       = "nil map key package"
 	resultKeyNotEnum      = "not all map key type terms are known enum types"
 
@@ -44,7 +43,7 @@ const (
 	resultIgnoreComment        = "has ignore comment"
 	resultNoEnforceComment     = "has no enforce comment"
 	resultEnumMembersAccounted = "required enum members accounted for"
-	resultDefaultCaseSuffices  = "default case presence satisfies exhaustiveness"
+	resultDefaultCaseSuffices  = "default case satisfies exhaustiveness"
 	resultReportedDiagnostic   = "reported diagnostic"
 )
 
@@ -154,7 +153,7 @@ func analyzeSwitchClauses(sw *ast.SwitchStmt, info *types.Info, each func(val co
 			continue
 		}
 		for _, expr := range caseCl.List {
-			if val, ok := exprValue(expr, info); ok {
+			if val, ok := exprConstVal(expr, info); ok {
 				each(val)
 			}
 		}

@@ -21,11 +21,11 @@ func denotesPackage(ident *ast.Ident, info *types.Info) bool {
 	return ok
 }
 
-// exprValue returns the constantValue for an expression if the
+// exprConstVal returns the constantValue for an expression if the
 // expression is a constant value and if the expression is considered
 // valid to satisfy exhaustiveness as defined by this program.
 // Otherwise it returns (_, false).
-func exprValue(e ast.Expr, info *types.Info) (constantValue, bool) {
+func exprConstVal(e ast.Expr, info *types.Info) (constantValue, bool) {
 	handleIdent := func(ident *ast.Ident) (constantValue, bool) {
 		obj := info.Uses[ident]
 		if obj == nil {
@@ -37,7 +37,7 @@ func exprValue(e ast.Expr, info *types.Info) (constantValue, bool) {
 		// There are two scenarios.
 		// See related test cases in typealias/quux/quux.go.
 		//
-		// ## Scenario 1
+		// Scenario 1
 		//
 		// Tag package and constant package are the same. This is
 		// simple; we just use fs.ModeDir's value.
@@ -49,7 +49,7 @@ func exprValue(e ast.Expr, info *types.Info) (constantValue, bool) {
 		//   case fs.ModeDir:
 		//   }
 		//
-		// ## Scenario 2
+		// Scenario 2
 		//
 		// Tag package and constant package are different. In this
 		// scenario, too, we accept the case clause expr constant value,
@@ -74,7 +74,8 @@ func exprValue(e ast.Expr, info *types.Info) (constantValue, bool) {
 		return determineConstVal(ident, info), true
 	}
 
-	e = astutil.Unparen(e)
+	e = stripTypeConversions(astutil.Unparen(e), info)
+
 	switch e := e.(type) {
 	case *ast.Ident:
 		return handleIdent(e)
@@ -103,6 +104,26 @@ func exprValue(e ast.Expr, info *types.Info) (constantValue, bool) {
 		// these aren't considered towards satisfying exhaustiveness.
 		return "", false
 	}
+}
+
+func stripTypeConversions(e ast.Expr, info *types.Info) ast.Expr {
+	c, ok := e.(*ast.CallExpr)
+	if !ok {
+		return e
+	}
+	if len(c.Args) != 1 {
+		return e
+	}
+	typ := info.TypeOf(c.Fun)
+	if typ == nil {
+		// not a type.
+		return e
+	}
+	// must not allow function calls.
+	if _, ok := typ.Underlying().(*types.Signature); ok {
+		return e
+	}
+	return stripTypeConversions(astutil.Unparen(c.Args[0]), info)
 }
 
 // member is a single member of an enum type.
@@ -336,7 +357,7 @@ func diagnosticGroups(gs []group) string {
 	return strings.Join(out, ", ")
 }
 
-// TODO(nishanths): When dropping pre-go1.18 support, the following
+// TODO(nishanths) If dropping pre-go1.18 support, the following
 // types and functions are candidates to be type parameterized.
 
 type boolCache struct {

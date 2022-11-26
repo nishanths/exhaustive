@@ -198,7 +198,7 @@ import (
 )
 
 func init() {
-	Analyzer.Flags.Var(&fCheck, CheckFlag, "comma-separated list of program elements to check exhaustiveness of; supported elements are: switch, map")
+	Analyzer.Flags.Var(&fCheck, CheckFlag, "comma-separated list of program `elements` for which check exhaustiveness; supported elements are: switch, map")
 	Analyzer.Flags.BoolVar(&fExplicitExhaustiveSwitch, ExplicitExhaustiveSwitchFlag, false, `only check exhaustivess on switch statements associated with "//exhaustive:enforce" comment`)
 	Analyzer.Flags.BoolVar(&fExplicitExhaustiveMap, ExplicitExhaustiveMapFlag, false, `only check exhaustiveness on map literals associated with "//exhaustive:enforce" comment`)
 	Analyzer.Flags.BoolVar(&fCheckGenerated, CheckGeneratedFlag, false, "check generated files")
