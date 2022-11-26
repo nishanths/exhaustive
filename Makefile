@@ -9,7 +9,6 @@ build:
 	go build ./...
 	go build ./cmd/exhaustive
 
-
 .PHONY: test
 test:
 	go test ./...

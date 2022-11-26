@@ -12,18 +12,30 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: ${{ matrix.go-version }}
+
     - name: checkout code
       uses: actions/checkout@v2
+
     - name: build
-      # NOTE: Must build with go1.14.
-      # Do not change this requirement unless you're sure.
       run: make build
-    - name: test
-      if: matrix.go-version >= '1.16' # some tests use io/fs which is available only >= go1.16
-      run: make test
+
     - name: install vet tools
-      if: matrix.go-version >= '1.16' # required for 'go install cmd@v1.2.3' syntax
-      run: make install-vet
+      if: ${{matrix.go-version < '1.16'}}
+      run: |
+        go get github.com/nishanths/exhaustive/cmd/exhaustive
+        go get github.com/gordonklaus/ineffassign
+        go get github.com/kisielk/errcheck
+        go get honnef.co/go/tools/cmd/staticcheck
+      if: ${{matrix.go-version >= '1.16'}}
+      run: |
+        go install github.com/nishanths/exhaustive/cmd/exhaustive@latest
+        go install github.com/gordonklaus/ineffassign@latest
+        go install github.com/kisielk/errcheck@latest
+        go install honnef.co/go/tools/cmd/staticcheck@latest
+
     - name: vet
       if: matrix.go-version >= '1.16'
       run: make vet
+
+    - name: test
+      run: make test
