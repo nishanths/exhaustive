@@ -2,8 +2,8 @@
 
 Package exhaustive defines an analyzer that checks exhaustiveness of switch
 statements of enum-like constants in Go source code. The analyzer can be
-configured to additionally check exhaustiveness of map keys for map literals
-whose key type is enum-like.
+configured to additionally check exhaustiveness of map literals whose key type
+is enum-like.
 
 For documentation on the flags, the definition of enum, and the definition of
 exhaustiveness, see [pkg.go.dev][godoc-doc]. For a changelog, see
@@ -14,8 +14,6 @@ The exported `analysis.Analyzer` uses the
 possible to integrate `exhaustive` in your own analysis driver program.
 
 ## Install
-
-Install the command line program:
 
 ```
 go install github.com/nishanths/exhaustive/cmd/exhaustive@latest
@@ -71,19 +69,19 @@ var m = map[token.Token]string{
 running `exhaustive` with default options will print:
 
 ```
-% exhaustive
+$ exhaustive
 calc.go:6:2: missing cases in switch of type token.Token: Quotient, Remainder
-%
+$
 ```
 
 To additionally check exhaustiveness of map literal keys, use
 `-check=switch,map`:
 
 ```
-% exhaustive -check=switch,map
+$ exhaustive -check=switch,map
 calc.go:6:2: missing cases in switch of type token.Token: Quotient, Remainder
 calc.go:14:9: missing keys in map of key type token.Token: Quotient, Remainder
-%
+$
 ```
 
 ## Contributing

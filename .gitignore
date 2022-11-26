@@ -8,3 +8,5 @@ tags
 
 # testing artifacts
 /coverage.out
+
+/CHANGELOG.md

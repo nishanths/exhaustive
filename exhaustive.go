@@ -1,14 +1,14 @@
 /*
 Package exhaustive defines an analyzer that checks exhaustiveness of switch
 statements of enum-like constants in Go source code. The analyzer can be
-configured to additionally check exhaustiveness of map keys for map literals
-whose key type is enum-like.
+configured to additionally check exhaustiveness of map literals whose key type
+is enum-like.
 
-# Definition of enum types and enum members
+# Definition of enum
 
-The [Go language spec] does not provide an explicit definition for
-an enum. For the purpose of this analyzer, and by convention, an enum type is
-any named type that:
+The Go [language spec] does not provide an explicit definition for enums. For
+the purpose of this analyzer, and by convention, an enum type is any named
+type that:
 
  1. has underlying type float, string, or integer (includes byte and
     rune, which are aliases for uint8 and int32, respectively); and
@@ -40,18 +40,16 @@ all of the enum members are listed in the switch statement's cases. If
 multiple members have the same constant value, it is sufficient for any one of
 these same-valued members to be listed.
 
-For an enum type defined in the same package as the switch statement,
-both exported and unexported enum members must be listed to satisfy
-exhaustiveness. For an enum type defined in an external package, it is
-sufficient that only exported enum members are listed.
-
-Only identifiers (e.g. Tundra) and qualified identifiers (e.g.
-somepkg.Grassland) that name constants may contribute towards satisfying
-exhaustiveness; other expressions such as literal values and function calls
-will not.
+For an enum type defined in the same package as the switch statement, both
+exported and unexported enum members must be listed to satisfy exhaustiveness.
+For an enum type defined in an external package, it is sufficient that only
+exported enum members are listed. Only identifiers (e.g. Tundra) and qualified
+identifiers (e.g. somepkg.Grassland) that name constants may contribute
+towards satisfying exhaustiveness; other expressions such as literal values
+and function calls will not.
 
 When using the default analyzer configuration, the existence of a
-'default' case in a switch statement, on its own, does not immediately
+default case in a switch statement, on its own, does not immediately
 make a switch statement exhaustive. See the
 -default-signifies-exhaustive flag to adjust this behavior.
 
@@ -87,7 +85,7 @@ only constants declared in the same scope as type T2's scope can be T2's enum
 members.) The following switch statements are valid Go code and and are
 exhaustive.
 
-	// Note: the type of v is effectively newpkg.T2 due to alias.
+	// Note that the type of v is effectively newpkg.T2 due to alias.
 	func f(v pkg.T1) {
 		switch v {
 		case newpkg.A:
@@ -100,22 +98,23 @@ exhaustive.
 	}
 
 The analyzer guarantees that introducing a type alias (such as type T1 =
-newpkg.T2) will never result in new diagnostics from the analyzer, as
-long as the set of enum member constant values of the alias RHS type is a
-subset of the set of enum member constant values of the LHS type.
+newpkg.T2) will not result in new diagnostics from the analyzer, as long as
+the set of enum member constant values of the alias RHS type is a subset of
+the set of enum member constant values of the LHS type.
 
 # Type parameters
 
 A switch statement that switches on a value whose type is a type parameter is
-checked for exhaustiveness iff each type element in the type constraint is
-an enum type and shares the same underlying basic kind. For example, the
-following switch statement will be checked, assuming M, N, and O are enum
-types with the same underlying basic kind. To satisfy exhaustiveness, all enum
-members for each of the types M, N, and O must be listed in the switch
-statement's cases.
+checked for exhaustiveness iff each type element in the type constraint is an
+enum type and shares the same underlying basic kind (e.g. uint8, string). In
+the following example, the switch statement will be checked, provided M, N,
+and O are enum types with the same underlying basic kind. To satisfy
+exhaustiveness, all members for each of the types M, N, and O must be listed
+in the switch statement's cases.
 
 	func bar[T M | I](v T) {
 		switch v {
+			...
 		}
 	}
 	type I interface{ N | J }
@@ -123,12 +122,11 @@ statement's cases.
 
 # Flags
 
-Flags supported by the analyzer are described below. All flags are
-optional.
+Flags used by the analyzer are described below.
 
 	flag                           type                     default value
 	----                           ----                     -------------
-	-check                         comma-separated strings  "switch"
+	-check                         comma-separated strings  switch
 	-explicit-exhaustive-switch    bool                     false
 	-explicit-exhaustive-map       bool                     false
 	-check-generated               bool                     false
@@ -158,7 +156,7 @@ https://golang.org/s/generatedcode for the definition of generated
 files.
 
 If the -default-signifies-exhaustive flag is enabled, the presence of a
-'default' case in a switch statement unconditionally satisfies exhaustiveness
+default case in a switch statement unconditionally satisfies exhaustiveness
 (all enum members do not have to be listed). Enabling this flag usually tends
 to counter the purpose of exhaustiveness checking, so it is not recommended
 that you do so.
@@ -166,7 +164,7 @@ that you do so.
 The -ignore-enum-members flag specifies a regular expression in Go package
 regexp syntax. Constants matching the regular expression do not have to be
 listed in switch statement cases or map literals in order to satisfy
-exhaustiveness. The specified regular expression is matched against an the
+exhaustiveness. The specified regular expression is matched against the
 constant name inclusive of the enum package import path. For example, if the
 package import path of the constant is "example.com/eco" and the constant name
 is "Tundra", the specified regular expression will be matched against the
@@ -183,7 +181,7 @@ all scopes, including in inner scopes such as functions.
 
 # Skip analysis
 
-To skip analysis of a switch statement or map literal, associate it with a
+To skip analysis of a switch statement or a map literal, associate it with a
 comment that begins with "//exhaustive:ignore". For example:
 
 	//exhaustive:ignore
@@ -192,11 +190,13 @@ comment that begins with "//exhaustive:ignore". For example:
 	case B:
 	}
 
-To ignore specific constants for exhaustiveness checks, use the
--ignore-enum-members flag. To ignore specific types, use the
--ignore-enum-types flag.
+To ignore specific constants in exhaustiveness checks, use the
+-ignore-enum-members flag. Similarly, to ignore specific types, use the
+-ignore-enum-types flag. For example:
 
-[Go language spec]: https://golang.org/ref/spec
+	exhaustive -ignore-enum-types "^reflect.Kind$|^time.Duration$"
+
+[language spec]: https://golang.org/ref/spec
 */
 package exhaustive
 
@@ -214,7 +214,7 @@ func init() {
 	Analyzer.Flags.BoolVar(&fExplicitExhaustiveSwitch, ExplicitExhaustiveSwitchFlag, false, `check switch statement only if associated with "//exhaustive:enforce" comment`)
 	Analyzer.Flags.BoolVar(&fExplicitExhaustiveMap, ExplicitExhaustiveMapFlag, false, `check map literal only if associated with "//exhaustive:enforce" comment`)
 	Analyzer.Flags.BoolVar(&fCheckGenerated, CheckGeneratedFlag, false, "check generated files")
-	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, "presence of 'default' case in switch statement unconditionally satisfies exhaustiveness")
+	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, "presence of default case in switch statement unconditionally satisfies exhaustiveness")
 	Analyzer.Flags.Var(&fIgnoreEnumMembers, IgnoreEnumMembersFlag, "constants matching `regexp` are ignored for exhaustiveness checks")
 	Analyzer.Flags.Var(&fIgnoreEnumTypes, IgnoreEnumTypesFlag, "types matching `regexp` are ignored for exhaustiveness checks")
 	Analyzer.Flags.BoolVar(&fPackageScopeOnly, PackageScopeOnlyFlag, false, "find enums only in package scopes, not inner scopes")
