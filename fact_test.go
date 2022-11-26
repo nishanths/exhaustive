@@ -157,17 +157,27 @@ func checkTypeEnumMembers(t *testing.T, enumMembersType reflect.Type) {
 		{"ValueToNames", "map[exhaustive.constantValue][]string"},
 	})
 
-	field, ok := enumMembersType.FieldByName("NameToValue")
+	// Check that types such as token.Pos and constantValue have basic
+	// underlying types (e.g. int, string).
+
+	// check token.Pos.
+	field, ok := enumMembersType.FieldByName("NameToPos")
 	if !ok {
 		t.Errorf("failed to find field")
 		return
 	}
 	cvType := field.Type.Elem()
-	checkTypeConstantValue(t, cvType)
-}
+	if cvType.Kind() != reflect.Int {
+		t.Errorf("unexpected kind %v", cvType.Kind())
+	}
 
-func checkTypeConstantValue(t *testing.T, cvType reflect.Type) {
-	t.Helper()
+	// check constantValue.
+	field, ok = enumMembersType.FieldByName("NameToValue")
+	if !ok {
+		t.Errorf("failed to find field")
+		return
+	}
+	cvType = field.Type.Elem()
 	if cvType.Kind() != reflect.String {
 		t.Errorf("unexpected kind %v", cvType.Kind())
 	}
