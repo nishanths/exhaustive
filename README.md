@@ -70,7 +70,7 @@ running `exhaustive` with default options will print:
 
 ```
 $ exhaustive
-calc.go:6:2: missing cases in switch of type token.Token: Quotient, Remainder
+calc.go:6:2: missing cases in switch of type token.Token: token.Quotient, token.Remainder
 $
 ```
 
@@ -79,8 +79,8 @@ To additionally check exhaustiveness of map literal keys, use
 
 ```
 $ exhaustive -check=switch,map
-calc.go:6:2: missing cases in switch of type token.Token: Quotient, Remainder
-calc.go:14:9: missing keys in map of key type token.Token: Quotient, Remainder
+calc.go:6:2: missing cases in switch of type token.Token: token.Quotient, token.Remainder
+calc.go:14:9: missing keys in map of key type token.Token: token.Quotient, token.Remainder
 $
 ```
 

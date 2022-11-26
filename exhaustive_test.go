@@ -43,10 +43,10 @@ func TestExhaustive(t *testing.T) {
 	// Tests for -ignore-enum-members and -ignore-enum-types flags.
 	runTest(t, "ignore-pattern/...", func() {
 		fIgnoreEnumMembers = regexpFlag{
-			regexp.MustCompile(`_UNSPECIFIED$|^general/y\.Echinodermata$|^ignore-pattern.User$`),
+			regexp.MustCompile(`_UNSPECIFIED$|^general/y\.Echinodermata$|^ignore-pattern\.User$`),
 		}
 		fIgnoreEnumTypes = regexpFlag{
-			regexp.MustCompile(`label|^reflect.Kind$|^time.Duration$`),
+			regexp.MustCompile(`label|^reflect\.Kind$|^time\.Duration$`),
 		}
 	})
 

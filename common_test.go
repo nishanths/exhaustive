@@ -133,7 +133,7 @@ func TestChecklist(t *testing.T) {
 		t.Run("constant", func(t *testing.T) {
 			t.Run("basic", func(t *testing.T) {
 				var c checklist
-				c.ignoreConstant(regexp.MustCompile(`^github.com/example/bar-go.G$`))
+				c.ignoreConstant(regexp.MustCompile(`^github\.com/example/bar-go\.G$`))
 				c.add(et, em, false)
 				checkRemaining(t, c, map[string]struct{}{
 					"A": {},
@@ -147,14 +147,14 @@ func TestChecklist(t *testing.T) {
 
 			t.Run("matches multiple", func(t *testing.T) {
 				var c checklist
-				c.ignoreConstant(regexp.MustCompile(`^github.com/example/bar-go`))
+				c.ignoreConstant(regexp.MustCompile(`^github\.com/example/bar-go`))
 				c.add(et, em, false)
 				checkRemaining(t, c, map[string]struct{}{})
 			})
 
 			t.Run("uses package path, not package name", func(t *testing.T) {
 				var c checklist
-				c.ignoreConstant(regexp.MustCompile(`bar.G`)) // this should not cause anything to be ignored.
+				c.ignoreConstant(regexp.MustCompile(`bar\.G`)) // this should not cause anything to be ignored.
 				c.add(et, em, false)
 				checkRemaining(t, c, map[string]struct{}{
 					"A": {},
@@ -171,14 +171,14 @@ func TestChecklist(t *testing.T) {
 		t.Run("type", func(t *testing.T) {
 			t.Run("basic", func(t *testing.T) {
 				var c checklist
-				c.ignoreType(regexp.MustCompile(`^github.com/example/bar-go.T$`))
+				c.ignoreType(regexp.MustCompile(`^github\.com/example/bar-go\.T$`))
 				c.add(et, em, false)
 				checkRemaining(t, c, map[string]struct{}{})
 			})
 
 			t.Run("uses package path, not package name", func(t *testing.T) {
 				var c checklist
-				c.ignoreType(regexp.MustCompile(`bar.T`)) // this should not cause anything to be ignored.
+				c.ignoreType(regexp.MustCompile(`bar\.T`)) // this should not cause anything to be ignored.
 				c.add(et, em, false)
 				checkRemaining(t, c, map[string]struct{}{
 					"A": {},

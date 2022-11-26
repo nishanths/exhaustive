@@ -194,7 +194,7 @@ To ignore specific constants in exhaustiveness checks, use the
 -ignore-enum-members flag. Similarly, to ignore specific types, use the
 -ignore-enum-types flag. For example:
 
-	exhaustive -ignore-enum-types "^reflect.Kind$|^time.Duration$"
+	exhaustive -ignore-enum-types '^reflect\.Kind$|^time\.Duration$'
 
 [language spec]: https://golang.org/ref/spec
 */
