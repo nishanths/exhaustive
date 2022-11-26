@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/types"
+	"log"
 	"regexp"
 
 	"golang.org/x/tools/go/analysis"
@@ -93,6 +94,7 @@ func switchChecker(pass *analysis.Pass, cfg switchConfig, generated boolCache, c
 
 		es, all := composingEnumTypes(pass, t.Type)
 		if !all {
+			log.Printf("%#v", es)
 			return true, resultTagNotEnum // TODO(nishanths) could be other reasons e.g. nil pkg, make this more generic
 		}
 

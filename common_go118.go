@@ -32,8 +32,7 @@ func fromNamed(pass *analysis.Pass, t *types.Named, typeparam bool) (result []ty
 }
 
 func fromInterface(pass *analysis.Pass, intf *types.Interface, typeparam bool) (result []typeAndMembers, all bool) {
-	// log.Printf("---")
-	// log.Printf("%#v", intf)
+	all = true
 
 	for i := 0; i < intf.NumEmbeddeds(); i++ {
 		embed := intf.EmbeddedType(i)
@@ -46,10 +45,12 @@ func fromInterface(pass *analysis.Pass, intf *types.Interface, typeparam bool) (
 				all = all && a
 			}
 		case *types.Named:
-			n := embed.(*types.Named)
-			result, all = fromNamed(pass, n, typeparam)
+			r, a := fromNamed(pass, embed.(*types.Named), typeparam)
+			result = append(result, r...)
+			all = all && a
 		default:
-			// don't care
+			// don't care about these.
+			// e.g. basic type
 		}
 	}
 

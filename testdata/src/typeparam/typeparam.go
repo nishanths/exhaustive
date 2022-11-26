@@ -2,12 +2,13 @@ package typeparam
 
 import (
 	"fmt"
+	y "general/y"
 )
 
 type M int // want M:"^A,B$"
 
 const (
-	A M = iota
+	A M = iota * 100
 	B
 )
 
@@ -16,7 +17,7 @@ func (M) String() string { return "M-value" }
 type N byte // want N:"^C,D$"
 
 const (
-	C N = iota
+	C N = iota * 100
 	D
 )
 
@@ -53,18 +54,20 @@ type L interface {
 	fmt.Stringer
 }
 
-/*
-func bar0[T barpkg.Phylum | I](v T) {
-	switch v {
+// "^missing cases in switch of type bar.Phylum|typeparam.N|typeparam.O: bar.Echinodermata, bar.Mollusca, typeparam.C, typeparam.E$"
+// "^missing cases in switch of type bar.Phylum\\|typeparam.N|typeparam.O|typeparam.M: bar.Echinodermata, bar.Mollusca, typeparam.E$"
+
+func bar0[T y.Phylum | I | M](v T) {
+	switch v { // want `^missing cases in switch of type bar.Phylum\|typeparam.N\|typeparam.O\|typeparam.M: bar.Echinodermata, bar.Mollusca, typeparam.D\|typeparam.B, typeparam.E$`
 	case T(A):
-	case T(D):
 	}
 }
 
-func bar1[T barpkg.Phylum | I](v T) {
+/*
+func bar1[T y.Phylum | I](v T) {
 	switch v {
 	case T(A):
-	case T(barpkg.Echinodermata):
+	case T(y.Echinodermata):
 	}
 }
 

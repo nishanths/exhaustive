@@ -18,6 +18,12 @@ func _t(d Direction) {
 	case Direction(E):
 	case callMe(W):
 	}
+
+	var _ = map[Direction]struct{}{ // want "^missing keys in map of key type x.Direction: x.N, x.S, x.W, x.directionInvalid$"
+		(_tt{}).methodCallMe(N): struct{}{},
+		Direction(E):            struct{}{},
+		callMe(W):               struct{}{},
+	}
 }
 
 func callMe(d Direction) Direction { return d }
