@@ -55,3 +55,20 @@ func _k() {
 		reflect.Uintptr: {},
 	}
 }
+
+func _l() {
+	// Not an ignored type.
+	// Should produce some diagnostics.
+	//
+	// This test serves a soundness check, since all other types and code in
+	// this file produces no diagnostics.
+
+	var e Graph
+	switch e { // want "^missing cases in switch of type ignorepattern.Graph: ignorepattern.Graph_GRAPH_PIE$"
+	case Graph_GRAPH_LINE:
+	}
+
+	_ = map[Graph]int{ // want "^missing keys in map of key type ignorepattern.Graph: ignorepattern.Graph_GRAPH_PIE$"
+		Graph_GRAPH_LINE: 1,
+	}
+}
