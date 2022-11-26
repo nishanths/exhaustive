@@ -26,8 +26,8 @@ func TestMakeSwitchDiagnostic(t *testing.T) {
 	tn := types.NewTypeName(50, types.NewPackage("example.org/enumpkg", "enumpkg"), "Biome", nil)
 	et := enumType{tn}
 	missing := map[member]struct{}{
-		{102, et, "Savanna", "2"}: struct{}{},
-		{109, et, "Desert", "3"}:  struct{}{},
+		{102, et, "Savanna", "2"}: {},
+		{109, et, "Desert", "3"}:  {},
 	}
 
 	got := makeSwitchDiagnostic(sw, []enumType{et}, missing)

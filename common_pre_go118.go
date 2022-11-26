@@ -3,6 +3,12 @@
 
 package exhaustive
 
+import (
+	"go/types"
+
+	"golang.org/x/tools/go/analysis"
+)
+
 func fromNamed(pass *analysis.Pass, t *types.Named) (result typeAndMembers, ok bool) {
 	if tpkg := t.Obj().Pkg(); tpkg == nil {
 		return typeAndMembers{}, false
