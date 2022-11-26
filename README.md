@@ -1,4 +1,4 @@
-# exhaustive [![Godoc][godoc-svg]][repo]
+# exhaustive [![Godoc][godoc-svg]][godoc]
 
 Package exhaustive defines an analyzer that checks exhaustiveness of switch
 statements of enum-like constants in Go source code. The analyzer can be
@@ -30,7 +30,7 @@ exhaustive [flags] [packages]
 Given the enum:
 
 ```go
-package token
+package token // import "example.org/token"
 
 type Token int
 
@@ -46,9 +46,9 @@ const (
 and code that switches on the enum:
 
 ```go
-package calc
+package calc // import "example.org/calc"
 
-import "token"
+import "example.org/token"
 
 func f(t token.Token) {
 	switch t {
@@ -69,7 +69,7 @@ var m = map[token.Token]string{
 running `exhaustive` with default options will print:
 
 ```
-$ exhaustive
+$ exhaustive example.org/calc/...
 calc.go:6:2: missing cases in switch of type token.Token: token.Quotient, token.Remainder
 $
 ```
@@ -78,7 +78,7 @@ To additionally check exhaustiveness of map literal keys, use
 `-check=switch,map`:
 
 ```
-$ exhaustive -check=switch,map
+$ exhaustive -check=switch,map example.org/calc/...
 calc.go:6:2: missing cases in switch of type token.Token: token.Quotient, token.Remainder
 calc.go:14:9: missing keys in map of key type token.Token: token.Quotient, token.Remainder
 $
@@ -89,7 +89,7 @@ $
 Issues and changes are welcome. Please discuss substantial changes
 in an issue first.
 
-[repo]: https://pkg.go.dev/github.com/nishanths/exhaustive
+[godoc]: https://pkg.go.dev/github.com/nishanths/exhaustive
 [godoc-svg]: https://pkg.go.dev/badge/github.com/nishanths/exhaustive.svg
 [godoc-doc]: https://pkg.go.dev/github.com/nishanths/exhaustive#section-documentation
 [xanalysis]: https://pkg.go.dev/golang.org/x/tools/go/analysis
