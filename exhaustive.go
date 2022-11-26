@@ -6,7 +6,7 @@ whose key type is enum-like.
 
 # Definition of enum types and enum members
 
-The [Go programming language spec] does not provide an explicit definition for
+The [Go language spec] does not provide an explicit definition for
 an enum. For the purpose of this analyzer, and by convention, an enum type is
 any named type that:
 
