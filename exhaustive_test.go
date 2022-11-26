@@ -10,7 +10,7 @@ import (
 func TestExhaustive(t *testing.T) {
 	run := func(t *testing.T, pattern string, setup ...func()) {
 		// NOSUBMIT(nishanths): temporary code for debugging.
-		if pattern == "typeparam/..." {
+		if pattern != "typeparam/..." {
 			return
 		}
 

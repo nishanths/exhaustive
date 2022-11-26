@@ -9,7 +9,6 @@ import (
 	"sort"
 	"strings"
 
-	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/ast/astutil"
 )
 
@@ -22,8 +21,9 @@ func denotesPackage(ident *ast.Ident, info *types.Info) bool {
 	return ok
 }
 
-// exprValue returns the constantValue for expressions
-// that are considered valid to satisfy exhaustiveness.
+// exprValue returns the constantValue for an expression if the
+// expression is a constant value and if the expression is considered
+// valid to satisfy exhaustiveness as defined by this program.
 // Otherwise it returns (_, false).
 func exprValue(e ast.Expr, info *types.Info) (constantValue, bool) {
 	handleIdent := func(ident *ast.Ident) (constantValue, bool) {
@@ -34,7 +34,6 @@ func exprValue(e ast.Expr, info *types.Info) (constantValue, bool) {
 		if _, ok := obj.(*types.Const); !ok {
 			return "", false
 		}
-
 		// There are two scenarios.
 		// See related test cases in typealias/quux/quux.go.
 		//
@@ -101,27 +100,9 @@ func exprValue(e ast.Expr, info *types.Info) (constantValue, bool) {
 
 	default:
 		// e.g. literal
-		// we ignore these.
+		// these aren't considered towards satisfying exhaustiveness.
 		return "", false
 	}
-}
-
-func composingEnumTypesNamed(pass *analysis.Pass, t *types.Named) ([]typeAndMembers, bool) {
-	if tpkg := t.Obj().Pkg(); tpkg == nil {
-		// The Go documentation says: nil for labels and objects in
-		// the Universe scope. This happens for the built-in error
-		// type for example.
-		return nil, false
-	}
-
-	et := enumType{t.Obj()}
-	em, ok := importFact(pass, et)
-	if !ok {
-		// type is not a known enum type.
-		return nil, false
-	}
-
-	return []typeAndMembers{{et, em}}, true
 }
 
 // member is a single member of an enum type.
@@ -353,4 +334,37 @@ func diagnosticGroups(gs []group) string {
 		out[i] = buf.String()
 	}
 	return strings.Join(out, ", ")
+}
+
+// TODO(nishanths): When dropping pre-go1.18 support, the following
+// types and functions are candidates to be type parameterized.
+
+type boolCache struct {
+	m     map[*ast.File]bool
+	value func(*ast.File) bool
+}
+
+func (c boolCache) get(file *ast.File) bool {
+	if c.m == nil {
+		c.m = make(map[*ast.File]bool)
+	}
+	if _, ok := c.m[file]; !ok {
+		c.m[file] = c.value(file)
+	}
+	return c.m[file]
+}
+
+type commentCache struct {
+	m     map[*ast.File]ast.CommentMap
+	value func(*token.FileSet, *ast.File) ast.CommentMap
+}
+
+func (c commentCache) get(fset *token.FileSet, file *ast.File) ast.CommentMap {
+	if c.m == nil {
+		c.m = make(map[*ast.File]ast.CommentMap)
+	}
+	if _, ok := c.m[file]; !ok {
+		c.m[file] = c.value(fset, file)
+	}
+	return c.m[file]
 }
