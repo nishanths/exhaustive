@@ -1,6 +1,7 @@
 package exhaustive
 
 import (
+	"fmt"
 	"go/ast"
 	"go/token"
 	"go/types"
@@ -140,13 +141,25 @@ type typeAndMembers struct {
 }
 
 type checklist struct {
-	info     map[enumType]enumMembers
-	checkl   map[member]struct{}
-	ignoreRx *regexp.Regexp
+	info             map[enumType]enumMembers
+	checkl           map[member]struct{}
+	ignoreConstantRe *regexp.Regexp
+	ignoreTypeRe     *regexp.Regexp
 }
 
-func (c *checklist) ignore(pattern *regexp.Regexp) {
-	c.ignoreRx = pattern
+func (c *checklist) ignoreConstant(pattern *regexp.Regexp) {
+	c.ignoreConstantRe = pattern
+}
+
+func (c *checklist) ignoreType(pattern *regexp.Regexp) {
+	c.ignoreTypeRe = pattern
+}
+
+func (*checklist) reMatch(re *regexp.Regexp, s string) bool {
+	if re == nil {
+		return false
+	}
+	return re.MatchString(s)
 }
 
 func (c *checklist) add(et enumType, em enumMembers, includeUnexported bool) {
@@ -162,7 +175,10 @@ func (c *checklist) add(et enumType, em enumMembers, includeUnexported bool) {
 		if !ast.IsExported(name) && !includeUnexported {
 			return
 		}
-		if c.ignoreRx != nil && c.ignoreRx.MatchString(et.Pkg().Path()+"."+name) {
+		if c.reMatch(c.ignoreConstantRe, fmt.Sprintf("%s.%s", et.Pkg().Path(), name)) {
+			return
+		}
+		if c.reMatch(c.ignoreTypeRe, fmt.Sprintf("%s.%s", et.Pkg().Path(), et.TypeName.Name())) {
 			return
 		}
 		mem := member{
@@ -262,22 +278,6 @@ func diagnosticEnumType(enumType *types.TypeName) string {
 	return enumType.Pkg().Name() + "." + enumType.Name()
 }
 
-func dedupEnumTypes(types []enumType) []enumType {
-	// TODO(nishanths) this function is a candidate for type parameterization
-
-	m := make(map[enumType]struct{})
-	var ret []enumType
-	for _, t := range types {
-		_, ok := m[t]
-		if ok {
-			continue
-		}
-		m[t] = struct{}{}
-		ret = append(ret, t)
-	}
-	return ret
-}
-
 func diagnosticEnumTypes(types []enumType) string {
 	var buf strings.Builder
 	for i := range types {
@@ -306,6 +306,30 @@ func diagnosticGroups(gs []group) string {
 		out[i] = buf.String()
 	}
 	return strings.Join(out, ", ")
+}
+
+func toEnumTypes(es []typeAndMembers) []enumType {
+	out := make([]enumType, len(es))
+	for i := range es {
+		out[i] = es[i].et
+	}
+	return out
+}
+
+func dedupEnumTypes(types []enumType) []enumType {
+	// TODO(nishanths) this function is a candidate for type parameterization
+
+	m := make(map[enumType]struct{})
+	var ret []enumType
+	for _, t := range types {
+		_, ok := m[t]
+		if ok {
+			continue
+		}
+		m[t] = struct{}{}
+		ret = append(ret, t)
+	}
+	return ret
 }
 
 // TODO(nishanths) If dropping pre-go1.18 support, the following

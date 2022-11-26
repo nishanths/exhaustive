@@ -48,6 +48,15 @@ const (
 	resultEnumTypes            = "invalid or empty composing enum types"
 )
 
+// switchConfig is configuration for switchChecker.
+type switchConfig struct {
+	explicit                   bool
+	defaultSignifiesExhaustive bool
+	checkGenerated             bool
+	ignoreConstant             *regexp.Regexp // can be nil
+	ignoreType                 *regexp.Regexp // can be nil
+}
+
 // switchChecker returns a node visitor that checks exhaustiveness of
 // enum switch statements for the supplied pass, and reports
 // diagnostics. The node visitor expects only *ast.SwitchStmt nodes.
@@ -98,7 +107,8 @@ func switchChecker(pass *analysis.Pass, cfg switchConfig, generated boolCache, c
 		}
 
 		var checkl checklist
-		checkl.ignore(cfg.ignoreEnumMembers)
+		checkl.ignoreConstant(cfg.ignoreConstant)
+		checkl.ignoreType(cfg.ignoreType)
 
 		for _, e := range es {
 			checkl.add(e.et, e.em, pass.Pkg == e.et.Pkg())
@@ -119,22 +129,6 @@ func switchChecker(pass *analysis.Pass, cfg switchConfig, generated boolCache, c
 		pass.Report(makeSwitchDiagnostic(sw, dedupEnumTypes(toEnumTypes(es)), checkl.remaining()))
 		return true, resultReportedDiagnostic
 	}
-}
-
-func toEnumTypes(es []typeAndMembers) []enumType {
-	out := make([]enumType, len(es))
-	for i := range es {
-		out[i] = es[i].et
-	}
-	return out
-}
-
-// switchConfig is configuration for switchChecker.
-type switchConfig struct {
-	explicit                   bool
-	defaultSignifiesExhaustive bool
-	checkGenerated             bool
-	ignoreEnumMembers          *regexp.Regexp // can be nil
 }
 
 func isDefaultCase(c *ast.CaseClause) bool {

@@ -1,4 +1,4 @@
-package ignoreenummember
+package ignorepattern
 
 type Access int // want Access:"^Standard,User,Group$"
 
@@ -13,10 +13,10 @@ const (
 // The member Standard, though it has the same constant value as User, must
 // still be reported in the diagnostic.
 func _c(a Access) {
-	switch a { // want "^missing cases in switch of type ignoreenummember.Access: ignoreenummember.Standard, ignoreenummember.Group$"
+	switch a { // want "^missing cases in switch of type ignorepattern.Access: ignorepattern.Standard, ignorepattern.Group$"
 	}
 
-	_ = map[Access]int{ // want "^missing keys in map of key type ignoreenummember.Access: ignoreenummember.Standard, ignoreenummember.Group$"
+	_ = map[Access]int{ // want "^missing keys in map of key type ignorepattern.Access: ignorepattern.Standard, ignorepattern.Group$"
 		0: 0,
 	}
 }

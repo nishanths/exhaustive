@@ -11,9 +11,10 @@ import (
 
 // mapConfig is configuration for mapChecker.
 type mapConfig struct {
-	explicit          bool
-	checkGenerated    bool
-	ignoreEnumMembers *regexp.Regexp // can be nil
+	explicit       bool
+	checkGenerated bool
+	ignoreConstant *regexp.Regexp // can be nil
+	ignoreType     *regexp.Regexp // can be nil
 }
 
 // mapChecker returns a node visitor that checks for exhaustiveness of
@@ -92,7 +93,8 @@ func mapChecker(pass *analysis.Pass, cfg mapConfig, generated boolCache, comment
 		}
 
 		var checkl checklist
-		checkl.ignore(cfg.ignoreEnumMembers)
+		checkl.ignoreConstant(cfg.ignoreConstant)
+		checkl.ignoreType(cfg.ignoreType)
 
 		for _, e := range es {
 			checkl.add(e.et, e.em, pass.Pkg == e.et.Pkg())
