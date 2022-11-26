@@ -246,6 +246,19 @@ func _s(u bar.Uppercase) {
 	}
 }
 
+func _ufunc0() Direction            { return directionInvalid }
+func _ufunc1(d Direction) Direction { return d }
+
+func _u() {
+	switch _ufunc0() { // want "^missing cases in switch of type x.Direction: x.W, x.directionInvalid$"
+	case N, E, S:
+	}
+
+	switch _ufunc1(Direction(0)) { // want "^missing cases in switch of type x.Direction: x.W, x.directionInvalid$"
+	case N, E, S:
+	}
+}
+
 func mapTypeAlias() {
 	type myMapAlias = map[Direction]int
 
@@ -263,5 +276,13 @@ func customMapType() {
 		N: 1,
 		E: 2,
 		W: 4,
+	}
+}
+
+func mapKeyFuncCall() {
+	_ = map[Direction]int{ // want "^missing keys in map of key type x.Direction: x.N, x.E, x.W, x.directionInvalid$"
+		_ufunc0():               1,
+		_ufunc1(Direction(100)): 1,
+		S:                       1,
 	}
 }
