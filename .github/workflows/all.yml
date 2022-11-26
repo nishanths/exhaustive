@@ -25,7 +25,7 @@ jobs:
         go get github.com/nishanths/exhaustive/cmd/exhaustive
         go get github.com/gordonklaus/ineffassign
         go get github.com/kisielk/errcheck
-        go get honnef.co/go/tools/cmd/staticcheck
+        go get honnef.co/go/tools/cmd/staticcheck@2020.2.2
 
     - name: install vet tools (>= go1.16)
       if: ${{ matrix.go-version >= '1.16' }}
