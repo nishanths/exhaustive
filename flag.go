@@ -11,27 +11,27 @@ var _ flag.Value = (*stringsFlag)(nil)
 
 // regexpFlag implements flag.Value for parsing
 // regular expression flag inputs.
-type regexpFlag struct{ rx *regexp.Regexp }
+type regexpFlag struct{ re *regexp.Regexp }
 
 func (f *regexpFlag) String() string {
-	if f == nil || f.rx == nil {
+	if f == nil || f.re == nil {
 		return ""
 	}
-	return f.rx.String()
+	return f.re.String()
 }
 
 func (f *regexpFlag) Set(expr string) error {
 	if expr == "" {
-		f.rx = nil
+		f.re = nil
 		return nil
 	}
 
-	rx, err := regexp.Compile(expr)
+	re, err := regexp.Compile(expr)
 	if err != nil {
 		return err
 	}
 
-	f.rx = rx
+	f.re = re
 	return nil
 }
 

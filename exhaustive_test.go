@@ -40,10 +40,14 @@ func TestExhaustive(t *testing.T) {
 	runTest(t, "default-signifies-exhaustive/default-absent/...", func() { fDefaultSignifiesExhaustive = true })
 	runTest(t, "default-signifies-exhaustive/default-present/...", func() { fDefaultSignifiesExhaustive = true })
 
-	// Tests for the -ignore-enum-member flag.
-	runTest(t, "ignore-enum-member/...", func() {
-		re := regexp.MustCompile(`_UNSPECIFIED$|^general/y\.Echinodermata$|^ignore-enum-member.User$`)
-		fIgnoreEnumMembers = regexpFlag{re}
+	// Tests for -ignore-enum-members and -ignore-enum-types flags.
+	runTest(t, "ignore-pattern/...", func() {
+		fIgnoreEnumMembers = regexpFlag{
+			regexp.MustCompile(`_UNSPECIFIED$|^general/y\.Echinodermata$|^ignore-pattern.User$`),
+		}
+		fIgnoreEnumTypes = regexpFlag{
+			regexp.MustCompile(`label|^reflect.Kind$|^time.Duration$`),
+		}
 	})
 
 	// Tests for -package-scope-only flag.

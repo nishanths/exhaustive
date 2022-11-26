@@ -115,7 +115,7 @@ func TestChecklist(t *testing.T) {
 		})
 	})
 
-	t.Run("ignore regexp", func(t *testing.T) {
+	t.Run("ignore pattern", func(t *testing.T) {
 		t.Run("no filtering", func(t *testing.T) {
 			var c checklist
 			c.add(et, em, false)
@@ -132,7 +132,7 @@ func TestChecklist(t *testing.T) {
 
 		t.Run("basic", func(t *testing.T) {
 			var c checklist
-			c.ignore(regexp.MustCompile(`^github.com/example/bar-go.G$`))
+			c.ignoreConstant(regexp.MustCompile(`^github.com/example/bar-go.G$`))
 			c.add(et, em, false)
 			checkRemaining(t, c, map[string]struct{}{
 				"A": {},
@@ -146,14 +146,14 @@ func TestChecklist(t *testing.T) {
 
 		t.Run("matches multiple", func(t *testing.T) {
 			var c checklist
-			c.ignore(regexp.MustCompile(`^github.com/example/bar-go`))
+			c.ignoreConstant(regexp.MustCompile(`^github.com/example/bar-go`))
 			c.add(et, em, false)
 			checkRemaining(t, c, map[string]struct{}{})
 		})
 
 		t.Run("uses package path, not package name", func(t *testing.T) {
 			var c checklist
-			c.ignore(regexp.MustCompile(`bar.G`))
+			c.ignoreConstant(regexp.MustCompile(`bar.G`))
 			c.add(et, em, false)
 			checkRemaining(t, c, map[string]struct{}{
 				"A": {},

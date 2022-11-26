@@ -134,6 +134,7 @@ optional.
 	-check-generated               bool                     false
 	-default-signifies-exhaustive  bool                     false
 	-ignore-enum-members           regexp pattern           (none)
+	-ignore-enum-types             regexp pattern           (none)
 	-package-scope-only            bool                     false
 
 The -check flag specifies is a comma-separated list of program elements
@@ -145,14 +146,7 @@ If the -explicit-exhaustive-switch flag is enabled, the analyzer checks a
 switch statement only if it associated with a comment beginning with
 "//exhaustive:enforce". By default the flag is disabled, which means that the
 analyzer checks every enum switch statement not associated with a comment
-beginning with "//exhaustive:ignore". As an example, the following switch
-statement will be ignored.
-
-	//exhaustive:ignore
-	switch v {
-	case A:
-	case B:
-	}
+beginning with "//exhaustive:ignore".
 
 The -explicit-exhaustive-map flag is the map literal counterpart of the
 -explicit-exhaustive-switch flag.
@@ -169,20 +163,38 @@ If the -default-signifies-exhaustive flag is enabled, the presence of a
 to counter the purpose of exhaustiveness checking, so it is not recommended
 that you do so.
 
-The -ignore-enum-members flag specifies a regular expression in Go
-package regexp syntax. Enum members matching the regular expression do
-not have to be listed in switch statement cases or map literals to
-satisfy exhaustiveness. The specified regular expression is matched
-against an enum member name inclusive of the enum package import path.
-For example, if the enum package import path is "example.com/eco" and
-the member name is "Tundra", the specified regular expression will be
-matched against the string "example.com/eco.Tundra".
+The -ignore-enum-members flag specifies a regular expression in Go package
+regexp syntax. Constants matching the regular expression do not have to be
+listed in switch statement cases or map literals in order to satisfy
+exhaustiveness. The specified regular expression is matched against an the
+constant name inclusive of the enum package import path. For example, if the
+package import path of the constant is "example.com/eco" and the constant name
+is "Tundra", the specified regular expression will be matched against the
+string "example.com/eco.Tundra".
+
+The -ignore-enum-types flag is similar to the -ignore-enum-members flag,
+except that it applies to types.
 
 If the -package-scope-only flag is enabled, the analyzer only finds enums
 defined in package scope, but not in inner scopes such as functions.
 Consequently only switch statements and map literals that use these enums will
 be checked for exhaustiveness. By default, the analyzer finds enums defined in
 all scopes, including in inner scopes such as functions.
+
+# Skip analysis
+
+To skip analysis of a switch statement or map literal, associate it with a
+comment that begins with "//exhaustive:ignore". For example:
+
+	//exhaustive:ignore
+	switch v {
+	case A:
+	case B:
+	}
+
+To ignore specific constants for exhaustiveness checks, use the
+-ignore-enum-members flag. To ignore specific types, use the
+-ignore-enum-types flag.
 
 [Go language spec]: https://golang.org/ref/spec
 */
@@ -203,7 +215,8 @@ func init() {
 	Analyzer.Flags.BoolVar(&fExplicitExhaustiveMap, ExplicitExhaustiveMapFlag, false, `check map literal only if associated with "//exhaustive:enforce" comment`)
 	Analyzer.Flags.BoolVar(&fCheckGenerated, CheckGeneratedFlag, false, "check generated files")
 	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, "presence of 'default' case in switch statement unconditionally satisfies exhaustiveness")
-	Analyzer.Flags.Var(&fIgnoreEnumMembers, IgnoreEnumMembersFlag, "enum members matching `regexp` do not have to be listed to satisfy exhaustiveness")
+	Analyzer.Flags.Var(&fIgnoreEnumMembers, IgnoreEnumMembersFlag, "constants matching `regexp` are ignored for exhaustiveness checks")
+	Analyzer.Flags.Var(&fIgnoreEnumTypes, IgnoreEnumTypesFlag, "types matching `regexp` are ignored for exhaustiveness checks")
 	Analyzer.Flags.BoolVar(&fPackageScopeOnly, PackageScopeOnlyFlag, false, "find enums only in package scopes, not inner scopes")
 
 	var unused string
@@ -220,6 +233,7 @@ const (
 	CheckGeneratedFlag             = "check-generated"
 	DefaultSignifiesExhaustiveFlag = "default-signifies-exhaustive"
 	IgnoreEnumMembersFlag          = "ignore-enum-members"
+	IgnoreEnumTypesFlag            = "ignore-enum-types"
 	PackageScopeOnlyFlag           = "package-scope-only"
 
 	IgnorePatternFlag    = "ignore-pattern"    // Deprecated: use IgnoreEnumMembersFlag.
@@ -257,6 +271,7 @@ var (
 	fCheckGenerated             bool
 	fDefaultSignifiesExhaustive bool
 	fIgnoreEnumMembers          regexpFlag
+	fIgnoreEnumTypes            regexpFlag
 	fPackageScopeOnly           bool
 )
 
@@ -269,6 +284,7 @@ func resetFlags() {
 	fCheckGenerated = false
 	fDefaultSignifiesExhaustive = false
 	fIgnoreEnumMembers = regexpFlag{}
+	fIgnoreEnumTypes = regexpFlag{}
 	fPackageScopeOnly = false
 }
 
@@ -298,12 +314,14 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		explicit:                   fExplicitExhaustiveSwitch,
 		defaultSignifiesExhaustive: fDefaultSignifiesExhaustive,
 		checkGenerated:             fCheckGenerated,
-		ignoreEnumMembers:          fIgnoreEnumMembers.rx,
+		ignoreConstant:             fIgnoreEnumMembers.re,
+		ignoreType:                 fIgnoreEnumTypes.re,
 	}
 	mapConf := mapConfig{
-		explicit:          fExplicitExhaustiveMap,
-		checkGenerated:    fCheckGenerated,
-		ignoreEnumMembers: fIgnoreEnumMembers.rx,
+		explicit:       fExplicitExhaustiveMap,
+		checkGenerated: fCheckGenerated,
+		ignoreConstant: fIgnoreEnumMembers.re,
+		ignoreType:     fIgnoreEnumTypes.re,
 	}
 	swChecker := switchChecker(pass, swConf, generated, comments)
 	mapChecker := mapChecker(pass, mapConf, generated, comments)
