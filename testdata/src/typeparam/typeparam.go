@@ -46,6 +46,7 @@ type J interface {
 type K interface {
 	M
 	fmt.Stringer
+	comparable
 }
 
 type L interface {
@@ -91,7 +92,7 @@ func fooNot1[T L](v T) {
 	}
 }
 
-func repeat[T M | K | I | O](v T) {
+func repeat[T I | O](v T) {
 	switch v {
 	}
 }

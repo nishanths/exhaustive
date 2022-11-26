@@ -109,20 +109,17 @@ subset of the set of enum member constant values of the old LHS type.
 # Type parameters
 
 A switch statement that switches on a value whose type is a type
-parameter is checked for exhaustiveness if and only if each term of the
-type constraint is an enum type. The following switch statement will be
-checked, assuming M, N, and O are enum types. To satisfy exhaustiveness,
-all enum members for each of M, N, and O must be listed in the switch
-statement's cases.
+parameter is checked for exhaustiveness if and only if each type in the
+type constraint's type set is an enum type. The following switch
+statement will be checked, assuming M, N, and O are enum types. To
+satisfy exhaustiveness, all enum members for each of M, N, and O must be
+listed in the switch statement's cases.
 
 	func bar[T M | I](v T) {
 		switch v {
 		}
 	}
-	type I interface {
-		N | J
-		fmt.Stringer
-	}
+	type I interface{ N | J }
 	type J interface{ O }
 
 # Flags
