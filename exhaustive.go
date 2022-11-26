@@ -199,8 +199,8 @@ import (
 
 func init() {
 	Analyzer.Flags.Var(&fCheck, CheckFlag, "comma-separated list of program `elements` that should be checked for exhaustiveness; supported elements are: switch, map")
-	Analyzer.Flags.BoolVar(&fExplicitExhaustiveSwitch, ExplicitExhaustiveSwitchFlag, false, `only check exhaustivess for switch statements associated with "//exhaustive:enforce" comment`)
-	Analyzer.Flags.BoolVar(&fExplicitExhaustiveMap, ExplicitExhaustiveMapFlag, false, `only check exhaustiveness for map literals associated with "//exhaustive:enforce" comment`)
+	Analyzer.Flags.BoolVar(&fExplicitExhaustiveSwitch, ExplicitExhaustiveSwitchFlag, false, `only check exhaustivess of switch statements associated with "//exhaustive:enforce" comment`)
+	Analyzer.Flags.BoolVar(&fExplicitExhaustiveMap, ExplicitExhaustiveMapFlag, false, `only check exhaustiveness of map literals associated with "//exhaustive:enforce" comment`)
 	Analyzer.Flags.BoolVar(&fCheckGenerated, CheckGeneratedFlag, false, "check generated files")
 	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, "presence of 'default' case in switch statement unconditionally satisfies exhaustiveness")
 	Analyzer.Flags.Var(&fIgnoreEnumMembers, IgnoreEnumMembersFlag, "enum members matching `regexp` do not have to be listed to satisfy exhaustiveness")
@@ -298,12 +298,12 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		explicit:                   fExplicitExhaustiveSwitch,
 		defaultSignifiesExhaustive: fDefaultSignifiesExhaustive,
 		checkGenerated:             fCheckGenerated,
-		ignoreEnumMembers:          fIgnoreEnumMembers.regexp(),
+		ignoreEnumMembers:          fIgnoreEnumMembers.rx,
 	}
 	mapConf := mapConfig{
 		explicit:          fExplicitExhaustiveMap,
 		checkGenerated:    fCheckGenerated,
-		ignoreEnumMembers: fIgnoreEnumMembers.regexp(),
+		ignoreEnumMembers: fIgnoreEnumMembers.rx,
 	}
 	swChecker := switchChecker(pass, swConf, generated, comments)
 	mapChecker := mapChecker(pass, mapConf, generated, comments)

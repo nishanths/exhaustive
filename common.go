@@ -145,35 +145,33 @@ var _ flag.Value = (*stringsFlag)(nil)
 
 // regexpFlag implements flag.Value for parsing
 // regular expression flag inputs.
-type regexpFlag struct{ r *regexp.Regexp }
+type regexpFlag struct{ rx *regexp.Regexp }
 
 func (f *regexpFlag) String() string {
-	if f == nil || f.r == nil {
+	if f == nil || f.rx == nil {
 		return ""
 	}
-	return f.r.String()
+	return f.rx.String()
 }
 
 func (f *regexpFlag) Set(expr string) error {
 	if expr == "" {
-		f.r = nil
+		f.rx = nil
 		return nil
 	}
 
-	r, err := regexp.Compile(expr)
+	rx, err := regexp.Compile(expr)
 	if err != nil {
 		return err
 	}
 
-	f.r = r
+	f.rx = rx
 	return nil
 }
 
-func (f *regexpFlag) regexp() *regexp.Regexp { return f.r }
-
-// stringsFlag implements flag.Value for parsing a comma-separated
-// string list. Surrounding whitespace is stripped from each element.
-// If filter is non-nil it is called for each element in the input.
+// stringsFlag implements flag.Value for parsing a comma-separated string
+// list. Surrounding whitespace is stripped from the input and from each
+// element. If filter is non-nil it is called for each element in the input.
 type stringsFlag struct {
 	elements []string
 	filter   func(string) error
@@ -194,9 +192,15 @@ func (f *stringsFlag) filterFunc() func(string) error {
 }
 
 func (f *stringsFlag) Set(input string) error {
+	input = strings.TrimSpace(input)
+	if input == "" {
+		f.elements = nil
+		return nil
+	}
+
 	for _, el := range strings.Split(input, ",") {
 		el = strings.TrimSpace(el)
-		if err := f.filter(el); err != nil {
+		if err := f.filterFunc()(el); err != nil {
 			return err
 		}
 		f.elements = append(f.elements, el)
