@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"go/ast"
 	"go/types"
-	"log"
 	"regexp"
 
 	"golang.org/x/tools/go/analysis"
@@ -46,6 +45,7 @@ const (
 	resultEnumMembersAccounted = "required enum members accounted for"
 	resultDefaultCaseSuffices  = "default case satisfies exhaustiveness"
 	resultReportedDiagnostic   = "reported diagnostic"
+	resultEnumTypes            = "invalid or empty composing enum types"
 )
 
 // switchChecker returns a node visitor that checks exhaustiveness of
@@ -92,10 +92,9 @@ func switchChecker(pass *analysis.Pass, cfg switchConfig, generated boolCache, c
 			return true, resultTagNotValue
 		}
 
-		es, all := composingEnumTypes(pass, t.Type)
-		if !all {
-			log.Printf("%#v", es)
-			return true, resultTagNotEnum // TODO(nishanths) could be other reasons e.g. nil pkg, make this more generic
+		es, ok := composingEnumTypes(pass, t.Type)
+		if !ok || len(es) == 0 {
+			return true, resultEnumTypes
 		}
 
 		var checkl checklist
@@ -117,12 +116,12 @@ func switchChecker(pass *analysis.Pass, cfg switchConfig, generated boolCache, c
 			// exhaustiveness.  So don't report.
 			return true, resultDefaultCaseSuffices
 		}
-		pass.Report(makeSwitchDiagnostic(sw, toTypes(es), checkl.remaining()))
+		pass.Report(makeSwitchDiagnostic(sw, dedupEnumTypes(toEnumTypes(es)), checkl.remaining()))
 		return true, resultReportedDiagnostic
 	}
 }
 
-func toTypes(es []typeAndMembers) []enumType {
+func toEnumTypes(es []typeAndMembers) []enumType {
 	out := make([]enumType, len(es))
 	for i := range es {
 		out[i] = es[i].et
@@ -169,7 +168,7 @@ func makeSwitchDiagnostic(sw *ast.SwitchStmt, enumTypes []enumType, missing map[
 		End: sw.End(),
 		Message: fmt.Sprintf(
 			"missing cases in switch of type %s: %s",
-			diagnosticEnumTypes(enumTypes),
+			diagnosticEnumTypes(dedupEnumTypes(enumTypes)),
 			diagnosticGroups(groupMissing(missing, enumTypes)),
 		),
 	}

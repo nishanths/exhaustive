@@ -3,7 +3,7 @@
 
 package exhaustive
 
-func fromNamed(pass *analysis.Pass, t *types.Named) (typeAndMembers, bool) {
+func fromNamed(pass *analysis.Pass, t *types.Named) (result typeAndMembers, ok bool) {
 	if tpkg := t.Obj().Pkg(); tpkg == nil {
 		return typeAndMembers{}, false
 	}
@@ -17,7 +17,7 @@ func fromNamed(pass *analysis.Pass, t *types.Named) (typeAndMembers, bool) {
 	return typeAndMembers{et, em}, true
 }
 
-func composingEnumTypes(pass *analysis.Pass, t types.Type) ([]typeAndMembers, bool) {
+func composingEnumTypes(pass *analysis.Pass, t types.Type) (result []typeAndMembers, ok bool) {
 	switch t := t.(type) {
 	case *types.Named:
 		e, ok := fromNamed(pass, t)

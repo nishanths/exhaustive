@@ -86,9 +86,9 @@ func mapChecker(pass *analysis.Pass, cfg mapConfig, generated boolCache, comment
 			return true, resultNoEnforceComment
 		}
 
-		es, all := composingEnumTypes(pass, mapType.Key())
-		if !all {
-			return true, resultKeyNotEnum // TODO(nishanths) could be other reasons e.g. nil pkg, make this more generic
+		es, ok := composingEnumTypes(pass, mapType.Key())
+		if !ok || len(es) == 0 {
+			return true, resultEnumTypes
 		}
 
 		var checkl checklist
@@ -102,7 +102,7 @@ func mapChecker(pass *analysis.Pass, cfg mapConfig, generated boolCache, comment
 		if len(checkl.remaining()) == 0 {
 			return true, resultEnumMembersAccounted
 		}
-		pass.Report(makeMapDiagnostic(lit, toTypes(es), checkl.remaining()))
+		pass.Report(makeMapDiagnostic(lit, dedupEnumTypes(toEnumTypes(es)), checkl.remaining()))
 		return true, resultReportedDiagnostic
 	}
 }

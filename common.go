@@ -116,7 +116,7 @@ func stripTypeConversions(e ast.Expr, info *types.Info) ast.Expr {
 	}
 	typ := info.TypeOf(c.Fun)
 	if typ == nil {
-		// not a type.
+		// can never happen for a valid Go program?
 		return e
 	}
 	// must not allow function calls.
@@ -325,6 +325,22 @@ func groupMissing(missing map[member]struct{}, types []enumType) []group {
 
 func diagnosticEnumType(enumType *types.TypeName) string {
 	return enumType.Pkg().Name() + "." + enumType.Name()
+}
+
+func dedupEnumTypes(types []enumType) []enumType {
+	// TODO(nishanths) this function is a candidate for type parameterization
+
+	m := make(map[enumType]struct{})
+	var ret []enumType
+	for _, t := range types {
+		_, ok := m[t]
+		if ok {
+			continue
+		}
+		m[t] = struct{}{}
+		ret = append(ret, t)
+	}
+	return ret
 }
 
 func diagnosticEnumTypes(types []enumType) string {
