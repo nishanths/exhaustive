@@ -165,9 +165,9 @@ files.
 
 If the -default-signifies-exhaustive flag is enabled, the presence of a
 'default' case in a switch statement unconditionally satisfies exhaustiveness
-(all enum members do not have to be listed). Enabling this flag usually
-defeats the purpose of exhaustiveness checking, so it is not recommended that
-you do.
+(all enum members do not have to be listed). Enabling this flag usually tends
+to counter the purpose of exhaustiveness checking, so it is not recommended
+that you do so.
 
 The -ignore-enum-members flag specifies a regular expression in Go
 package regexp syntax. Enum members matching the regular expression do
