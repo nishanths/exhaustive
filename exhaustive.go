@@ -141,12 +141,12 @@ that should be checked for exhaustiveness. Supported program elements
 are "switch" and "map". By default, only switch statements are checked.
 Specify -check=switch,map to additionally check map literals.
 
-If the -explicit-exhaustive-switch flag is enabled, the analyzer only
-checks enum switch statements associated with a comment beginning with
-"//exhaustive:enforce". By default the flag is disabled, which means
-that the analyzer checks every enum switch statement not associated with
-a comment beginning with "//exhaustive:ignore". As an example, the following
-switch statement will be ignored.
+If the -explicit-exhaustive-switch flag is enabled, the analyzer checks a
+switch statement only if it associated with a comment beginning with
+"//exhaustive:enforce". By default the flag is disabled, which means that the
+analyzer checks every enum switch statement not associated with a comment
+beginning with "//exhaustive:ignore". As an example, the following switch
+statement will be ignored.
 
 	//exhaustive:ignore
 	switch v {
@@ -199,8 +199,8 @@ import (
 
 func init() {
 	Analyzer.Flags.Var(&fCheck, CheckFlag, "comma-separated list of program `elements` that should be checked for exhaustiveness; supported elements are: switch, map")
-	Analyzer.Flags.BoolVar(&fExplicitExhaustiveSwitch, ExplicitExhaustiveSwitchFlag, false, `only check exhaustivess of switch statements associated with "//exhaustive:enforce" comment`)
-	Analyzer.Flags.BoolVar(&fExplicitExhaustiveMap, ExplicitExhaustiveMapFlag, false, `only check exhaustiveness of map literals associated with "//exhaustive:enforce" comment`)
+	Analyzer.Flags.BoolVar(&fExplicitExhaustiveSwitch, ExplicitExhaustiveSwitchFlag, false, `check switch statement only if associated with "//exhaustive:enforce" comment`)
+	Analyzer.Flags.BoolVar(&fExplicitExhaustiveMap, ExplicitExhaustiveMapFlag, false, `check map literal only if associated with "//exhaustive:enforce" comment`)
 	Analyzer.Flags.BoolVar(&fCheckGenerated, CheckGeneratedFlag, false, "check generated files")
 	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, "presence of 'default' case in switch statement unconditionally satisfies exhaustiveness")
 	Analyzer.Flags.Var(&fIgnoreEnumMembers, IgnoreEnumMembersFlag, "enum members matching `regexp` do not have to be listed to satisfy exhaustiveness")
