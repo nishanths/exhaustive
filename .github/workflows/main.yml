@@ -4,7 +4,7 @@ jobs:
   main:
     strategy:
       matrix:
-        go-version: [1.14, 1.x]
+        go-version: [1.14, 1.16, 1.18, 1.x]
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
@@ -20,13 +20,13 @@ jobs:
       run: make build
 
     - name: install vet tools
-      if: ${{matrix.go-version < '1.16'}}
+      if: ${{ matrix.go-version < '1.16' }}
       run: |
         go get github.com/nishanths/exhaustive/cmd/exhaustive
         go get github.com/gordonklaus/ineffassign
         go get github.com/kisielk/errcheck
         go get honnef.co/go/tools/cmd/staticcheck
-      if: ${{matrix.go-version >= '1.16'}}
+      if: ${{ matrix.go-version >= '1.16' }}
       run: |
         go install github.com/nishanths/exhaustive/cmd/exhaustive@latest
         go install github.com/gordonklaus/ineffassign@latest
@@ -34,7 +34,6 @@ jobs:
         go install honnef.co/go/tools/cmd/staticcheck@latest
 
     - name: vet
-      if: matrix.go-version >= '1.16'
       run: make vet
 
     - name: test
