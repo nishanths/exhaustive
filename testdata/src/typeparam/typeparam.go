@@ -2,7 +2,6 @@ package typeparam
 
 import (
 	"fmt"
-	barpkg "general/y"
 )
 
 type M int // want M:"^A,B$"
@@ -54,6 +53,7 @@ type L interface {
 	fmt.Stringer
 }
 
+/*
 func bar0[T barpkg.Phylum | I](v T) {
 	switch v {
 	case T(A):
@@ -96,3 +96,4 @@ func repeat[T I | O](v T) {
 	switch v {
 	}
 }
+*/

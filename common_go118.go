@@ -5,7 +5,6 @@ package exhaustive
 
 import (
 	"go/types"
-	"log"
 
 	"golang.org/x/tools/go/analysis"
 )
@@ -33,8 +32,8 @@ func fromNamed(pass *analysis.Pass, t *types.Named, typeparam bool) (result []ty
 }
 
 func fromInterface(pass *analysis.Pass, intf *types.Interface, typeparam bool) (result []typeAndMembers, all bool) {
-	log.Printf("---")
-	log.Printf("%#v", intf)
+	// log.Printf("---")
+	// log.Printf("%#v", intf)
 
 	for i := 0; i < intf.NumEmbeddeds(); i++ {
 		embed := intf.EmbeddedType(i)
