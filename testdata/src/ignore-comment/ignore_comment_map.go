@@ -1,6 +1,7 @@
 package ignorecomment
 
-import "fmt"
+func callMe(a string, x map[Direction]int) map[Direction]int { return x }
+func makeErr(a string, x map[Direction]int) error            { return nil }
 
 var _ = map[Direction]int{ // want "^missing keys in map of key type ignorecomment.Direction: ignorecomment.E, ignorecomment.S, ignorecomment.W, ignorecomment.directionInvalid$"
 	N: 1,
@@ -22,7 +23,7 @@ var (
 	_ = map[Direction]int{
 		N: 1,
 	}[N]
-	_ = fmt.Errorf("%v", map[Direction]int{
+	_ = callMe("something", map[Direction]int{
 		N: 1,
 	})
 )
@@ -35,7 +36,7 @@ var (
 	_ = &map[Direction]int{ // want "^missing keys in map of key type ignorecomment.Direction: ignorecomment.E, ignorecomment.S, ignorecomment.W, ignorecomment.directionInvalid$"
 		N: 1,
 	}
-	_ = fmt.Errorf("%v", map[Direction]int{ // want "^missing keys in map of key type ignorecomment.Direction: ignorecomment.E, ignorecomment.S, ignorecomment.W, ignorecomment.directionInvalid$"
+	_ = callMe("something", map[Direction]int{ // want "^missing keys in map of key type ignorecomment.Direction: ignorecomment.E, ignorecomment.S, ignorecomment.W, ignorecomment.directionInvalid$"
 		N: 1,
 	})
 )
@@ -124,35 +125,35 @@ func returnFuncCallWithMap() error {
 		// some other comment
 		//exhaustive:ignore
 		// some other comment
-		return fmt.Errorf("%v", map[Direction]int{
+		return makeErr("something", map[Direction]int{
 			N: 1,
-		})
+		}).(error)
 
 	case 2:
 		//exhaustive:ignore ... more arbitrary comment content (e.g. an explanation) ...
-		return fmt.Errorf("%v", map[Direction]int{
+		return makeErr("something", map[Direction]int{
 			N: 1,
-		})
+		}).(error)
 
 	case 3:
-		return fmt.Errorf("%v", map[Direction]int{ // want "^missing keys in map of key type ignorecomment.Direction: ignorecomment.E, ignorecomment.S, ignorecomment.W, ignorecomment.directionInvalid$"
+		return makeErr("something", map[Direction]int{ // want "^missing keys in map of key type ignorecomment.Direction: ignorecomment.E, ignorecomment.S, ignorecomment.W, ignorecomment.directionInvalid$"
 			N: 1,
-		})
+		}).(error)
 
 	case 4:
 		// this should report: according to go/ast, the comment is not considered to
 		// be associated with the return node.
-		return fmt.Errorf("%v", map[Direction]int{ //exhaustive:ignore // want "^missing keys in map of key type ignorecomment.Direction: ignorecomment.E, ignorecomment.S, ignorecomment.W, ignorecomment.directionInvalid$"
+		return makeErr("something", map[Direction]int{ //exhaustive:ignore // want "^missing keys in map of key type ignorecomment.Direction: ignorecomment.E, ignorecomment.S, ignorecomment.W, ignorecomment.directionInvalid$"
 			N: 1,
-		})
+		}).(error)
 
 	case 5:
 		// this should report: according to go/ast, the comment is not considered to
 		// be associated with the return node.
-		return fmt.Errorf("%v", map[Direction]int{ // want "^missing keys in map of key type ignorecomment.Direction: ignorecomment.E, ignorecomment.S, ignorecomment.W, ignorecomment.directionInvalid$"
+		return makeErr("something", map[Direction]int{ // want "^missing keys in map of key type ignorecomment.Direction: ignorecomment.E, ignorecomment.S, ignorecomment.W, ignorecomment.directionInvalid$"
 			//exhaustive:ignore
 			N: 1,
-		})
+		}).(error)
 	}
 	return nil
 }
@@ -304,7 +305,7 @@ func localVarDeclaration() {
 		_ = map[Direction]int{
 			N: 1,
 		}[N]
-		_ = fmt.Errorf("%v", map[Direction]int{
+		_ = callMe("something", map[Direction]int{
 			N: 1,
 		})
 	)
@@ -317,7 +318,7 @@ func localVarDeclaration() {
 		_ = &map[Direction]int{ // want "^missing keys in map of key type ignorecomment.Direction: ignorecomment.E, ignorecomment.S, ignorecomment.W, ignorecomment.directionInvalid$"
 			N: 1,
 		}
-		_ = fmt.Errorf("%v", map[Direction]int{ // want "^missing keys in map of key type ignorecomment.Direction: ignorecomment.E, ignorecomment.S, ignorecomment.W, ignorecomment.directionInvalid$"
+		_ = callMe("something", map[Direction]int{ // want "^missing keys in map of key type ignorecomment.Direction: ignorecomment.E, ignorecomment.S, ignorecomment.W, ignorecomment.directionInvalid$"
 			N: 1,
 		})
 	)

@@ -11,7 +11,11 @@ build:
 
 .PHONY: test
 test:
-	go test ./...
+	go test -count=1 ./...
+
+.PHONY: testshort
+testshort:
+	go test -short -count=1 ./...
 
 .PHONY: cover
 cover:

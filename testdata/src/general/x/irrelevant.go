@@ -1,7 +1,6 @@
 package x
 
 import (
-	"fmt"
 	barpkg "general/y"
 )
 
@@ -62,7 +61,9 @@ func _v() {
 	// type switches should be ignored.
 	// as of go1.19 these have type *ast.TypeSwitchStmt.
 
-	var s fmt.Stringer
+	var s interface {
+		String() string
+	}
 
 	switch s.(type) {
 	case WithMethod:

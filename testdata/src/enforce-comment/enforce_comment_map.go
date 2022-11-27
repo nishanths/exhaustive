@@ -1,6 +1,7 @@
 package enforcecomment
 
-import "fmt"
+func callMe(a string, x map[Direction]int) map[Direction]int { return x }
+func makeErr(a string, x map[Direction]int) error            { return nil }
 
 var _ = map[Direction]int{
 	N: 1,
@@ -22,7 +23,7 @@ var (
 	_ = map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 		N: 1,
 	}[N]
-	_ = fmt.Errorf("%v", map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
+	_ = callMe("something", map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 		N: 1,
 	})
 )
@@ -35,7 +36,7 @@ var (
 	_ = &map[Direction]int{
 		N: 1,
 	}
-	_ = fmt.Errorf("%v", map[Direction]int{
+	_ = callMe("something", map[Direction]int{
 		N: 1,
 	})
 )
@@ -124,35 +125,35 @@ func returnFuncCallWithMap() error {
 		// some other comment
 		//exhaustive:enforce
 		// some other comment
-		return fmt.Errorf("%v", map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
+		return makeErr("something", map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 			N: 1,
-		})
+		}).(error)
 
 	case 2:
 		//exhaustive:enforce ... more arbitrary comment content (e.g. an explanation) ...
-		return fmt.Errorf("%v", map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
+		return makeErr("something", map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 			N: 1,
-		})
+		}).(error)
 
 	case 3:
-		return fmt.Errorf("%v", map[Direction]int{
+		return makeErr("something", map[Direction]int{
 			N: 1,
-		})
+		}).(error)
 
 	case 4:
 		// this should report: according to go/ast, the comment is not considered to
 		// be associated with the return node.
-		return fmt.Errorf("%v", map[Direction]int{ //exhaustive:enforce
+		return makeErr("something", map[Direction]int{ //exhaustive:enforce
 			N: 1,
-		})
+		}).(error)
 
 	case 5:
 		// this should report: according to go/ast, the comment is not considered to
 		// be associated with the return node.
-		return fmt.Errorf("%v", map[Direction]int{
+		return makeErr("something", map[Direction]int{
 			//exhaustive:enforce
 			N: 1,
-		})
+		}).(error)
 	}
 	return nil
 }
@@ -304,7 +305,7 @@ func localVarDeclaration() {
 		_ = map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 			N: 1,
 		}[N]
-		_ = fmt.Errorf("%v", map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
+		_ = callMe("something", map[Direction]int{ // want "^missing keys in map of key type enforcecomment.Direction: enforcecomment.E, enforcecomment.S, enforcecomment.W, enforcecomment.directionInvalid$"
 			N: 1,
 		})
 	)
@@ -317,7 +318,7 @@ func localVarDeclaration() {
 		_ = &map[Direction]int{
 			N: 1,
 		}
-		_ = fmt.Errorf("%v", map[Direction]int{
+		_ = callMe("something", map[Direction]int{
 			N: 1,
 		})
 	)

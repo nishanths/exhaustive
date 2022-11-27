@@ -7,7 +7,6 @@ package x
 
 import (
 	"io/fs"
-	"log"
 	"os"
 )
 
@@ -18,10 +17,7 @@ func _q() {
 	// Of interest, note that e.g. listing os.ModeSocket in a case clause is
 	// equivalent to listing fs.ModeSocket (both have the same constant value).
 
-	fi, err := os.Lstat(".")
-	if err != nil {
-		log.Fatal(err)
-	}
+	var fi fs.FileInfo
 
 	switch fi.Mode() { // want "^missing cases in switch of type fs.FileMode: fs.ModeDevice, fs.ModeSetuid, fs.ModeSetgid, fs.ModeType, fs.ModePerm$"
 	case os.ModeDir:

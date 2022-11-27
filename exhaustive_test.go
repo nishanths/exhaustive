@@ -27,9 +27,11 @@ func runTest(t *testing.T, pattern string, setup ...func()) {
 }
 
 func TestExhaustive(t *testing.T) {
-	// Analysis of code that uses complex packages, such as package os and
-	// package reflect, should not fail.
-	runTest(t, "complexpkg/...")
+	if !testing.Short() {
+		// Analysis of code that uses complex packages, such as package os and
+		// package reflect, should not fail.
+		runTest(t, "complexpkg/...")
+	}
 
 	// Enum discovery, enum types.
 	runTest(t, "enum/...")

@@ -4,7 +4,6 @@
 package typeparam
 
 import (
-	"fmt"
 	y "general/y"
 )
 
@@ -42,16 +41,22 @@ const (
 
 type NotEnumType uint8
 
+type Stringer interface {
+	String() string
+}
+
 type II interface{ N | JJ }
 type JJ interface{ O }
 type KK interface {
 	M
-	fmt.Stringer
+	Stringer
+	error
 	comparable
 }
 type LL interface {
 	M | NotEnumType
-	fmt.Stringer
+	Stringer
+	error
 }
 type MM interface {
 	M
