@@ -93,7 +93,7 @@ func switchChecker(pass *analysis.Pass, cfg switchConfig, generated boolCache, c
 		}
 
 		if sw.Tag == nil {
-			return true, resultNoSwitchTag
+			return true, resultNoSwitchTag // never possible for valid Go program?
 		}
 
 		t := pass.TypesInfo.Types[sw.Tag]

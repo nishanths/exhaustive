@@ -1,6 +1,9 @@
 package x
 
-import barpkg "general/y"
+import (
+	"fmt"
+	barpkg "general/y"
+)
 
 const (
 	PlainIntA = 1
@@ -43,6 +46,31 @@ func _e() {
 
 	_ = map[NamedButNotEnum]int{
 		1: 1,
+	}
+}
+
+type WithMethod int // want WithMethod:"^WA,WB$"
+
+const (
+	WA WithMethod = 1
+	WB WithMethod = 2
+)
+
+func (WithMethod) String() string { return "whatever" }
+
+func _v() {
+	// type switches should be ignored.
+	// as of go1.19 these have type *ast.TypeSwitchStmt.
+
+	var s fmt.Stringer
+
+	switch s.(type) {
+	case WithMethod:
+	}
+
+	switch s := s.(type) {
+	case WithMethod:
+		_ = s
 	}
 }
 

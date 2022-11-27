@@ -14,7 +14,7 @@ import (
 )
 
 func useComplexPackages() {
-	// see issue #25: https://github.com/nishanths/exhaustive/issues/25
+	// see issue 25: https://github.com/nishanths/exhaustive/issues/25
 	var (
 		_ http.Server
 		_ tls.Conn
@@ -219,6 +219,13 @@ func _u() {
 
 	switch _ufunc1(Direction(0)) { // want "^missing cases in switch of type x.Direction: x.W, x.directionInvalid$"
 	case N, E, S:
+	}
+}
+
+func _w() {
+	// assignment in switch
+	switch x := _ufunc0(); x { // want "^missing cases in switch of type x.Direction: x.E, x.S, x.W$"
+	case N, directionInvalid:
 	}
 }
 

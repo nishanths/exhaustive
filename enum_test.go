@@ -237,6 +237,21 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 				`1`: {"EnumRHS_B"},
 			},
 		}},
+		{"WithMethod", enumMembers{
+			[]string{"WithMethodA", "WithMethodB"},
+			map[string]token.Pos{
+				"WithMethodA": 0,
+				"WithMethodB": 0,
+			},
+			map[string]constantValue{
+				"WithMethodA": `1`,
+				"WithMethodB": `2`,
+			},
+			map[constantValue][]string{
+				`1`: {"WithMethodA"},
+				`2`: {"WithMethodB"},
+			},
+		}},
 		{"T", enumMembers{
 			[]string{"A", "B"},
 			map[string]token.Pos{

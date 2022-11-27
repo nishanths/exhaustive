@@ -77,3 +77,12 @@ const (
 	EnumRHS_A EnumRHS = iota
 	EnumRHS_B
 )
+
+type WithMethod int // want WithMethod:"^WithMethodA,WithMethodB$"
+
+const (
+	WithMethodA WithMethod = 1
+	WithMethodB WithMethod = 2
+)
+
+func (WithMethod) String() string { return "whatever" }

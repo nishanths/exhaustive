@@ -1,11 +1,13 @@
 //go:build go1.16
 // +build go1.16
 
+// The use of package io/fs requires go1.16.
+
 package x
 
 import (
-	"fmt"
 	"io/fs"
+	"log"
 	"os"
 )
 
@@ -17,7 +19,9 @@ func _q() {
 	// equivalent to listing fs.ModeSocket (both have the same constant value).
 
 	fi, err := os.Lstat(".")
-	fmt.Println(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	switch fi.Mode() { // want "^missing cases in switch of type fs.FileMode: fs.ModeDevice, fs.ModeSetuid, fs.ModeSetgid, fs.ModeType, fs.ModePerm$"
 	case os.ModeDir:
