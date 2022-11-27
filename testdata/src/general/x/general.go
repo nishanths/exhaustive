@@ -1,29 +1,10 @@
 package x
 
 import (
-	"crypto/elliptic"
-	"crypto/tls"
-	"encoding/json"
 	"errors"
-	"fmt"
 	bar "general/y"
 	barpkg "general/y"
-	"net/http"
-	"os"
-	"reflect"
 )
-
-func useComplexPackages() {
-	// see issue 25: https://github.com/nishanths/exhaustive/issues/25
-	var (
-		_ http.Server
-		_ tls.Conn
-		_ reflect.ChanDir
-		_ json.Encoder
-		_ elliptic.Curve
-	)
-	fmt.Println(os.LookupEnv(""))
-}
 
 type Direction int // want Direction:"^N,E,S,W,directionInvalid$"
 
