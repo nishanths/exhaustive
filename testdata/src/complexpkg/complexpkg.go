@@ -14,13 +14,14 @@ import (
 func useComplexPackages() {
 	// see issue 25: https://github.com/nishanths/exhaustive/issues/25
 	var (
-		_ http.Server
-		_ tls.Conn
-		_ reflect.ChanDir
-		_ json.Encoder
 		_ elliptic.Curve
-		_ time.Ticker
+		_ tls.Conn
+		_ json.Encoder
+		_ fmt.Formatter
+		_ http.Server
 		_ os.File
+		_ reflect.ChanDir
+		_ time.Ticker
 	)
-	fmt.Println(os.LookupEnv(""))
+	fmt.Println(os.Getgid())
 }

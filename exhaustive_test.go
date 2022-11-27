@@ -7,26 +7,26 @@ import (
 	"golang.org/x/tools/go/analysis/analysistest"
 )
 
-func runTest(t *testing.T, pattern string, setup ...func()) {
-	t.Helper()
-	t.Run(pattern, func(t *testing.T) {
-		resetFlags()
-		// default to checking switch and map for test.
-		fCheck = stringsFlag{
-			[]string{
-				string(elementSwitch),
-				string(elementMap),
-			},
-			nil,
-		}
-		for _, f := range setup {
-			f()
-		}
-		analysistest.Run(t, analysistest.TestData(), Analyzer, pattern)
-	})
-}
-
 func TestExhaustive(t *testing.T) {
+	runTest := func(t *testing.T, pattern string, setup ...func()) {
+		t.Helper()
+		t.Run(pattern, func(t *testing.T) {
+			resetFlags()
+			// default to checking switch and map for test.
+			fCheck = stringsFlag{
+				[]string{
+					string(elementSwitch),
+					string(elementMap),
+				},
+				nil,
+			}
+			for _, f := range setup {
+				f()
+			}
+			analysistest.Run(t, analysistest.TestData(), Analyzer, pattern)
+		})
+	}
+
 	if !testing.Short() {
 		// Analysis of code that uses complex packages, such as package os and
 		// package reflect, should not fail.
@@ -76,6 +76,7 @@ func TestExhaustive(t *testing.T) {
 	runTest(t, "duplicate-enum-value/...")
 
 	runTest(t, "typealias/...")
+	runTest(t, "typeparam/...")
 
 	// mixture of general tests.
 	runTest(t, "general/...")
