@@ -32,24 +32,7 @@ func fromNamed(pass *analysis.Pass, t *types.Named, typeparam bool) (result []ty
 }
 
 func fromInterface(pass *analysis.Pass, intf *types.Interface, typeparam bool) (result []typeAndMembers, all bool) {
-	var kind types.BasicKind
-	var kindSet bool
 	all = true
-
-	// sameKind reports whether each type t that the function is called with
-	// has the same underlying basic kind as the rest.
-	sameBasicKind := func(t types.Type) (ok bool) {
-		basic, ok := t.Underlying().(*types.Basic)
-		if !ok {
-			return false
-		}
-		if kindSet && kind != basic.Kind() {
-			return false
-		}
-		kind = basic.Kind()
-		kindSet = true
-		return true
-	}
 
 	for i := 0; i < intf.NumEmbeddeds(); i++ {
 		embed := intf.EmbeddedType(i)
@@ -60,24 +43,12 @@ func fromInterface(pass *analysis.Pass, intf *types.Interface, typeparam bool) (
 			// gather from each term in the union.
 			for i := 0; i < u.Len(); i++ {
 				r, a := fromType(pass, u.Term(i).Type(), typeparam)
-				for _, rr := range r {
-					if !sameBasicKind(rr.et.TypeName.Type()) {
-						a = false
-						break
-					}
-				}
 				result = append(result, r...)
 				all = all && a
 			}
 
 		case *types.Named:
 			r, a := fromNamed(pass, embed.(*types.Named), typeparam)
-			for _, rr := range r {
-				if !sameBasicKind(rr.et.TypeName.Type()) {
-					a = false
-					break
-				}
-			}
 			result = append(result, r...)
 			all = all && a
 
@@ -102,6 +73,14 @@ func fromType(pass *analysis.Pass, t types.Type, typeparam bool) (result []typeA
 		intf := t.Constraint().Underlying().(*types.Interface)
 		return fromInterface(pass, intf, typeparam)
 
+	case *types.Interface:
+		// anonymous interface.
+		// e.g. func foo[T interface { M } | interface { N }](v T) {}
+		if !typeparam {
+			return nil, true
+		}
+		return fromInterface(pass, t, typeparam)
+
 	default:
 		// ignore these.
 		return nil, true
@@ -110,5 +89,34 @@ func fromType(pass *analysis.Pass, t types.Type, typeparam bool) (result []typeA
 
 func composingEnumTypes(pass *analysis.Pass, t types.Type) (result []typeAndMembers, ok bool) {
 	_, typeparam := t.(*types.TypeParam)
-	return fromType(pass, t, typeparam)
+	result, ok = fromType(pass, t, typeparam)
+
+	if typeparam {
+		var kind types.BasicKind
+		var kindSet bool
+
+		// sameKind reports whether each type t that the function is called
+		// with has the same underlying basic kind.
+		sameBasicKind := func(t types.Type) (ok bool) {
+			basic, ok := t.Underlying().(*types.Basic)
+			if !ok {
+				return false
+			}
+			if kindSet && kind != basic.Kind() {
+				return false
+			}
+			kind = basic.Kind()
+			kindSet = true
+			return true
+		}
+
+		for _, rr := range result {
+			if !sameBasicKind(rr.et.TypeName.Type()) {
+				ok = false
+				break
+			}
+		}
+	}
+
+	return result, ok
 }

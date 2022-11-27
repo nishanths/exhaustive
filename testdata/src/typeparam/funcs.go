@@ -3,67 +3,7 @@
 
 package typeparam
 
-import (
-	y "general/y"
-)
-
-type M uint8 // want M:"^A,B$"
-const (
-	_ M = iota * 100
-	A
-	B
-)
-
-func (M) String() string { return "" }
-
-type N uint8 // want N:"^C,D$"
-const (
-	_ N = iota * 100
-	C
-	D
-)
-
-type O byte // want O:"^E1,E2$"
-const (
-	E1 O = 'h'
-	E2 O = 'e'
-)
-
-type P float32 // want P:"^F$"
-const (
-	F P = 1.1234
-)
-
-type Q string // want Q:"^G$"
-const (
-	G Q = "world"
-)
-
-type NotEnumType uint8
-
-type Stringer interface {
-	String() string
-}
-
-type II interface{ N | JJ }
-type JJ interface{ O }
-type KK interface {
-	M
-	Stringer
-	error
-	comparable
-}
-type LL interface {
-	M | NotEnumType
-	Stringer
-	error
-}
-type MM interface {
-	M
-}
-type QQ interface {
-	Q
-}
+import y "general/y"
 
 func _a[T y.Phylum | M](v T) {
 	switch v { // want `^missing cases in switch of type bar.Phylum\|typeparam.M: bar.Chordata, bar.Mollusca, typeparam.B$`
@@ -93,7 +33,17 @@ func _b[T N | MM](v T) {
 	}
 }
 
-func _c[T O | M | N](v T) {
+func _c0[T O | M | N](v T) {
+	switch v { // want `^missing cases in switch of type typeparam.O\|typeparam.M\|typeparam.N: typeparam.E1, typeparam.E2, typeparam.A\|typeparam.C$`
+	case T(B):
+	}
+
+	_ = map[T]struct{}{ // want `^missing keys in map of key type typeparam.O\|typeparam.M\|typeparam.N: typeparam.E1, typeparam.E2, typeparam.A\|typeparam.C$`
+		T(B): struct{}{},
+	}
+}
+
+func _c2[T interface{ O } | M | interface{ N }](v T) {
 	switch v { // want `^missing cases in switch of type typeparam.O\|typeparam.M\|typeparam.N: typeparam.E1, typeparam.E2, typeparam.A\|typeparam.C$`
 	case T(B):
 	}
@@ -125,6 +75,16 @@ func _e[T M](v T) {
 	}
 }
 
+func _f[T Anon](v T) {
+	switch v { // want `^missing cases in switch of type typeparam.M\|typeparam.N: typeparam.B\|typeparam.D$`
+	case T(C):
+	}
+
+	_ = map[T]struct{}{ // want `^missing keys in map of key type typeparam.M\|typeparam.N: typeparam.B\|typeparam.D$`
+		T(C): struct{}{},
+	}
+}
+
 func repeat0[T II | O](v T) {
 	switch v { // want `^missing cases in switch of type typeparam.N\|typeparam.O: typeparam.C, typeparam.D, typeparam.E2$`
 	case T(E1):
@@ -136,6 +96,16 @@ func repeat0[T II | O](v T) {
 }
 
 func repeat1[T MM | M](v T) {
+	switch v { // want `^missing cases in switch of type typeparam.M: typeparam.A$`
+	case T(B):
+	}
+
+	_ = map[T]struct{}{ // want `^missing keys in map of key type typeparam.M: typeparam.A$`
+		T(B): struct{}{},
+	}
+}
+
+func repeat2[T interface{ M } | interface{ M }](v T) {
 	switch v { // want `^missing cases in switch of type typeparam.M: typeparam.A$`
 	case T(B):
 	}
@@ -158,6 +128,26 @@ func _mixedTypes0[T M | QQ](v T) {
 }
 
 func _mixedTypes1[T MM | QQ](v T) {
+	switch v {
+	case T(A):
+	}
+
+	_ = map[T]struct{}{
+		T(A): struct{}{},
+	}
+}
+
+func _mixedTypes2[T interface{ M } | interface{ Q }](v T) {
+	switch v {
+	case T(A):
+	}
+
+	_ = map[T]struct{}{
+		T(A): struct{}{},
+	}
+}
+
+func _mixedTypes3[T interface{ M | Q }](v T) {
 	switch v {
 	case T(A):
 	}
