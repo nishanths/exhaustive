@@ -62,7 +62,7 @@ func fromInterface(pass *analysis.Pass, intf *types.Interface, typeparam bool) (
 				r, a := fromType(pass, u.Term(i).Type(), typeparam)
 				for _, rr := range r {
 					if !sameBasicKind(rr.et.TypeName.Type()) {
-						all = false
+						a = false
 						break
 					}
 				}
@@ -74,7 +74,7 @@ func fromInterface(pass *analysis.Pass, intf *types.Interface, typeparam bool) (
 			r, a := fromNamed(pass, embed.(*types.Named), typeparam)
 			for _, rr := range r {
 				if !sameBasicKind(rr.et.TypeName.Type()) {
-					all = false
+					a = false
 					break
 				}
 			}

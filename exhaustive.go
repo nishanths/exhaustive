@@ -10,11 +10,11 @@ The Go [language spec] does not provide an explicit definition for enums. For
 the purpose of this analyzer, and by convention, an enum type is any named
 type that:
 
- 1. has underlying type float, string, or integer (includes byte and
+  - has underlying type float, string, or integer (includes byte and
     rune, which are aliases for uint8 and int32, respectively); and
- 2. has at least one constant of the type defined in the same scope.
+  - has at least one constant of the type defined in the same scope.
 
-In the example below, Biome is an enum type. The 3 constants are its
+In the example below, Biome is an enum type. The three constants are its
 enum members.
 
 	package eco
