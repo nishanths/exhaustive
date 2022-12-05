@@ -9,16 +9,16 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-// nodeVisitor is like the visitor function used by Inspector.WithStack,
+// nodeVisitor is like the visitor function used by inspector.WithStack,
 // except that it returns an additional value: a short description of
 // the result of this node visit.
 //
-// The result is typically useful in debugging or in unit tests to check
+// The result value is typically useful in debugging or in unit tests to check
 // that the nodeVisitor function took the expected code path.
 type nodeVisitor func(n ast.Node, push bool, stack []ast.Node) (proceed bool, result string)
 
-// toVisitor converts the nodeVisitor to a function suitable for use
-// with Inspector.WithStack.
+// toVisitor converts a nodeVisitor to a function suitable for use
+// with inspector.WithStack.
 func toVisitor(v nodeVisitor) func(ast.Node, bool, []ast.Node) bool {
 	return func(node ast.Node, push bool, stack []ast.Node) bool {
 		proceed, _ := v(node, push, stack)

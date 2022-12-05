@@ -22,9 +22,9 @@ enum members.
 	type Biome int
 
 	const (
-		Tundra Biome = iota
-		Savanna
-		Desert
+		Tundra  Biome = 1
+		Savanna Biome = 2
+		Desert  Biome = 3
 	)
 
 Enum member constants for a particular enum type do not necessarily all
