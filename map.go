@@ -77,13 +77,13 @@ func mapChecker(pass *analysis.Pass, cfg mapConfig, generated boolCache, comment
 			}
 		}
 
-		if !cfg.explicit && hasComment(relatedComments, ignoreComment) {
+		if !cfg.explicit && hasCommentPrefix(relatedComments, ignoreComment) {
 			// Skip checking of this map literal due to ignore
 			// comment. Still return true because there may be nested
 			// map literals that are not to be ignored.
 			return true, resultIgnoreComment
 		}
-		if cfg.explicit && !hasComment(relatedComments, enforceComment) {
+		if cfg.explicit && !hasCommentPrefix(relatedComments, enforceComment) {
 			return true, resultNoEnforceComment
 		}
 

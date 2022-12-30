@@ -80,13 +80,13 @@ func switchChecker(pass *analysis.Pass, cfg switchConfig, generated boolCache, c
 		sw := n.(*ast.SwitchStmt)
 
 		switchComments := comments.get(pass.Fset, file)[sw]
-		if !cfg.explicit && hasComment(switchComments, ignoreComment) {
+		if !cfg.explicit && hasCommentPrefix(switchComments, ignoreComment) {
 			// Skip checking of this switch statement due to ignore
 			// comment. Still return true because there may be nested
 			// switch statements that are not to be ignored.
 			return true, resultIgnoreComment
 		}
-		if cfg.explicit && !hasComment(switchComments, enforceComment) {
+		if cfg.explicit && !hasCommentPrefix(switchComments, enforceComment) {
 			// Skip checking of this switch statement due to missing
 			// enforce comment.
 			return true, resultNoEnforceComment

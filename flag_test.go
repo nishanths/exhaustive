@@ -62,7 +62,7 @@ func TestRegexpFlag(t *testing.T) {
 
 	// The flag.Value interface doc says: "The flag package may call the
 	// String method with a zero-valued receiver, such as a nil pointer."
-	t.Run("String() nil receiver", func(t *testing.T) {
+	t.Run("String nil receiver", func(t *testing.T) {
 		var v *regexpFlag
 		// expect no panic, and ...
 		if got := v.String(); got != "" {
@@ -124,7 +124,7 @@ func TestStringsFlag(t *testing.T) {
 
 	// The flag.Value interface doc says: "The flag package may call the
 	// String method with a zero-valued receiver, such as a nil pointer."
-	t.Run("String() nil receiver", func(t *testing.T) {
+	t.Run("String nil receiver", func(t *testing.T) {
 		var v *stringsFlag
 		// expect no panic, and ...
 		if got := v.String(); got != "" {
