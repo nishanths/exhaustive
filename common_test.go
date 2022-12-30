@@ -329,7 +329,7 @@ func TestGroupMissing(t *testing.T) {
 
 	// f adapts groupMissing for easy use in the test.
 	f := func(missing map[member]struct{}, types []enumType) [][]string {
-		return groupStrings(groupMissing(missing, types))
+		return groupStrings(groupify(missing, types))
 	}
 
 	tn := types.NewTypeName(50, types.NewPackage("example.org/enumpkg-go", "enumpkg"), "River", nil)

@@ -5,7 +5,6 @@ import (
 	"go/token"
 	"reflect"
 	"sort"
-	"strconv"
 	"testing"
 
 	"golang.org/x/tools/go/ast/inspector"
@@ -95,7 +94,7 @@ func TestFindEnums(t *testing.T) {
 	inspect := inspector.New(testdataEnumPkg.Syntax)
 
 	for _, pkgOnly := range [...]bool{false, true} {
-		t.Run("package scopes only "+strconv.FormatBool(pkgOnly), func(t *testing.T) {
+		t.Run(fmt.Sprint("pkgOnly", pkgOnly), func(t *testing.T) {
 			result := findEnums(pkgOnly, testdataEnumPkg.Types, inspect, testdataEnumPkg.TypesInfo)
 			checkEnums(t, transform(result), pkgOnly)
 		})
@@ -451,7 +450,7 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 
 	for i := range want {
 		// don't bother with checking ast positions.
-		// zero out the values.
+		// zero out these values.
 		for k := range got[i].members.NameToPos {
 			got[i].members.NameToPos[k] = 0
 		}

@@ -227,7 +227,7 @@ func (c *checklist) remaining() map[member]struct{} {
 // different enum types.
 type group []member
 
-func groupMissing(missing map[member]struct{}, types []enumType) []group {
+func groupify(missing map[member]struct{}, types []enumType) []group {
 	// indices maps each element in the input slice to its index.
 	indices := func(vs []enumType) map[enumType]int {
 		ret := make(map[enumType]int, len(vs))

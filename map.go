@@ -128,7 +128,7 @@ func makeMapDiagnostic(lit *ast.CompositeLit, enumTypes []enumType, missing map[
 		Message: fmt.Sprintf(
 			"missing keys in map of key type %s: %s",
 			diagnosticEnumTypes(enumTypes),
-			diagnosticGroups(groupMissing(missing, enumTypes)),
+			diagnosticGroups(groupify(missing, enumTypes)),
 		),
 	}
 }

@@ -10,6 +10,10 @@ import (
 )
 
 func init() {
+	registerFlags()
+}
+
+func registerFlags() {
 	Analyzer.Flags.Var(&fCheck, CheckFlag, "comma-separated list of program `elements` that should be checked for exhaustiveness; supported elements are: switch, map")
 	Analyzer.Flags.BoolVar(&fExplicitExhaustiveSwitch, ExplicitExhaustiveSwitchFlag, false, `check switch statement only if associated with "//exhaustive:enforce" comment`)
 	Analyzer.Flags.BoolVar(&fExplicitExhaustiveMap, ExplicitExhaustiveMapFlag, false, `check map literal only if associated with "//exhaustive:enforce" comment`)
@@ -40,6 +44,31 @@ const (
 	CheckingStrategyFlag = "checking-strategy" // Deprecated.
 )
 
+// Flag values.
+var (
+	fCheck                      = stringsFlag{elements: defaultCheckElements, filter: validCheckElement}
+	fExplicitExhaustiveSwitch   bool
+	fExplicitExhaustiveMap      bool
+	fCheckGenerated             bool
+	fDefaultSignifiesExhaustive bool
+	fIgnoreEnumMembers          regexpFlag
+	fIgnoreEnumTypes            regexpFlag
+	fPackageScopeOnly           bool
+)
+
+// resetFlags resets the flag variables to default values.
+// Useful in tests.
+func resetFlags() {
+	fCheck = stringsFlag{elements: defaultCheckElements, filter: validCheckElement}
+	fExplicitExhaustiveSwitch = false
+	fExplicitExhaustiveMap = false
+	fCheckGenerated = false
+	fDefaultSignifiesExhaustive = false
+	fIgnoreEnumMembers = regexpFlag{}
+	fIgnoreEnumTypes = regexpFlag{}
+	fPackageScopeOnly = false
+}
+
 // checkElement is a program element supported by the -check flag.
 type checkElement string
 
@@ -61,31 +90,6 @@ func validCheckElement(s string) error {
 
 var defaultCheckElements = []string{
 	string(elementSwitch),
-}
-
-// Flag values.
-var (
-	fCheck                      = stringsFlag{elements: defaultCheckElements, filter: validCheckElement}
-	fExplicitExhaustiveSwitch   bool
-	fExplicitExhaustiveMap      bool
-	fCheckGenerated             bool
-	fDefaultSignifiesExhaustive bool
-	fIgnoreEnumMembers          regexpFlag
-	fIgnoreEnumTypes            regexpFlag
-	fPackageScopeOnly           bool
-)
-
-// resetFlags resets the flag variables to their default values.
-// Useful in tests.
-func resetFlags() {
-	fCheck = stringsFlag{elements: defaultCheckElements, filter: validCheckElement}
-	fExplicitExhaustiveSwitch = false
-	fExplicitExhaustiveMap = false
-	fCheckGenerated = false
-	fDefaultSignifiesExhaustive = false
-	fIgnoreEnumMembers = regexpFlag{}
-	fIgnoreEnumTypes = regexpFlag{}
-	fPackageScopeOnly = false
 }
 
 var Analyzer = &analysis.Analyzer{
@@ -137,5 +141,6 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			panic(fmt.Sprintf("unknown checkElement %v", e))
 		}
 	}
+
 	return nil, nil
 }

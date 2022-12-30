@@ -163,7 +163,7 @@ func makeSwitchDiagnostic(sw *ast.SwitchStmt, enumTypes []enumType, missing map[
 		Message: fmt.Sprintf(
 			"missing cases in switch of type %s: %s",
 			diagnosticEnumTypes(enumTypes),
-			diagnosticGroups(groupMissing(missing, enumTypes)),
+			diagnosticGroups(groupify(missing, enumTypes)),
 		),
 	}
 }
