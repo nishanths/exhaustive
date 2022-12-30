@@ -227,7 +227,7 @@ func (c *checklist) remaining() map[member]struct{} {
 // different enum types.
 type group []member
 
-func groupify(missing map[member]struct{}, types []enumType) []group {
+func groupify(items map[member]struct{}, types []enumType) []group {
 	// indices maps each element in the input slice to its index.
 	indices := func(vs []enumType) map[enumType]int {
 		ret := make(map[enumType]int, len(vs))
@@ -249,17 +249,17 @@ func groupify(missing map[member]struct{}, types []enumType) []group {
 	}
 
 	// byConstVal groups member names by constant value.
-	byConstVal := func(members map[member]struct{}) map[constantValue][]member {
+	byConstVal := func(items map[member]struct{}) map[constantValue][]member {
 		ret := make(map[constantValue][]member)
-		for m := range members {
+		for m := range items {
 			ret[m.val] = append(ret[m.val], m)
 		}
 		return ret
 	}
 
 	var groups []group
-	for _, members := range byConstVal(missing) {
-		groups = append(groups, group(members))
+	for _, ms := range byConstVal(items) {
+		groups = append(groups, group(ms))
 	}
 
 	// sort members within each group in AST order.
@@ -319,7 +319,7 @@ func toEnumTypes(es []typeAndMembers) []enumType {
 }
 
 func dedupEnumTypes(types []enumType) []enumType {
-	// TODO(nishanths) this function is a candidate to use generics.
+	// TODO(nishanths): this function is a candidate to use generics.
 
 	m := make(map[enumType]struct{})
 	var ret []enumType
@@ -334,7 +334,7 @@ func dedupEnumTypes(types []enumType) []enumType {
 	return ret
 }
 
-// TODO(nishanths) If dropping pre-go1.18 support, the following
+// TODO(nishanths): If dropping pre-go1.18 support, the following
 // types and functions are candidates to use generics.
 
 type boolCache struct {

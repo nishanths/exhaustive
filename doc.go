@@ -27,11 +27,12 @@ enum members.
 		Desert  Biome = 3
 	)
 
-Enum member constants for a particular enum type do not necessarily all
-have to be declared in the same const block. The constant values may be
-specified using iota, using literal values, or using any valid means for
-declaring a Go constant. It is allowed for multiple enum member
-constants for a particular enum type to have the same constant value.
+Enum member constants for a particular enum type must be declared in the same
+scope as the type, but they do not necessarily all have to be declared in the
+same const block. The constant values may be specified using iota, using
+literal values, or using any valid means for declaring a Go constant. It is
+allowed for multiple enum member constants for a particular enum type to have
+the same constant value.
 
 # Definition of exhaustiveness
 
@@ -65,33 +66,25 @@ checked for exhaustiveness if each type element in the type constraint is an
 enum type and shares the same underlying basic type kind.
 
 In the following example, the switch statement on the value of type parameter
-T will be checked, because each type element of T—namely M, N, and O—is an
-enum type and shares the same underlying basic type kind (i.e. int8). To
-satisfy exhaustiveness, all enum members, by constant value, for each of the
-enum types M, N, and O—namely A, B, C, and D—must be listed in the switch
-statement's cases.
+T will be checked, because each type element of T—namely M and N—is an enum
+type and shares the same underlying basic type kind (i.e. int8). To satisfy
+exhaustiveness, all enum members, by constant value, for each of the enum
+types M and N—namely A and B—must be listed in the switch statement's cases.
 
 	func bar[T M | I](v T) {
 		switch v {
-			case T(A):
-			case T(B):
-			case T(C):
-			case T(D):
+		case T(A):
+		case T(B):
 		}
 	}
 
-	type I interface{ N | J }
-	type J interface{ O }
+	type I interface{ N }
 
 	type M int8
 	const A M = 1
 
 	type N int8
 	const B N = 2
-	const C N = 3
-
-	type O int8
-	const D O = 4
 
 # Type aliases
 
