@@ -106,21 +106,23 @@ func exprConstVal(e ast.Expr, info *types.Info) (constantValue, bool) {
 	}
 }
 
+// stripTypeConversions removing type conversions from the experession.
 func stripTypeConversions(e ast.Expr, info *types.Info) ast.Expr {
 	c, ok := e.(*ast.CallExpr)
 	if !ok {
 		return e
 	}
-	if len(c.Args) != 1 {
-		return e
-	}
 	typ := info.TypeOf(c.Fun)
 	if typ == nil {
-		// can never happen for a valid Go program?
+		// can happen for built-ins.
 		return e
 	}
-	// must not allow function calls.
+	// do not allow function calls.
 	if _, ok := typ.Underlying().(*types.Signature); ok {
+		return e
+	}
+	// type conversions have exactly one arg.
+	if len(c.Args) != 1 {
 		return e
 	}
 	return stripTypeConversions(astutil.Unparen(c.Args[0]), info)
@@ -164,7 +166,7 @@ func (*checklist) reMatch(re *regexp.Regexp, s string) bool {
 
 func (c *checklist) add(et enumType, em enumMembers, includeUnexported bool) {
 	addOne := func(name string) {
-		if name == "_" {
+		if isBlankIdentifier(name) {
 			// Blank identifier is often used to skip entries in iota
 			// lists.  Also, it can't be referenced anywhere (e.g. can't
 			// be referenced in switch statement cases) It doesn't make
@@ -317,7 +319,7 @@ func toEnumTypes(es []typeAndMembers) []enumType {
 }
 
 func dedupEnumTypes(types []enumType) []enumType {
-	// TODO(nishanths) this function is a candidate for type parameterization
+	// TODO(nishanths) this function is a candidate to use generics.
 
 	m := make(map[enumType]struct{})
 	var ret []enumType
@@ -333,7 +335,7 @@ func dedupEnumTypes(types []enumType) []enumType {
 }
 
 // TODO(nishanths) If dropping pre-go1.18 support, the following
-// types and functions are candidates to be type parameterized.
+// types and functions are candidates to use generics.
 
 type boolCache struct {
 	m     map[*ast.File]bool

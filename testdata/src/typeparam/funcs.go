@@ -157,7 +157,7 @@ func _mixedTypes3[T interface{ M | Q }](v T) {
 	}
 }
 
-func _notEnumType0[T M | NotEnumType](v T) {
+func _noCheck0[T M | NotEnumType](v T) {
 	// expect no diagnostic because not type elements are enum types.
 	switch v {
 	case T(B):
@@ -168,7 +168,17 @@ func _notEnumType0[T M | NotEnumType](v T) {
 	}
 }
 
-func _notEnumType1[T LL](v T) {
+func _noCheck1[T LL](v T) {
+	switch v {
+	case T(A):
+	}
+
+	_ = map[T]struct{}{
+		T(A): struct{}{},
+	}
+}
+
+func _noCheck2[T KK](v T) {
 	switch v {
 	case T(A):
 	}

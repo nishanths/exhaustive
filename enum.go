@@ -10,7 +10,7 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
-// constantValue is a constant.Value.ExactString().
+// constantValue is a (constant.Value).ExactString value.
 type constantValue string
 
 // enumType represents an enum type as defined by this program, which
@@ -91,6 +91,25 @@ func findEnums(pkgScopeOnly bool, pkg *types.Package, inspect *inspector.Inspect
 }
 
 func possibleEnumMember(constName *ast.Ident, info *types.Info) (et enumType, name string, val constantValue, ok bool) {
+	// Notes
+	//
+	//   type T int
+	//   const A T = iota // obj.Type() is T
+	//
+	//   type R T
+	//   const B R = iota // obj.Type() is R
+	//
+	//   type T2 int
+	//   type T1 = T2
+	//   const C T1 = iota // obj.Type() is T2
+	//
+	//   type T3 = T4
+	//   type T4 int
+	//   type T5 = T3
+	//   const D T5 = iota // obj.Type() is T4
+	//
+	// In all these cases, validNamedBasic(obj.Type()) == true.
+
 	obj := info.Defs[constName]
 	if obj == nil {
 		panic(fmt.Sprintf("info.Defs[%s] == nil", constName))
@@ -98,44 +117,22 @@ func possibleEnumMember(constName *ast.Ident, info *types.Info) (et enumType, na
 	if _, ok = obj.(*types.Const); !ok {
 		panic(fmt.Sprintf("obj must be *types.Const, got %T", obj))
 	}
-	if isBlankIdentifier(obj) {
+	if isBlankIdentifier(obj.Name()) {
 		// These objects have a nil parent scope.
 		// Also, we have no real purpose to record them.
 		return enumType{}, "", "", false
 	}
-
-	/*
-		Notes:
-
-		type T int
-		const A T = iota // obj.Type() is T
-
-		type R T
-		const B R = iota // obj.Type() is R
-
-		type T2 int
-		type T1 = T2
-		const C T1 = iota // obj.Type() is T2
-
-		type T3 = T4
-		type T4 int
-		type T5 = T3
-		const D T5 = iota // obj.Type() is T4
-
-		In all these cases, validNamedBasic(obj.Type()) == true.
-	*/
-
 	if !validNamedBasic(obj.Type()) {
 		return enumType{}, "", "", false
 	}
 
-	named := obj.Type().(*types.Named) // guaranteed by validNamedBasic()
+	named := obj.Type().(*types.Named) // guaranteed by validNamedBasic
 	tn := named.Obj()
 
-	// Enum type's scope and enum member's scope must be the same. If they're
-	// not, don't consider the const a member. Additionally, the enum type and
-	// the enum member must be in the same package (the scope check accounts for
-	// this, too).
+	// By definition, enum type's scope and enum member's scope must be the
+	// same. If they're not, don't consider the const a member. Additionally,
+	// the enum type and the enum member must be in the same package (the
+	// scope check accounts for this, too).
 	if tn.Parent() != obj.Parent() {
 		return enumType{}, "", "", false
 	}
@@ -148,8 +145,8 @@ func determineConstVal(name *ast.Ident, info *types.Info) constantValue {
 	return constantValue(c.Val().ExactString())
 }
 
-func isBlankIdentifier(obj types.Object) bool {
-	return obj.Name() == "_" // NOTE: go/types/decl.go does a direct comparison like this
+func isBlankIdentifier(name string) bool {
+	return name == "_" // NOTE: go/types/decl.go does a direct comparison like this
 }
 
 func validBasic(basic *types.Basic) bool {
@@ -161,9 +158,10 @@ func validBasic(basic *types.Basic) bool {
 }
 
 // validNamedBasic returns whether the type t is a named type whose underlying
-// type is a valid basic type to form an enum.
-// A type that passes this check meets the definition of an enum type.
-// Note that
+// type is a valid basic type to form an enum. A type that passes this check
+// meets the definition of an enum type.
+//
+// The following is guaranteed:
 //
 //	validNamedBasic(t) == true => t.(*types.Named)
 func validNamedBasic(t types.Type) bool {
