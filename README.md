@@ -48,7 +48,7 @@ const (
 )
 ```
 
-And code that switches on the enum:
+And code that uses the enum:
 
 ```go
 package calc // import "example.org/calc"
