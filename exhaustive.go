@@ -126,7 +126,6 @@ The following switch statements are exhaustive.
 		switch v {
 		case newpkg.A:
 		case newpkg.B:
-		case newpkg.Y:
 		}
 	}
 
@@ -217,7 +216,7 @@ comment that begins with "//exhaustive:ignore". For example:
 To ignore specific constants in exhaustiveness checks, use the
 -ignore-enum-members flag:
 
-	exhaustive -ignore-enum-members '^example\.org/eco.Tundra$'
+	exhaustive -ignore-enum-members '^example\.org/eco\.Tundra$'
 
 To ignore specific types, use the -ignore-enum-types flag:
 
