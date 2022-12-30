@@ -24,11 +24,7 @@ jobs:
     #   ../../../go/pkg/mod/honnef.co/go/tools@v0.3.3/go/ir/builder.go:36:2: //go:build comment without // +build comment
     - name: install vet tools (go1.17 or later)
       if: ${{ matrix.go-version >= '1.17' }}
-      run: |
-        go install github.com/nishanths/exhaustive/cmd/exhaustive@latest
-        go install github.com/gordonklaus/ineffassign@latest
-        go install github.com/kisielk/errcheck@latest
-        go install honnef.co/go/tools/cmd/staticcheck@latest
+      run: make install-vet
 
     - name: vet (go1.17 or later)
       if: ${{ matrix.go-version >= '1.17' }}
