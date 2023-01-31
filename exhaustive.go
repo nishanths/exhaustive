@@ -41,7 +41,7 @@ const (
 	PackageScopeOnlyFlag           = "package-scope-only"
 
 	IgnorePatternFlag    = "ignore-pattern"    // Deprecated: use IgnoreEnumMembersFlag.
-	CheckingStrategyFlag = "checking-strategy" // Deprecated.
+	CheckingStrategyFlag = "checking-strategy" // Deprecated: no longer applicable.
 )
 
 // Flag values.

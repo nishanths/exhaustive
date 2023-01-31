@@ -62,11 +62,11 @@ exhaustiveness.
 A switch statement that switches on a value whose type is a type parameter, it
 is checked for exhaustiveness if and only if each type element in the type
 constraint is an enum type and the type elements share the same underlying
-basic type kind.
+[BasicKind].
 
 For example, the switch statement below will be checked because each type
 element (i.e. M and N) in the type constraint is an enum type and the type
-elements share the same underlying basic type kind, namely int8. To satisfy
+elements share the same underlying BasicKind, namely int8. To satisfy
 exhaustiveness, the enum members collectively belonging to the enum types M
 and N (i.e. A, B, and C) must be listed in the switch statement's cases.
 
@@ -111,9 +111,7 @@ newpkg.M.
 A switch statement that switches either on a value of type newpkg.M or of type
 oldpkg.M (which, being an alias, is just an alternative spelling for newpkg.M)
 is exhaustive if all of newpkg.M's enum members are listed in the switch
-statement's cases.
-
-The following switch statement is exhaustive.
+statement's cases. The following switch statement is exhaustive.
 
 	func f(v oldpkg.M) {
 		switch v {
@@ -123,9 +121,9 @@ The following switch statement is exhaustive.
 	}
 
 The analyzer guarantees that introducing a type alias (such as type M =
-newpkg.M) will not result in new diagnostics from the analyzer if the set of
-enum member constant values of the RHS type is a subset of the set of enum
-member constant values of the LHS type.
+newpkg.M) will not result in new diagnostics if the set of enum member
+constant values of the RHS type is a subset of the set of enum member constant
+values of the LHS type.
 
 # Flags
 
@@ -177,7 +175,7 @@ Descriptions:
 	    then the specified regular expression is matched against
 	    "example.org/eco.Tundra".
 
-	-ignore-enum-types flag
+	-ignore-enum-types
 	    Similar to -ignore-enum-members but for types.
 
 	-package-scope-only
@@ -189,7 +187,7 @@ Descriptions:
 To skip analysis of a switch statement or a map literal, associate it with a
 comment that begins with "//exhaustive:ignore". For example:
 
-	//exhaustive:ignore ...optional explanation goes here...
+	//exhaustive:ignore ... an optional explanation goes here ...
 	switch v {
 	case A:
 	case B:
@@ -205,5 +203,7 @@ To ignore specific types, specify the -ignore-enum-types flag:
 	exhaustive -ignore-enum-types '^time\.Duration$|^example\.org/measure\.Unit$'
 
 [language spec]: https://golang.org/ref/spec
+
+[Basic Kind]: https://pkg.go.dev/go/types#BasicKind
 */
 package exhaustive
