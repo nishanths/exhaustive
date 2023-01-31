@@ -1,7 +1,9 @@
 # exhaustive [![Godoc][godoc-svg]][godoc]
 
 Package exhaustive defines an analyzer that checks exhaustiveness of switch
-statements of enum-like constants in Go source code.
+statements of enum-like constants in Go source code. The analyzer can
+be configured to additionally check exhaustiveness of keys in map literals
+whose key type is enum-like.
 
 For flags, the definition of enum, and the definition of exhaustiveness used
 by this package, see [pkg.go.dev][godoc-doc]. For a changelog, see
