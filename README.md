@@ -7,12 +7,9 @@ For supported flags, the definition of enum, and the definition of
 exhaustiveness used by this package, see [pkg.go.dev][godoc-doc]. For a
 changelog, see [CHANGELOG][changelog] in the GitHub wiki.
 
-The analyzer can be configured to additionally check exhaustiveness of map
-literals whose key type is enum-like.
-
 ## Usage
 
-Command line program:
+Command:
 
 ```
 go install github.com/nishanths/exhaustive/cmd/exhaustive@latest
@@ -24,6 +21,8 @@ Package:
 
 ```
 go get github.com/nishanths/exhaustive
+
+import "github.com/nishanths/exhaustive"
 ```
 
 The `exhaustive.Analyzer` variable follows the guidelines of the
@@ -48,14 +47,14 @@ const (
 )
 ```
 
-And code that uses the enum:
+and code that switches on the enum:
 
 ```go
-package calc // import "example.org/calc"
+package calc
 
 import "example.org/token"
 
-func f(t token.Token) {
+func g(t token.Token) {
 	switch t {
 	case token.Add:
 	case token.Subtract:
@@ -63,28 +62,30 @@ func f(t token.Token) {
 	default:
 	}
 }
+```
 
+running `exhaustive` with default options will print:
+
+```
+calc.go:6:2: missing cases in switch of type token.Token: token.Quotient, token.Remainder
+```
+
+Specify flag `-check=switch,map` to additionally check exhaustiveness of map
+literal keys. For example:
+
+```go
 var m = map[token.Token]string{
-	token.Add:      "add",
-	token.Subtract: "subtract",
-	token.Multiply: "multiply",
+	token.Add:       "add",
+	token.Multiply:  "multiply",
+	token.Quotient:  "quotient",
+	token.Remainder: "remainder",
 }
 ```
 
-Running `exhaustive` with default options will report:
+and `exhaustive` will print:
 
 ```
-% exhaustive example.org/calc
-calc.go:6:2: missing cases in switch of type token.Token: token.Quotient, token.Remainder
-```
-
-Specify the flag `-check=switch,map` to additionally check exhaustiveness of
-map literal keys:
-
-```
-% exhaustive -check=switch,map example.org/calc
-calc.go:6:2: missing cases in switch of type token.Token: token.Quotient, token.Remainder
-calc.go:14:9: missing keys in map of key type token.Token: token.Quotient, token.Remainder
+calc.go:14:9: missing keys in map of key type token.Token: token.Subtract
 ```
 
 ## Contributing
