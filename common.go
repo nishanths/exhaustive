@@ -319,8 +319,6 @@ func toEnumTypes(es []typeAndMembers) []enumType {
 }
 
 func dedupEnumTypes(types []enumType) []enumType {
-	// TODO(nishanths): this function is a candidate to use generics.
-
 	m := make(map[enumType]struct{})
 	var ret []enumType
 	for _, t := range types {
@@ -334,8 +332,8 @@ func dedupEnumTypes(types []enumType) []enumType {
 	return ret
 }
 
-// TODO(nishanths): If dropping pre-go1.18 support, the following
-// types and functions are candidates to use generics.
+// If dropping pre-go1.18 support, the following types and functions are
+// candidates for generics.
 
 type boolCache struct {
 	m     map[*ast.File]bool
