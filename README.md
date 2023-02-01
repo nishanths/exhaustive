@@ -1,9 +1,9 @@
 # exhaustive [![Godoc][godoc-svg]][godoc]
 
 Package exhaustive defines an analyzer that checks exhaustiveness of switch
-statements of enum-like constants in Go source code. The analyzer can
-be configured to additionally check exhaustiveness of keys in map literals
-whose key type is enum-like.
+statements of enum-like constants in Go source code. The analyzer also
+provides an option to check exhaustiveness of keys in map literals whose key
+type is enum-like.
 
 For flags, the definition of enum, and the definition of exhaustiveness used
 by this package, see [docs][godoc-doc]. For a changelog, see
@@ -60,7 +60,7 @@ func x(t token.Token) {
 	switch t {
 	case token.Add:
 	case token.Subtract:
-	case token.Multiply:
+	case token.Remainder:
 	default:
 	}
 }
@@ -69,23 +69,23 @@ func x(t token.Token) {
 running `exhaustive` with default options will produce:
 
 ```
-calc.go:6:2: missing cases in switch of type token.Token: token.Quotient, token.Remainder
+calc.go:6:2: missing cases in switch of type token.Token: token.Multiply, token.Quotient
 ```
 
-Specify flag `-check=switch,map` to additionally check exhaustiveness of map
-literal keys. For example:
+Specify flag `-check=switch,map` to additionally check exhaustiveness of keys
+in map literals. For example:
 
 ```go
 var m = map[token.Token]rune{
 	token.Add:       '+',
-	token.Multiply:  '*',
+	token.Subtract:  '-',
 	token.Quotient:  '/',
 	token.Remainder: '%',
 }
 ```
 
 ```
-calc.go:14:9: missing keys in map of key type token.Token: token.Subtract
+calc.go:14:9: missing keys in map of key type token.Token: token.Multiply
 ```
 
 ## Contributing

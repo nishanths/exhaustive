@@ -71,7 +71,7 @@ func TestEnumMembers_add(t *testing.T) {
 		}
 	})
 
-	// TODO(testing): add tests for iota, repeated values, ...
+	// TODO: add tests for iota, repeated values, ...
 }
 
 func TestFindEnums(t *testing.T) {
