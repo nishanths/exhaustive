@@ -8,33 +8,24 @@ For the definitions of enum and exhaustiveness used by `exhaustive`, see
 [godoc][godoc-doc]. For the changelog, see [CHANGELOG][changelog] in the GitHub
 wiki.
 
-## Install
-
-Command:
-
-```
-go install github.com/nishanths/exhaustive/cmd/exhaustive@latest
-```
-
-Package:
-
-```
-go get github.com/nishanths/exhaustive
-```
-
 ## Usage
 
 Command:
 
 ```
+go install github.com/nishanths/exhaustive/cmd/exhaustive@latest
+
 exhaustive [flags] [packages]
 ```
 
-See [godoc][godoc-flags] or `exhaustive -h` for available flags.
+For available flags, refer to the [Flags][godoc-flags] section in godoc or run
+`exhaustive -h`.
 
 Package:
 
 ```
+go get github.com/nishanths/exhaustive
+
 import "github.com/nishanths/exhaustive"
 ```
 
