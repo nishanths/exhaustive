@@ -1,29 +1,40 @@
 # exhaustive [![Godoc][godoc-svg]][godoc]
 
-Package exhaustive defines an analyzer that checks exhaustiveness of switch
-statements of enum-like constants in Go source code. The analyzer also
-provides an option to check exhaustiveness of keys in map literals whose key
-type is enum-like.
+The `exhaustive` package and command line program checks exhaustiveness of enum
+switch statements in Go source code. Optionally `exhaustive` can be configured
+to check exhaustiveness of enum keys in map literals.
 
-For flags, the definition of enum, and the definition of exhaustiveness used
-by this package, see [docs][godoc-doc]. For a changelog, see
-[CHANGELOG][changelog] in the GitHub wiki.
+For the definitions of enum and exhaustiveness used by `exhaustive`, see
+[godoc][godoc-doc]. For the changelog, see [CHANGELOG][changelog] in the GitHub
+wiki.
 
-## Usage
+## Install
 
 Command:
 
 ```
 go install github.com/nishanths/exhaustive/cmd/exhaustive@latest
-
-exhaustive [flags] [packages]
 ```
 
 Package:
 
 ```
 go get github.com/nishanths/exhaustive
+```
 
+## Usage
+
+Command:
+
+```
+exhaustive [flags] [packages]
+```
+
+See [godoc][godoc-flags] or `exhaustive -h` for available flags.
+
+Package:
+
+```
 import "github.com/nishanths/exhaustive"
 ```
 
