@@ -1,8 +1,8 @@
 /*
-Package exhaustive defines an analyzer that checks exhaustiveness of switch
-statements of enum-like constants in Go source code. The analyzer also
-provides an option to check exhaustiveness of keys in map literals whose key
-type is enum-like.
+Package exhaustive provides an analyzer that checks exhaustiveness of switch
+statements of enum-like constants in Go source code. The analyzer can also
+optionally check exhaustiveness of keys in map literals in which the key type is
+enum-like.
 
 # Definition of enum
 
