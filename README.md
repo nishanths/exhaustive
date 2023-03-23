@@ -1,8 +1,8 @@
 # exhaustive [![Godoc][godoc-svg]][godoc]
 
-The `exhaustive` package and the command line program check exhaustiveness of
-enum switch statements in Go source code. Optionally `exhaustive` can be
-configured to check exhaustiveness of enum keys in map literals.
+`exhaustive` checks exhaustiveness of enum switch statements in Go source code.
+`exhaustive` can also optionally check exhaustiveness of keys in map literals in
+which the key type is an enum.
 
 For the definitions of enum and exhaustiveness used by `exhaustive`, see
 [godoc][godoc-doc]. For the changelog, see [CHANGELOG][changelog] in the GitHub
