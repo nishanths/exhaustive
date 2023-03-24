@@ -102,4 +102,3 @@ first.
 [godoc-flags]: https://pkg.go.dev/github.com/nishanths/exhaustive#hdr-Flags
 [xanalysis]: https://pkg.go.dev/golang.org/x/tools/go/analysis
 [changelog]: https://github.com/nishanths/exhaustive/wiki/CHANGELOG
-[issue-typeparam]: https://github.com/nishanths/exhaustive/issues/31
