@@ -1,7 +1,7 @@
 /*
-Package exhaustive provides an analyzer that checks exhaustiveness of switch
+Package exhaustive defines an analyzer that checks exhaustiveness of switch
 statements of enum-like constants in Go source code. The analyzer can also
-optionally check exhaustiveness of keys in map literals in which the key type is
+optionally check exhaustiveness of keys in map literals whose key type is
 enum-like.
 
 # Definition of enum
@@ -12,7 +12,7 @@ type that:
 
   - has underlying type float, string, or integer (includes byte and rune);
     and
-  - has at least one constant of its type defined in the same block.
+  - has at least one constant of its type defined in the same [block].
 
 In the example below, Biome is an enum type. The three constants are its
 enum members.
@@ -42,10 +42,11 @@ same-valued members to be listed.
 For an enum type defined in the same package as the switch statement, both
 exported and unexported enum members must be listed to satisfy exhaustiveness.
 For an enum type defined in an external package, it is sufficient that only
-exported enum members are listed. Only identifiers (e.g. Tundra,
-somepkg.Grassland) that name constants may contribute towards satisfying
-exhaustiveness in a switch statement; other expressions. such as literal
-values and function calls, will not.
+exported enum members are listed. Only constant identifiers (e.g. Tundra,
+eco.Desert) listed in a switch statement's case clause can contribute towards
+satisfying exhaustiveness; other expressions, such as literal values and
+function calls, listed in case clauses do not contribute towards satisfying
+exhaustiveness.
 
 By default, the existence of a default case in a switch statement does not
 unconditionally make a switch statement exhaustive. Use the
@@ -58,8 +59,8 @@ exhaustiveness.
 
 # Type parameters
 
-A switch statement that switches on a value whose type is a type parameter, it
-is checked for exhaustiveness if and only if each type element in the type
+A switch statement that switches on a value whose type is a type parameter is
+checked for exhaustiveness if and only if each type element in the type
 constraint is an enum type and the type elements share the same underlying
 [BasicKind].
 
@@ -112,7 +113,7 @@ oldpkg.M (which, being an alias, is just an alternative spelling for newpkg.M)
 is exhaustive if all of newpkg.M's enum members are listed in the switch
 statement's cases. The following switch statement is exhaustive.
 
-	func f(v oldpkg.M) {
+	func f(v newpkg.M) {
 		switch v {
 		case newpkg.A: // or equivalently oldpkg.A
 		case newpkg.B: // or equivalently oldpkg.B
@@ -142,44 +143,45 @@ Summary:
 Descriptions:
 
 	-check
-	    Comma-separated list of program elements to check for exhaustiveness.
-	    Supported program element values are "switch" and "map". The default
-	    value is "switch", which means only switch statements are checked.
+		Comma-separated list of program elements to check for exhaustiveness.
+		Supported program element values are "switch" and "map". The default
+		value is "switch", which means that only switch statements are checked.
 
 	-explicit-exhaustive-switch
-	    Check a switch statement only if it is associated with a
-	    "//exhaustive:enforce" comment. By default the analyzer checks
-	    every switch statement that isn't associated with a
-	    "//exhaustive:ignore" comment.
+		Check a switch statement only if it is associated with a
+		"//exhaustive:enforce" comment. By default the analyzer checks every
+		switch statement that isn't associated with a "//exhaustive:ignore"
+		comment.
 
 	-explicit-exhaustive-map
-	    Similar to -explicit-exhaustive-switch but for map literals.
+		Similar to -explicit-exhaustive-switch but for map literals.
 
 	-check-generated
-	    Check generated files. For the definition of a generated file,
-	    see https://golang.org/s/generatedcode.
+		Check generated files. For the definition of a generated file, see
+		https://golang.org/s/generatedcode.
 
 	-default-signifies-exhaustive
-	    Consider a switch statement to be exhaustive unconditionally if it
-	    has a default case (all enum members do not have to be listed in
-	    its cases). Setting this flag usually runs counter to the purpose
-	    of exhaustiveness checks, so it is recommended to not set this flag.
+		Consider a switch statement to be exhaustive unconditionally if it has a
+		default case. (In other words, all enum members do not have to be listed
+		in its cases if a default case is present.) Setting this flag usually is
+		counter to the purpose of exhaustiveness checks, so it is not
+		recommended to set this flag.
 
 	-ignore-enum-members
-	    Constants that match the specified regular expression (in package
-	    regexp syntax) are not considered enum members. The specified regular
-	    expression is matched against the constant name inclusive of
-	    import path. For example, if the import path for the
-	    constant is "example.org/eco" and the constant name is "Tundra",
-	    then the specified regular expression is matched against
-	    "example.org/eco.Tundra".
+		Constants that match the specified regular expression (in package regexp
+		syntax) are not considered enum members and hence do not have to be
+		listed to satisfy exhaustiveness. The specified regular expression is
+		matched against the constant name inclusive of import path. For example,
+		if the import path for the constant is "example.org/eco" and the
+		constant name is "Tundra", then the specified regular expression is
+		matched against the string "example.org/eco.Tundra".
 
 	-ignore-enum-types
-	    Similar to -ignore-enum-members but for types.
+		Similar to -ignore-enum-members but for types.
 
 	-package-scope-only
-	    Only use enums declared in top-level package blocks.
-	    By default, the analyzer use enums defined in all blocks.
+		Only discover enums declared in file-level blocks. By default, the
+		analyzer discovers enums defined in all blocks.
 
 # Skip analysis
 
@@ -202,6 +204,7 @@ To ignore specific types, specify the -ignore-enum-types flag:
 	exhaustive -ignore-enum-types '^time\.Duration$|^example\.org/measure\.Unit$'
 
 [language spec]: https://golang.org/ref/spec
+[block]: https://golang.org/ref/spec#Blocks
 
 [Basic Kind]: https://pkg.go.dev/go/types#BasicKind
 */
