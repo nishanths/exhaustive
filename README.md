@@ -1,9 +1,11 @@
-# exhaustive [![Godoc][godoc-svg]][godoc]
+# exhaustive
+
+[![Godoc][godoc-svg]][godoc]
 
 `exhaustive` checks exhaustiveness of enum switch statements in Go source code.
-For the definitions of enum and exhaustiveness used by `exhaustive`, see
-[godoc][godoc-doc]. For the changelog, see [CHANGELOG][changelog] in the GitHub
-wiki.
+For the definition of enum and the definition of exhaustiveness used by this
+program, see [godoc][godoc-doc]. For the changelog, see [CHANGELOG][changelog]
+in the GitHub wiki.
 
 `exhaustive` can be configured to additionally check exhaustiveness of keys in
 map literals whose key type is an enum.
@@ -37,7 +39,7 @@ possible to integrate `exhaustive` with your own analysis driver program.
 
 Given an enum:
 
-```go
+```
 package token // import "example.org/token"
 
 type Token int
@@ -53,7 +55,7 @@ const (
 
 and code that switches on the enum:
 
-```go
+```
 package calc
 
 import "example.org/token"
@@ -77,23 +79,23 @@ calc.go:6:2: missing cases in switch of type token.Token: token.Multiply, token.
 Specify flag `-check=switch,map` to additionally check exhaustiveness of keys
 in map literals. For example:
 
-```go
+```
 var m = map[token.Token]rune{
-	token.Add:       '+',
-	token.Subtract:  '-',
-	token.Quotient:  '/',
-	token.Remainder: '%',
+	token.Add:      '+',
+	token.Subtract: '-',
+	token.Multiply: '*',
+	token.Quotient: '/',
 }
 ```
 
 ```
-calc.go:14:9: missing keys in map of key type token.Token: token.Multiply
+calc.go:14:9: missing keys in map of key type token.Token: token.Remainder
 ```
 
 ## Contributing
 
-Issues and changes are welcome. Please discuss substantial changes
-in an issue first.
+Issues and changes are welcome. Please discuss substantial changes in an issue
+first.
 
 [godoc]: https://pkg.go.dev/github.com/nishanths/exhaustive
 [godoc-svg]: https://pkg.go.dev/badge/github.com/nishanths/exhaustive.svg
