@@ -21,14 +21,14 @@ func registerFlags() {
 	Analyzer.Flags.BoolVar(&fDefaultSignifiesExhaustive, DefaultSignifiesExhaustiveFlag, false, "switch statement is unconditionally exhaustive if it has a default case")
 	Analyzer.Flags.Var(&fIgnoreEnumMembers, IgnoreEnumMembersFlag, "ignore constants matching `regexp`")
 	Analyzer.Flags.Var(&fIgnoreEnumTypes, IgnoreEnumTypesFlag, "ignore types matching `regexp`")
-	Analyzer.Flags.BoolVar(&fPackageScopeOnly, PackageScopeOnlyFlag, false, "only use enums declared in top-level package blocks")
+	Analyzer.Flags.BoolVar(&fPackageScopeOnly, PackageScopeOnlyFlag, false, "only discover enums declared in file-level blocks")
 
 	var unused string
 	Analyzer.Flags.StringVar(&unused, IgnorePatternFlag, "", "no effect (deprecated); use -"+IgnoreEnumMembersFlag)
 	Analyzer.Flags.StringVar(&unused, CheckingStrategyFlag, "", "no effect (deprecated)")
 }
 
-// Flag names used by the analyzer. They are exported for use by analyzer
+// Flag names used by the analyzer. These are exported for use by analyzer
 // driver programs.
 const (
 	CheckFlag                      = "check"
@@ -40,6 +40,7 @@ const (
 	IgnoreEnumTypesFlag            = "ignore-enum-types"
 	PackageScopeOnlyFlag           = "package-scope-only"
 
+	// Deprecated flag names.
 	IgnorePatternFlag    = "ignore-pattern"    // Deprecated: use IgnoreEnumMembersFlag.
 	CheckingStrategyFlag = "checking-strategy" // Deprecated: no longer applicable.
 )
