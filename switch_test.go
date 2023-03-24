@@ -10,7 +10,7 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// TODO(testing): write tests that assert on the "result" returned by
+// TODO: write tests that assert on the "result" returned by
 // switchStmtChecker.
 
 // This test mainly exists to ensure stability of the diagnostic message
