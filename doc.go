@@ -205,7 +205,6 @@ To ignore specific types, specify the -ignore-enum-types flag:
 
 [language spec]: https://golang.org/ref/spec
 [block]: https://golang.org/ref/spec#Blocks
-
-[Basic Kind]: https://pkg.go.dev/go/types#BasicKind
+[BasicKind]: https://pkg.go.dev/go/types#BasicKind
 */
 package exhaustive
