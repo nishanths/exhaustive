@@ -3,12 +3,11 @@
 [![Godoc][godoc-svg]][godoc]
 
 `exhaustive` checks exhaustiveness of enum switch statements in Go source code.
+
 For the definition of enum and the definition of exhaustiveness used by this
 program, see [godoc][godoc-doc]. For the changelog, see [CHANGELOG][changelog]
-in the GitHub wiki.
-
-`exhaustive` can be configured to additionally check exhaustiveness of keys in
-map literals whose key type is an enum.
+in the GitHub wiki. The program can be configured to additionally check
+exhaustiveness of keys in map literals whose key type is an enum.
 
 ## Usage
 
