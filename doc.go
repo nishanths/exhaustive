@@ -1,8 +1,8 @@
 /*
 Package exhaustive defines an analyzer that checks exhaustiveness of switch
-statements of enum-like constants in Go source code. The analyzer can also
-optionally check exhaustiveness of keys in map literals whose key type is
-enum-like.
+statements of enum-like constants in Go source code. The analyzer can
+optionally also check exhaustiveness of keys in map literals whose key type
+is enum-like.
 
 # Definition of enum
 
@@ -143,45 +143,50 @@ Summary:
 Descriptions:
 
 	-check
-		Comma-separated list of program elements to check for exhaustiveness.
-		Supported program element values are "switch" and "map". The default
-		value is "switch", which means that only switch statements are checked.
+		Comma-separated list of program elements to check for
+		exhaustiveness.  Supported program element values are
+		"switch" and "map". The default value is "switch", which
+		means that only switch statements are checked.
 
 	-explicit-exhaustive-switch
 		Check a switch statement only if it is associated with a
-		"//exhaustive:enforce" comment. By default the analyzer checks every
-		switch statement that isn't associated with a "//exhaustive:ignore"
-		comment.
+		"//exhaustive:enforce" comment. By default the analyzer
+		checks every switch statement that isn't associated with a
+		"//exhaustive:ignore" comment.
 
 	-explicit-exhaustive-map
 		Similar to -explicit-exhaustive-switch but for map literals.
 
 	-check-generated
-		Check generated files. For the definition of a generated file, see
-		https://golang.org/s/generatedcode.
+		Check generated files. For the definition of a generated
+		file, see https://golang.org/s/generatedcode.
 
 	-default-signifies-exhaustive
-		Consider a switch statement to be exhaustive unconditionally if it has a
-		default case. (In other words, all enum members do not have to be listed
-		in its cases if a default case is present.) Setting this flag usually is
-		counter to the purpose of exhaustiveness checks, so it is not
-		recommended to set this flag.
+		Consider a switch statement to be exhaustive
+		unconditionally if it has a default case. (In other words,
+		all enum members do not have to be listed in its cases if a
+		default case is present.) Setting this flag usually is
+		counter to the purpose of exhaustiveness checks, so it is
+		not recommended to set this flag.
 
 	-ignore-enum-members
-		Constants that match the specified regular expression (in package regexp
-		syntax) are not considered enum members and hence do not have to be
-		listed to satisfy exhaustiveness. The specified regular expression is
-		matched against the constant name inclusive of import path. For example,
-		if the import path for the constant is "example.org/eco" and the
-		constant name is "Tundra", then the specified regular expression is
-		matched against the string "example.org/eco.Tundra".
+		Constants that match the specified regular expression (in
+		package regexp syntax) are not considered enum members and
+		hence do not have to be listed to satisfy exhaustiveness.
+		The specified regular expression is matched against the
+		constant name inclusive of import path. For example, if the
+		import path for the constant is "example.org/eco" and the
+		constant name is "Tundra", then the specified regular
+		expression is matched against the string
+		"example.org/eco.Tundra".
 
 	-ignore-enum-types
 		Similar to -ignore-enum-members but for types.
 
 	-package-scope-only
-		Only discover enums declared in file-level blocks. By default, the
-		analyzer discovers enums defined in all blocks.
+		Only discover enums declared in file-level blocks. By
+		default, the analyzer discovers enums defined in all
+		blocks.
 
 # Skip analysis
 

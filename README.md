@@ -69,7 +69,7 @@ func x(t token.Token) {
 }
 ```
 
-running `exhaustive` with default options will produce:
+running `exhaustive` with default flags will produce:
 
 ```
 calc.go:6:2: missing cases in switch of type token.Token: token.Multiply, token.Quotient
