@@ -108,8 +108,8 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		exportFact(pass, typ, members)
 	}
 
-	generated := boolCache{value: isGeneratedFile}
-	comments := commentCache{value: fileCommentMap}
+	generated := boolCache{compute: isGeneratedFile}
+	comments := commentCache{compute: fileCommentMap}
 
 	// NOTE: should not share the same inspect.WithStack call for different
 	// program elements: the visitor function for a program element may

@@ -1,8 +1,3 @@
-//go:build go1.16
-// +build go1.16
-
-// The use of package io/fs requires go1.16.
-
 package x
 
 import (

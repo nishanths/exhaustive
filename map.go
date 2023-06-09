@@ -97,7 +97,7 @@ func mapChecker(pass *analysis.Pass, cfg mapConfig, generated boolCache, comment
 		checkl.ignoreType(cfg.ignoreType)
 
 		for _, e := range es {
-			checkl.add(e.et, e.em, pass.Pkg == e.et.Pkg())
+			checkl.add(e.typ, e.members, pass.Pkg == e.typ.Pkg())
 		}
 
 		analyzeMapLiteral(lit, pass.TypesInfo, checkl.found)
