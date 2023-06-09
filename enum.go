@@ -21,7 +21,7 @@ func (et enumType) String() string           { return et.TypeName.String() } // 
 func (et enumType) scope() *types.Scope      { return et.TypeName.Parent() } // scope that the type is declared in
 func (et enumType) factObject() types.Object { return et.TypeName }          // types.Object for fact export
 
-// enumMembers is set of enum members for a single enum type.
+// enumMembers is the set of enum members for a single enum type.
 // The zero value is ready to use.
 type enumMembers struct {
 	Names        []string                   // enum member names
@@ -47,11 +47,11 @@ func (em *enumMembers) add(name string, val constantValue, pos token.Pos) {
 	em.ValueToNames[val] = append(em.ValueToNames[val], name)
 }
 
-func (em enumMembers) String() string {
+func (em *enumMembers) String() string {
 	return em.factString()
 }
 
-func (em enumMembers) factString() string {
+func (em *enumMembers) factString() string {
 	var buf strings.Builder
 	for j, vv := range em.Names {
 		buf.WriteString(vv)

@@ -111,7 +111,7 @@ func switchChecker(pass *analysis.Pass, cfg switchConfig, generated boolCache, c
 		checkl.ignoreType(cfg.ignoreType)
 
 		for _, e := range es {
-			checkl.add(e.et, e.em, pass.Pkg == e.et.Pkg())
+			checkl.add(e.typ, e.members, pass.Pkg == e.typ.Pkg())
 		}
 
 		def := analyzeSwitchClauses(sw, pass.TypesInfo, checkl.found)
