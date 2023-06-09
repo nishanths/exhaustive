@@ -46,8 +46,8 @@ func TestChecklist(t *testing.T) {
 		for k := range h.remaining() {
 			rem[k.name] = struct{}{}
 		}
-		if !reflect.DeepEqual(want, rem) {
-			t.Errorf("want %+v, got %+v", want, rem)
+		if !reflect.DeepEqual(rem, want) {
+			t.Errorf("got %+v, want %+v", rem, want)
 		}
 	}
 
@@ -310,7 +310,7 @@ func TestDiagnosticEnumType(t *testing.T) {
 	got := diagnosticEnumType(tn)
 	want := "enumpkg.Biome"
 	if got != want {
-		t.Errorf("want %q, got %q", want, got)
+		t.Errorf("got %q, want %q", got, want)
 	}
 }
 
@@ -349,8 +349,8 @@ func TestGroupMissing(t *testing.T) {
 			members[2]: {},
 		}, []enumType{et})
 		want := [][]string{{"enumpkg.Ganga", "enumpkg.Unspecified"}, {"enumpkg.Kaveri"}}
-		if !reflect.DeepEqual(want, got) {
-			t.Errorf("want %v, got %v", want, got)
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
 		}
 	})
 
@@ -360,15 +360,15 @@ func TestGroupMissing(t *testing.T) {
 			members[2]: {},
 		}, []enumType{et})
 		want := [][]string{{"enumpkg.Yamuna"}, {"enumpkg.Kaveri"}}
-		if !reflect.DeepEqual(want, got) {
-			t.Errorf("want %v, got %v", want, got)
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
 		}
 	})
 
 	t.Run("missing none", func(t *testing.T) {
 		got := f(nil, []enumType{et})
 		if len(got) != 0 {
-			t.Errorf("want zero elements, got %d", len(got))
+			t.Errorf("got %d elements, want 0 elements", len(got))
 		}
 	})
 
@@ -380,8 +380,8 @@ func TestGroupMissing(t *testing.T) {
 			members[3]: {},
 		}, []enumType{et})
 		want := [][]string{{"enumpkg.Ganga", "enumpkg.Unspecified"}, {"enumpkg.Yamuna"}, {"enumpkg.Kaveri"}}
-		if !reflect.DeepEqual(want, got) {
-			t.Errorf("want %v, got %v", want, got)
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
 		}
 	})
 
@@ -400,8 +400,8 @@ func TestGroupMissing(t *testing.T) {
 			members[1]: {},
 		}, []enumType{et})
 		want := [][]string{{"xkcd.X", "xkcd.Unspecified"}, {"xkcd.A"}}
-		if !reflect.DeepEqual(want, got) {
-			t.Errorf("want %v, got %v", want, got)
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
 		}
 	})
 }

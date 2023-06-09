@@ -11,7 +11,8 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// checks that an enumMembers literal is correctly defined in tests.
+// checkEnumMembersLiteral checks that an enumMembers literal is correctly
+// defined in tests.
 func checkEnumMembersLiteral(id string, v enumMembers) {
 	var count int
 	for _, names := range v.ValueToNames {
@@ -37,37 +38,37 @@ func TestEnumMembers_add(t *testing.T) {
 		v.add("y", "Y", 40)
 		v.add("x", "X", 50)
 
-		if want, got := []string{"foo", "z", "bar", "y", "x"}, v.Names; !reflect.DeepEqual(want, got) {
-			t.Errorf("want %v, got %v", want, got)
+		if got, want := v.Names, []string{"foo", "z", "bar", "y", "x"}; !reflect.DeepEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
 		}
 
-		if want, got := map[string]token.Pos{
+		if got, want := v.NameToPos, map[string]token.Pos{
 			"foo": 10,
 			"z":   20,
 			"bar": 30,
 			"y":   40,
 			"x":   50,
-		}, v.NameToPos; !reflect.DeepEqual(want, got) {
-			t.Errorf("want %v, got %v", want, got)
+		}; !reflect.DeepEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
 		}
 
-		if want, got := map[string]constantValue{
+		if got, want := v.NameToValue, map[string]constantValue{
 			"foo": "\"A\"",
 			"z":   "X",
 			"bar": "\"B\"",
 			"y":   "Y",
 			"x":   "X",
-		}, v.NameToValue; !reflect.DeepEqual(want, got) {
-			t.Errorf("want %v, got %v", want, got)
+		}; !reflect.DeepEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
 		}
 
-		if want, got := map[constantValue][]string{
+		if got, want := v.ValueToNames, map[constantValue][]string{
 			"\"A\"": {"foo"},
 			"\"B\"": {"bar"},
 			"X":     {"z", "x"},
 			"Y":     {"y"},
-		}, v.ValueToNames; !reflect.DeepEqual(want, got) {
-			t.Errorf("want %v, got %v", want, got)
+		}; !reflect.DeepEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
 		}
 	})
 
@@ -107,13 +108,13 @@ type checkEnum struct {
 	members  enumMembers
 }
 
-func equalCheckEnum(t *testing.T, want, got checkEnum) {
+func equalCheckEnum(t *testing.T, got, want checkEnum) {
 	t.Helper()
-	if want.typeName != got.typeName {
-		t.Errorf("type name: want %s, got %s", want.typeName, got.typeName)
+	if got.typeName != want.typeName {
+		t.Errorf("type name: got %s, want %s", got.typeName, want.typeName)
 	}
-	if !reflect.DeepEqual(want.members, got.members) {
-		t.Errorf("type name %s: members: want %+v, got %+v", want.typeName, want.members, got.members)
+	if !reflect.DeepEqual(got.members, want.members) {
+		t.Errorf("type name %s: members: got %+v, want %+v", want.typeName, got.members, want.members)
 	}
 }
 
@@ -436,15 +437,15 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 	sort.Sort(byNameAndMembers(want))
 	sort.Sort(byNameAndMembers(got))
 
-	if len(want) != len(got) {
-		var wantNames, gotNames []string
-		for _, c := range want {
-			wantNames = append(wantNames, c.typeName)
-		}
+	if len(got) != len(want) {
+		var gotNames, wantNames []string
 		for _, c := range got {
 			gotNames = append(gotNames, c.typeName)
 		}
-		t.Errorf("unequal lengths: %d != %d; want %v, got %v", len(want), len(got), wantNames, gotNames)
+		for _, c := range want {
+			wantNames = append(wantNames, c.typeName)
+		}
+		t.Errorf("unequal lengths: %d != %d; got %v, got %v", len(got), len(want), gotNames, wantNames)
 		return
 	}
 
@@ -454,6 +455,6 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 		for k := range got[i].members.NameToPos {
 			got[i].members.NameToPos[k] = 0
 		}
-		equalCheckEnum(t, want[i], got[i])
+		equalCheckEnum(t, got[i], want[i])
 	}
 }

@@ -85,6 +85,6 @@ func TestExhaustive(t *testing.T) {
 func assertNoError(t *testing.T, err error) {
 	t.Helper()
 	if err != nil {
-		t.Fatalf("want nil error, got %s", err)
+		t.Fatalf("got %s, want nil error", err)
 	}
 }

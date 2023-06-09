@@ -11,10 +11,10 @@ func TestRegexpFlag(t *testing.T) {
 	t.Run("not set", func(t *testing.T) {
 		var v regexpFlag
 		if got := v.re; got != nil {
-			t.Errorf("want nil, got %+v", got)
+			t.Errorf("got %+v, want nil", got)
 		}
 		if got := v.String(); got != "" {
-			t.Errorf("expected empty string, got %q", got)
+			t.Errorf("got %q, want empty string", got)
 		}
 	})
 
@@ -24,10 +24,10 @@ func TestRegexpFlag(t *testing.T) {
 			t.Errorf("error unexpectedly non-nil: %v", err)
 		}
 		if got := v.re; got != nil {
-			t.Errorf("want nil, got %+v", got)
+			t.Errorf("got %+v, want nil", got)
 		}
 		if got := v.String(); got != "" {
-			t.Errorf("expected empty string, got %q", got)
+			t.Errorf("got %q, want empty string", got)
 		}
 	})
 
@@ -37,10 +37,10 @@ func TestRegexpFlag(t *testing.T) {
 			t.Errorf("error unexpectedly nil")
 		}
 		if got := v.re; got != nil {
-			t.Errorf("want nil, got %+v", got)
+			t.Errorf("got %+v, want nil", got)
 		}
 		if got := v.String(); got != "" {
-			t.Errorf("expected empty string, got %q", got)
+			t.Errorf("got %q, want empty string", got)
 		}
 	})
 
@@ -56,7 +56,7 @@ func TestRegexpFlag(t *testing.T) {
 			t.Errorf("did not match")
 		}
 		if got, want := v.String(), regexp.MustCompile("^foo$").String(); got != want {
-			t.Errorf("want %q, got %q", got, want)
+			t.Errorf("got %q, want %q", got, want)
 		}
 	})
 
@@ -66,7 +66,7 @@ func TestRegexpFlag(t *testing.T) {
 		var v *regexpFlag
 		// expect no panic, and ...
 		if got := v.String(); got != "" {
-			t.Errorf("expected empty string, got %q", got)
+			t.Errorf("got %q, want empty string", got)
 		}
 	})
 }
@@ -78,27 +78,23 @@ func TestStringsFlag(t *testing.T) {
 			t.Errorf("error unexpectedly non-nil: %v", err)
 		}
 		if got := len(v.elements); got != 0 {
-			t.Errorf("want zero length, got %d", got)
+			t.Errorf("got %d, want 0 length", got)
 		}
 		if got := v.String(); got != "" {
-			t.Errorf("expected empty string, got %q", got)
+			t.Errorf("got %q, want empty string", got)
 		}
 	})
 
 	t.Run("happy path", func(t *testing.T) {
 		var v stringsFlag
-
 		if err := v.Set("a, b,bb, c   ,d "); err != nil {
 			t.Errorf("error unexpectedly non-nil: %v", err)
 		}
-		want := []string{"a", "b", "bb", "c", "d"}
-		got := v.elements
-		if !reflect.DeepEqual(want, got) {
-			t.Errorf("want %v, got %v", want, got)
+		if got, want := v.elements, []string{"a", "b", "bb", "c", "d"}; !reflect.DeepEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
 		}
-
-		if want, got := "a,b,bb,c,d", v.String(); want != got {
-			t.Errorf("want %q, got %q", want, got)
+		if got, want := v.String(), "a,b,bb,c,d"; got != want {
+			t.Errorf("got %q, want %q", got, want)
 		}
 	})
 
@@ -117,8 +113,8 @@ func TestStringsFlag(t *testing.T) {
 		if err == nil {
 			t.Errorf("error unexpectedly nil: %v", err)
 		}
-		if errBoom != err {
-			t.Errorf("want %v, got %v", errBoom, err)
+		if err != errBoom {
+			t.Errorf("got %v, want %v", err, errBoom)
 		}
 	})
 
@@ -128,7 +124,7 @@ func TestStringsFlag(t *testing.T) {
 		var v *stringsFlag
 		// expect no panic, and ...
 		if got := v.String(); got != "" {
-			t.Errorf("expected empty string, got %q", got)
+			t.Errorf("got %q, want empty string", got)
 		}
 	})
 }

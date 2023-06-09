@@ -36,8 +36,8 @@ func TestMakeSwitchDiagnostic(t *testing.T) {
 		End:     11,
 		Message: "missing cases in switch of type enumpkg.Biome: enumpkg.Savanna, enumpkg.Desert",
 	}
-	if !reflect.DeepEqual(want, got) {
-		t.Errorf("want %+v, got %+v", want, got)
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %+v, want %+v", got, want)
 	}
 }
 
@@ -74,11 +74,11 @@ func TestAnalyzeSwitchClauses(t *testing.T) {
 			got = append(got, val)
 		})
 
-		if !reflect.DeepEqual(want, got) {
-			t.Errorf("want %v, got %v", want, got)
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
 		}
-		if wantDefaultExists != gotDefaultExists {
-			t.Errorf("want %v, got %v", wantDefaultExists, gotDefaultExists)
+		if gotDefaultExists != wantDefaultExists {
+			t.Errorf("got %v, want %v", gotDefaultExists, wantDefaultExists)
 		}
 	}
 
@@ -111,7 +111,7 @@ func TestAnalyzeSwitchClauses(t *testing.T) {
 		t.Run(tt.pkg.Name+"#"+tt.funcName, func(t *testing.T) {
 			fn := tt.file.Decls[tt.declIdx]
 			if getFuncName(fn) != tt.funcName {
-				t.Errorf("want func name %q, got %q", tt.funcName, getFuncName(fn))
+				t.Errorf("func name: got %q, want %q", getFuncName(fn), tt.funcName)
 				return
 			}
 			sw := getSwitchStatement(fn)

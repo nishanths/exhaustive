@@ -34,8 +34,8 @@ func TestEnumMembersFact(t *testing.T) {
 			},
 		}
 		checkEnumMembersLiteral("Biome", e.Members)
-		if want := "Tundra,Savanna,Desert"; want != e.String() {
-			t.Errorf("want %v, got %v", want, e.String())
+		if want := "Tundra,Savanna,Desert"; e.String() != want {
+			t.Errorf("got %v, want %v", e.String(), want)
 		}
 
 		e = enumMembersFact{
@@ -66,8 +66,8 @@ func TestEnumMembersFact(t *testing.T) {
 			},
 		}
 		checkEnumMembersLiteral("Token", e.Members)
-		if want := "_,add,sub,mul,quotient,remainder"; want != e.String() {
-			t.Errorf("want %v, got %v", want, e.String())
+		if want := "_,add,sub,mul,quotient,remainder"; e.String() != want {
+			t.Errorf("got %v, want %v", e.String(), want)
 		}
 	})
 }
@@ -187,7 +187,7 @@ func assertTypeFields(t *testing.T, typ reflect.Type, wantFields []wantField) {
 	t.Helper()
 
 	if got := typ.NumField(); got != len(wantFields) {
-		t.Errorf("want %d, got %d", len(wantFields), got)
+		t.Errorf("got %d, got %d", got, len(wantFields))
 		return
 	}
 
@@ -199,11 +199,11 @@ func assertTypeFields(t *testing.T, typ reflect.Type, wantFields []wantField) {
 		if field.Type.Kind() == reflect.Ptr {
 			t.Errorf("field %q is pointer", field.Name)
 		}
-		if wantFields[i].name != field.Name {
-			t.Errorf("want %q, got %q", wantFields[i].name, field.Name)
+		if field.Name != wantFields[i].name {
+			t.Errorf("got %q, want %q", field.Name, wantFields[i].name)
 		}
-		if wantFields[i].typ != field.Type.String() {
-			t.Errorf("want %q, got %q", wantFields[i].typ, field.Type.String())
+		if field.Type.String() != wantFields[i].typ {
+			t.Errorf("got %q, want %q", field.Type.String(), wantFields[i].typ)
 		}
 	}
 }
