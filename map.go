@@ -87,9 +87,15 @@ func mapChecker(pass *analysis.Pass, cfg mapConfig, generated boolCache, comment
 			return true, resultNoEnforceComment
 		}
 
+		isKeys := true
 		es, ok := composingEnumTypes(pass, mapType.Key())
 		if !ok || len(es) == 0 {
-			return true, resultEnumTypes
+			elem := mapType.Elem()
+			es, ok = composingEnumTypes(pass, elem)
+			if !ok || len(es) == 0 {
+				return true, resultEnumTypes
+			}
+			isKeys = false
 		}
 
 		var checkl checklist
@@ -100,33 +106,44 @@ func mapChecker(pass *analysis.Pass, cfg mapConfig, generated boolCache, comment
 			checkl.add(e.typ, e.members, pass.Pkg == e.typ.Pkg())
 		}
 
-		analyzeMapLiteral(lit, pass.TypesInfo, checkl.found)
+		analyzeMapLiteral(lit, pass.TypesInfo, checkl.found, isKeys)
 		if len(checkl.remaining()) == 0 {
 			return true, resultEnumMembersAccounted
 		}
-		pass.Report(makeMapDiagnostic(lit, dedupEnumTypes(toEnumTypes(es)), checkl.remaining()))
+		pass.Report(makeMapDiagnostic(lit, dedupEnumTypes(toEnumTypes(es)), checkl.remaining(), isKeys))
 		return true, resultReportedDiagnostic
 	}
 }
 
-func analyzeMapLiteral(lit *ast.CompositeLit, info *types.Info, each func(constantValue)) {
+func analyzeMapLiteral(lit *ast.CompositeLit, info *types.Info, each func(constantValue), isKeys bool) {
 	for _, e := range lit.Elts {
 		expr, ok := e.(*ast.KeyValueExpr)
 		if !ok {
 			continue
 		}
-		if val, ok := exprConstVal(expr.Key, info); ok {
+
+		astExpr := expr.Key
+		if !isKeys {
+			astExpr = expr.Value
+		}
+
+		if val, ok := exprConstVal(astExpr, info); ok {
 			each(val)
 		}
 	}
 }
 
-func makeMapDiagnostic(lit *ast.CompositeLit, enumTypes []enumType, missing map[member]struct{}) analysis.Diagnostic {
+func makeMapDiagnostic(lit *ast.CompositeLit, enumTypes []enumType, missing map[member]struct{}, isKeys bool) analysis.Diagnostic {
+	format := "missing keys in map of key type %s: %s"
+	if !isKeys {
+		format = "missing values in map of value type %s: %s"
+	}
+
 	return analysis.Diagnostic{
 		Pos: lit.Pos(),
 		End: lit.End(),
 		Message: fmt.Sprintf(
-			"missing keys in map of key type %s: %s",
+			format,
 			diagnosticEnumTypes(enumTypes),
 			diagnosticGroups(groupify(missing, enumTypes)),
 		),

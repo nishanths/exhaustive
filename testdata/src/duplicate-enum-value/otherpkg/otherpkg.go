@@ -66,8 +66,16 @@ func _r() {
 		d.Yamuna: 1,
 	}
 
+	_ = map[int]d.River{ // want `^missing values in map of value type duplicateenumvalue.River: duplicateenumvalue.DefaultRiver\|duplicateenumvalue.Ganga, duplicateenumvalue.Kaveri$`
+		1: d.Yamuna,
+	}
+
 	_ = map[d.State]int{ // want `^missing keys in map of key type duplicateenumvalue.State: duplicateenumvalue.TamilNadu\|duplicateenumvalue.DefaultState, duplicateenumvalue.Kerala$`
 		d.Karnataka: 1,
+	}
+
+	_ = map[int]d.State{ // want `^missing values in map of value type duplicateenumvalue.State: duplicateenumvalue.TamilNadu\|duplicateenumvalue.DefaultState, duplicateenumvalue.Kerala$`
+		1: d.Karnataka,
 	}
 }
 
