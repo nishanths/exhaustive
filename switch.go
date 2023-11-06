@@ -44,6 +44,7 @@ const (
 	resultNoEnforceComment     = "has no enforce comment"
 	resultEnumMembersAccounted = "required enum members accounted for"
 	resultDefaultCaseSuffices  = "default case satisfies exhaustiveness"
+	resultMissingDefaultCase   = "missing required default case"
 	resultReportedDiagnostic   = "reported diagnostic"
 	resultEnumTypes            = "invalid or empty composing enum types"
 )
@@ -52,6 +53,7 @@ const (
 type switchConfig struct {
 	explicit                   bool
 	defaultSignifiesExhaustive bool
+	defaultCaseRequired        bool
 	checkGenerated             bool
 	ignoreConstant             *regexp.Regexp // can be nil
 	ignoreType                 *regexp.Regexp // can be nil
@@ -114,13 +116,21 @@ func switchChecker(pass *analysis.Pass, cfg switchConfig, generated boolCache, c
 			checkl.add(e.typ, e.members, pass.Pkg == e.typ.Pkg())
 		}
 
-		def := analyzeSwitchClauses(sw, pass.TypesInfo, checkl.found)
+		defaultCaseExists := analyzeSwitchClauses(sw, pass.TypesInfo, checkl.found)
+		if !defaultCaseExists && cfg.defaultCaseRequired {
+			// Even if the switch explicitly enumerates all the
+			// enum values, the user has still required all switches
+			// to have a default case. We check this first to avoid
+			// early-outs
+			pass.Report(makeMissingDefaultDiagnostic(sw, dedupEnumTypes(toEnumTypes(es))))
+			return true, resultMissingDefaultCase
+		}
 		if len(checkl.remaining()) == 0 {
 			// All enum members accounted for.
 			// Nothing to report.
 			return true, resultEnumMembersAccounted
 		}
-		if def && cfg.defaultSignifiesExhaustive {
+		if defaultCaseExists && cfg.defaultSignifiesExhaustive {
 			// Though enum members are not accounted for, the
 			// existence of the default case signifies
 			// exhaustiveness.  So don't report.
@@ -164,6 +174,17 @@ func makeSwitchDiagnostic(sw *ast.SwitchStmt, enumTypes []enumType, missing map[
 			"missing cases in switch of type %s: %s",
 			diagnosticEnumTypes(enumTypes),
 			diagnosticGroups(groupify(missing, enumTypes)),
+		),
+	}
+}
+
+func makeMissingDefaultDiagnostic(sw *ast.SwitchStmt, enumTypes []enumType) analysis.Diagnostic {
+	return analysis.Diagnostic{
+		Pos: sw.Pos(),
+		End: sw.End(),
+		Message: fmt.Sprintf(
+			"missing default in switch over type %s",
+			diagnosticEnumTypes(enumTypes),
 		),
 	}
 }
