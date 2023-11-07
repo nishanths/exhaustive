@@ -118,12 +118,15 @@ func switchChecker(pass *analysis.Pass, cfg switchConfig, generated boolCache, c
 
 		defaultCaseExists := analyzeSwitchClauses(sw, pass.TypesInfo, checkl.found)
 		if !defaultCaseExists && cfg.defaultCaseRequired {
-			// Even if the switch explicitly enumerates all the
-			// enum values, the user has still required all switches
-			// to have a default case. We check this first to avoid
-			// early-outs
-			pass.Report(makeMissingDefaultDiagnostic(sw, dedupEnumTypes(toEnumTypes(es))))
-			return true, resultMissingDefaultCase
+			// Don't enforce this if the user opted-out
+			if !hasCommentPrefix(switchComments, defaultRequireIgnoreComment) {
+				// Even if the switch explicitly enumerates all the
+				// enum values, the user has still required all switches
+				// to have a default case. We check this first to avoid
+				// early-outs
+				pass.Report(makeMissingDefaultDiagnostic(sw, dedupEnumTypes(toEnumTypes(es))))
+				return true, resultMissingDefaultCase
+			}
 		}
 		if len(checkl.remaining()) == 0 {
 			// All enum members accounted for.
