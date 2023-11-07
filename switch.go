@@ -93,6 +93,12 @@ func switchChecker(pass *analysis.Pass, cfg switchConfig, generated boolCache, c
 			// enforce comment.
 			return true, resultNoEnforceComment
 		}
+		requireDefaultCase := cfg.defaultCaseRequired
+		if hasCommentPrefix(switchComments, defaultRequireIgnoreComment) {
+			requireDefaultCase = false
+		} else if hasCommentPrefix(switchComments, defaultRequireEnforceComment) {
+			requireDefaultCase = true
+		}
 
 		if sw.Tag == nil {
 			return true, resultNoSwitchTag // never possible for valid Go program?
@@ -117,16 +123,13 @@ func switchChecker(pass *analysis.Pass, cfg switchConfig, generated boolCache, c
 		}
 
 		defaultCaseExists := analyzeSwitchClauses(sw, pass.TypesInfo, checkl.found)
-		if !defaultCaseExists && cfg.defaultCaseRequired {
-			// Don't enforce this if the user opted-out
-			if !hasCommentPrefix(switchComments, defaultRequireIgnoreComment) {
-				// Even if the switch explicitly enumerates all the
-				// enum values, the user has still required all switches
-				// to have a default case. We check this first to avoid
-				// early-outs
-				pass.Report(makeMissingDefaultDiagnostic(sw, dedupEnumTypes(toEnumTypes(es))))
-				return true, resultMissingDefaultCase
-			}
+		if !defaultCaseExists && requireDefaultCase {
+			// Even if the switch explicitly enumerates all the
+			// enum values, the user has still required all switches
+			// to have a default case. We check this first to avoid
+			// early-outs
+			pass.Report(makeMissingDefaultDiagnostic(sw, dedupEnumTypes(toEnumTypes(es))))
+			return true, resultMissingDefaultCase
 		}
 		if len(checkl.remaining()) == 0 {
 			// All enum members accounted for.

@@ -40,9 +40,10 @@ func isGeneratedFile(file *ast.File) bool {
 }
 
 const (
-	ignoreComment               = "//exhaustive:ignore"
-	enforceComment              = "//exhaustive:enforce"
-	defaultRequireIgnoreComment = "//exhaustive:default-require-ignore"
+	ignoreComment                = "//exhaustive:ignore"
+	enforceComment               = "//exhaustive:enforce"
+	defaultRequireIgnoreComment  = "//exhaustive:default-require-ignore"
+	defaultRequireEnforceComment = "//exhaustive:default-require-enforce"
 )
 
 func hasCommentPrefix(comments []*ast.CommentGroup, comment string) bool {
