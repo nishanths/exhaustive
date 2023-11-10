@@ -46,7 +46,7 @@ func TestExhaustive(t *testing.T) {
 	runTest(t, "default-signifies-exhaustive/default-absent/...", func() { fDefaultSignifiesExhaustive = true })
 	runTest(t, "default-signifies-exhaustive/default-present/...", func() { fDefaultSignifiesExhaustive = true })
 
-	// This tests exercises the default-case-required flag and its escape comment
+	// These tests exercise the default-case-required flag and its escape comment
 	runTest(t, "default-case-required/default-required/...", func() { fDefaultCaseRequired = true })
 	runTest(t, "default-case-required/default-not-required/...", func() { fDefaultCaseRequired = false })
 
