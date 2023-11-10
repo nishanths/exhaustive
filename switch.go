@@ -5,6 +5,7 @@ import (
 	"go/ast"
 	"go/types"
 	"regexp"
+	"strings"
 
 	"golang.org/x/tools/go/analysis"
 )
@@ -59,6 +60,41 @@ type switchConfig struct {
 	ignoreType                 *regexp.Regexp // can be nil
 }
 
+// There are few possibilities, and often none, so we use a possibly-nil slice
+func userDirectives(comments []*ast.CommentGroup) []string {
+	var directives []string
+	for _, c := range comments {
+		for _, cc := range c.List {
+			// The order matters here: we always want to check the longest first.
+			for _, d := range []string{
+				enforceDefaultCaseRequiredComment,
+				ignoreDefaultCaseRequiredComment,
+				enforceComment,
+				ignoreComment,
+			} {
+				if strings.HasPrefix(cc.Text, d) {
+					directives = append(directives, d)
+					// The break here is important: once we associate a comment
+					// with a particular (longest-possible) directive, we don't want
+					// to map to another!
+					break
+				}
+			}
+		}
+	}
+	return directives
+}
+
+// Can be replaced with slices.Contains with go1.21
+func directivesIncludes(directives []string, d string) bool {
+	for _, ud := range directives {
+		if ud == d {
+			return true
+		}
+	}
+	return false
+}
+
 // switchChecker returns a node visitor that checks exhaustiveness of
 // enum switch statements for the supplied pass, and reports
 // diagnostics. The node visitor expects only *ast.SwitchStmt nodes.
@@ -82,22 +118,23 @@ func switchChecker(pass *analysis.Pass, cfg switchConfig, generated boolCache, c
 		sw := n.(*ast.SwitchStmt)
 
 		switchComments := comments.get(pass.Fset, file)[sw]
-		if !cfg.explicit && hasCommentPrefix(switchComments, ignoreComment) {
+		uDirectives := userDirectives(switchComments)
+		if !cfg.explicit && directivesIncludes(uDirectives, ignoreComment) {
 			// Skip checking of this switch statement due to ignore
 			// comment. Still return true because there may be nested
 			// switch statements that are not to be ignored.
 			return true, resultIgnoreComment
 		}
-		if cfg.explicit && !hasCommentPrefix(switchComments, enforceComment) {
+		if cfg.explicit && !directivesIncludes(uDirectives, enforceComment) {
 			// Skip checking of this switch statement due to missing
 			// enforce comment.
 			return true, resultNoEnforceComment
 		}
 		requireDefaultCase := cfg.defaultCaseRequired
-		if hasCommentPrefix(switchComments, defaultRequireIgnoreComment) {
+		if directivesIncludes(uDirectives, ignoreDefaultCaseRequiredComment) {
 			requireDefaultCase = false
 		}
-		if hasCommentPrefix(switchComments, defaultRequireEnforceComment) {
+		if directivesIncludes(uDirectives, enforceDefaultCaseRequiredComment) {
 			// We have "if" instead of "else if" here in case of conflicting ignore/enforce directives.
 			// In that case, because this is second, we will default to enforcing.
 			requireDefaultCase = true

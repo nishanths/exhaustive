@@ -7,10 +7,10 @@ import (
 )
 
 const (
-	ignoreComment                = "//exhaustive:ignore"
-	enforceComment               = "//exhaustive:enforce"
-	defaultRequireIgnoreComment  = "//exhaustive:default-require-ignore"
-	defaultRequireEnforceComment = "//exhaustive:default-require-enforce"
+	ignoreComment                     = "//exhaustive:ignore"
+	enforceComment                    = "//exhaustive:enforce"
+	ignoreDefaultCaseRequiredComment  = "//exhaustive:ignore-default-case-required"
+	enforceDefaultCaseRequiredComment = "//exhaustive:enforce-default-case-required"
 )
 
 func hasCommentPrefix(comments []*ast.CommentGroup, comment string) bool {
