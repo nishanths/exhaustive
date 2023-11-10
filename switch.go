@@ -96,7 +96,10 @@ func switchChecker(pass *analysis.Pass, cfg switchConfig, generated boolCache, c
 		requireDefaultCase := cfg.defaultCaseRequired
 		if hasCommentPrefix(switchComments, defaultRequireIgnoreComment) {
 			requireDefaultCase = false
-		} else if hasCommentPrefix(switchComments, defaultRequireEnforceComment) {
+		}
+		if hasCommentPrefix(switchComments, defaultRequireEnforceComment) {
+			// We have "if" instead of "else if" here in case of conflicting ignore/enforce directives.
+			// In that case, because this is second, we will default to enforcing.
 			requireDefaultCase = true
 		}
 
