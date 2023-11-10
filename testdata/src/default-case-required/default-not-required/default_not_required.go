@@ -3,7 +3,8 @@ package notrequired
 import "default-case-required"
 
 func _a(t dcr.T) {
-	// No diagnostic because default-require is not set.
+	// No diagnostic because neither fDefaultCaseRequired is true
+	// nor the enforcement comment is present.
 	switch t {
 	case dcr.A:
 	case dcr.B:
