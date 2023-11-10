@@ -12,7 +12,7 @@ func _a(t dcr.T) {
 
 func _b(t dcr.T) {
 	//exhaustive:enforce-default-case-required this is a comment showing that we can turn it on for select switches
-	switch t { // want "^missing default in switch of type dcr.T$"
+	switch t { // want "^missing default case in switch of type dcr.T$"
 	case dcr.A:
 	case dcr.B:
 	}
@@ -21,7 +21,7 @@ func _b(t dcr.T) {
 func _c(t dcr.T) {
 	//exhaustive:ignore-default-case-required this comment is discarded in facvor of the enforcement
 	//exhaustive:enforce-default-case-required this is a comment showing that we can turn it on for select switches
-	switch t { // want "^missing default in switch of type dcr.T$"
+	switch t { // want "^missing default case in switch of type dcr.T$"
 	case dcr.A:
 	case dcr.B:
 	}
@@ -30,7 +30,7 @@ func _c(t dcr.T) {
 func _d(t dcr.T) {
 	//exhaustive:enforce-default-case-required this is a comment showing that we can turn it on for select switches
 	//exhaustive:ignore-default-case-required this comment is discarded in facvor of the enforcement
-	switch t { // want "^missing default in switch of type dcr.T$"
+	switch t { // want "^missing default case in switch of type dcr.T$"
 	case dcr.A:
 	case dcr.B:
 	}
