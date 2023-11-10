@@ -189,7 +189,7 @@ func makeMissingDefaultDiagnostic(sw *ast.SwitchStmt, enumTypes []enumType) anal
 		Pos: sw.Pos(),
 		End: sw.End(),
 		Message: fmt.Sprintf(
-			"missing default in switch of type %s",
+			"missing default case in switch of type %s",
 			diagnosticEnumTypes(enumTypes),
 		),
 	}
