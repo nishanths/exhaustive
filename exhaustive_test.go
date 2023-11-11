@@ -46,6 +46,10 @@ func TestExhaustive(t *testing.T) {
 	runTest(t, "default-signifies-exhaustive/default-absent/...", func() { fDefaultSignifiesExhaustive = true })
 	runTest(t, "default-signifies-exhaustive/default-present/...", func() { fDefaultSignifiesExhaustive = true })
 
+	// These tests exercise the default-case-required flag and its escape comment
+	runTest(t, "default-case-required/default-required/...", func() { fDefaultCaseRequired = true })
+	runTest(t, "default-case-required/default-not-required/...", func() { fDefaultCaseRequired = false })
+
 	// Tests for -ignore-enum-members and -ignore-enum-types flags.
 	runTest(t, "ignore-pattern/...", func() {
 		fIgnoreEnumMembers = regexpFlag{
