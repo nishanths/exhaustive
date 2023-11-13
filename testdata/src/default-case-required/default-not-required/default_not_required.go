@@ -45,3 +45,16 @@ func _e(t dcr.T) {
 	default:
 	}
 }
+
+ func _f() {
+	// should not report because these are not enum switch
+	// statements.
+	var x int
+	switch x {
+	case 0:
+	}
+
+	switch {
+	case x == 0:
+	}
+}
