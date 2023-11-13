@@ -36,7 +36,7 @@ func _d(t dcr.T) {
 	}
 }
 
- func _e() {
+func _e() {
 	// should not report because these are not enum switch
 	// statements.
 	var x int

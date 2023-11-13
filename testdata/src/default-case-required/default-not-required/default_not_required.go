@@ -46,14 +46,16 @@ func _e(t dcr.T) {
 	}
 }
 
- func _f() {
+func _f() {
 	// should not report because these are not enum switch
 	// statements.
+	//exhaustive:enforce-default-case-required
 	var x int
 	switch x {
 	case 0:
 	}
 
+	//exhaustive:enforce-default-case-required
 	switch {
 	case x == 0:
 	}
