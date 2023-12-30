@@ -1,9 +1,10 @@
 package required
 
-import "default-case-required"
+import dcr "default-case-required"
 
 func _a(t dcr.T) {
 	// expect a diagnostic when fDefaultCaseRequired is true.
+	//exhaustive:ignore-default-case-required-typo This invalid directive should be ignored
 	switch t { // want "^missing default case in switch of type dcr.T$"
 	case dcr.A:
 	case dcr.B:
@@ -12,6 +13,7 @@ func _a(t dcr.T) {
 
 func _b(t dcr.T) {
 	//exhaustive:ignore-default-case-required this is a comment showing that we can turn it off for select switches
+	//exhaustive:enforce-default-case-required-typo This invalid directive should be ignored
 	switch t {
 	case dcr.A:
 	case dcr.B:

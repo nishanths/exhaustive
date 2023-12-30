@@ -1,10 +1,11 @@
 package notrequired
 
-import "default-case-required"
+import dcr "default-case-required"
 
 func _a(t dcr.T) {
 	// No diagnostic because neither fDefaultCaseRequired is true
 	// nor the enforcement comment is present.
+	//exhaustive:enforce-default-case-required-typo this invalid directive should be ignored
 	switch t {
 	case dcr.A:
 	case dcr.B:
