@@ -5,7 +5,6 @@ import (
 	"go/ast"
 	"go/types"
 	"regexp"
-	"strings"
 
 	"golang.org/x/tools/go/analysis"
 )
@@ -58,31 +57,6 @@ type switchConfig struct {
 	checkGenerated             bool
 	ignoreConstant             *regexp.Regexp // can be nil
 	ignoreType                 *regexp.Regexp // can be nil
-}
-
-// There are few possibilities, and often none, so we use a possibly-nil slice
-func userDirectives(comments []*ast.CommentGroup) []string {
-	var directives []string
-	for _, c := range comments {
-		for _, cc := range c.List {
-			// The order matters here: we always want to check the longest first.
-			for _, d := range []string{
-				enforceDefaultCaseRequiredComment,
-				ignoreDefaultCaseRequiredComment,
-				enforceComment,
-				ignoreComment,
-			} {
-				if strings.HasPrefix(cc.Text, d) {
-					directives = append(directives, d)
-					// The break here is important: once we associate a comment
-					// with a particular (longest-possible) directive, we don't want
-					// to map to another!
-					break
-				}
-			}
-		}
-	}
-	return directives
 }
 
 // switchChecker returns a node visitor that checks exhaustiveness of
