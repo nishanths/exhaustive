@@ -7,21 +7,52 @@ import (
 )
 
 const (
-	ignoreComment                     = "//exhaustive:ignore"
-	enforceComment                    = "//exhaustive:enforce"
-	ignoreDefaultCaseRequiredComment  = "//exhaustive:ignore-default-case-required"
-	enforceDefaultCaseRequiredComment = "//exhaustive:enforce-default-case-required"
+	exhaustiveComment                 = "//exhaustive:"
+	ignoreComment                     = "ignore"
+	enforceComment                    = "enforce"
+	ignoreDefaultCaseRequiredComment  = "ignore-default-case-required"
+	enforceDefaultCaseRequiredComment = "enforce-default-case-required"
 )
 
-func hasCommentPrefix(comments []*ast.CommentGroup, comment string) bool {
-	for _, c := range comments {
-		for _, cc := range c.List {
-			if strings.HasPrefix(cc.Text, comment) {
-				return true
+type directive int64
+
+const (
+	ignoreDirective = 1 << iota
+	enforceDirective
+	ignoreDefaultCaseRequiredDirective
+	enforceDefaultCaseRequiredDirective
+)
+
+type directiveSet int64
+
+func parseDirectiveSet(commentGroups []*ast.CommentGroup) (out directiveSet) {
+	for _, commentGroup := range commentGroups {
+		for _, comment := range commentGroup.List {
+			commentLine := comment.Text
+			if !strings.HasPrefix(commentLine, exhaustiveComment) {
+				continue
+			}
+			directive := commentLine[len(exhaustiveComment):]
+			if whiteSpaceIndex := strings.IndexAny(directive, " \t"); whiteSpaceIndex != -1 {
+				directive = directive[:whiteSpaceIndex]
+			}
+			switch directive {
+			case ignoreComment:
+				out |= ignoreDirective
+			case enforceComment:
+				out |= enforceDirective
+			case ignoreDefaultCaseRequiredComment:
+				out |= ignoreDefaultCaseRequiredDirective
+			case enforceDefaultCaseRequiredComment:
+				out |= enforceDefaultCaseRequiredDirective
 			}
 		}
 	}
-	return false
+	return
+}
+
+func (d directiveSet) hasDirective(directive directive) bool {
+	return int64(d)&int64(directive) != 0
 }
 
 func fileCommentMap(fset *token.FileSet, file *ast.File) ast.CommentMap {

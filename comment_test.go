@@ -1,6 +1,7 @@
 package exhaustive
 
 import (
+	"go/ast"
 	"go/parser"
 	"go/token"
 	"testing"
@@ -29,6 +30,98 @@ func f() {
 		assertNoError(t, err)
 		if isGeneratedFile(f) {
 			t.Errorf("unexpectedly true")
+		}
+	})
+}
+
+func TestDirectives(t *testing.T) {
+	t.Run("no directives", func(t *testing.T) {
+		commentGroups := []*ast.CommentGroup{
+			{
+				List: []*ast.Comment{
+					{
+						Text: "//exhaustive:foo",
+					},
+				},
+			},
+			{
+				List: []*ast.Comment{
+					{
+						Text: "//bar:value",
+					},
+					{
+						Text: "Another comment",
+					},
+				},
+			},
+		}
+		directives := parseDirectiveSet(commentGroups)
+		if directives != 0 {
+			t.Errorf("unexpected directives: %d", directives)
+		}
+	})
+
+	t.Run("several conflicting directives", func(t *testing.T) {
+		commentGroups := []*ast.CommentGroup{
+			{
+				List: []*ast.Comment{
+					{
+						Text: "//exhaustive:ignore",
+					},
+					{
+						Text: "//exhaustive:enforce",
+					},
+				},
+			},
+			{
+				List: []*ast.Comment{
+					{
+						Text: "//exhaustive:ignore-default-case-required",
+					},
+					{
+						Text: "//exhaustive:enforce-default-case-required",
+					},
+					{
+						Text: "//exhaustive:ignore-default-case-required",
+					},
+				},
+			},
+		}
+		directives := parseDirectiveSet(commentGroups)
+		expected := ignoreDirective | enforceDirective |
+			ignoreDefaultCaseRequiredDirective | enforceDefaultCaseRequiredDirective
+
+		if directives != directiveSet(expected) {
+			t.Errorf("unexpected directives: %d", directives)
+		}
+	})
+
+	t.Run("directives with trailing text and surrounding non-directives", func(t *testing.T) {
+		commentGroups := []*ast.CommentGroup{
+			{
+				List: []*ast.Comment{
+					{
+						Text: "Nevermind this comment",
+					},
+					{
+						Text: "//exhaustive:ignore foo",
+					},
+					{
+						Text: "//exhaustive:enforce-default-case-required\tbar",
+					},
+					{
+						Text: "//exhaustive:ignore-default-case-garbage",
+					},
+					{
+						Text: "This comment doesn't matter",
+					},
+				},
+			},
+		}
+
+		directives := parseDirectiveSet(commentGroups)
+		if directives != ignoreDirective|enforceDefaultCaseRequiredDirective {
+			t.Errorf("unexpected directives: %d", directives)
 		}
 	})
 }

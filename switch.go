@@ -85,16 +85,6 @@ func userDirectives(comments []*ast.CommentGroup) []string {
 	return directives
 }
 
-// Can be replaced with slices.Contains with go1.21
-func directivesIncludes(directives []string, d string) bool {
-	for _, ud := range directives {
-		if ud == d {
-			return true
-		}
-	}
-	return false
-}
-
 // switchChecker returns a node visitor that checks exhaustiveness of
 // enum switch statements for the supplied pass, and reports
 // diagnostics. The node visitor expects only *ast.SwitchStmt nodes.
@@ -118,23 +108,24 @@ func switchChecker(pass *analysis.Pass, cfg switchConfig, generated boolCache, c
 		sw := n.(*ast.SwitchStmt)
 
 		switchComments := comments.get(pass.Fset, file)[sw]
-		uDirectives := userDirectives(switchComments)
-		if !cfg.explicit && directivesIncludes(uDirectives, ignoreComment) {
+		uDirectives := parseDirectiveSet(switchComments)
+
+		if !cfg.explicit && uDirectives.hasDirective(ignoreDirective) {
 			// Skip checking of this switch statement due to ignore
 			// comment. Still return true because there may be nested
 			// switch statements that are not to be ignored.
 			return true, resultIgnoreComment
 		}
-		if cfg.explicit && !directivesIncludes(uDirectives, enforceComment) {
+		if cfg.explicit && !uDirectives.hasDirective(enforceDirective) {
 			// Skip checking of this switch statement due to missing
 			// enforce comment.
 			return true, resultNoEnforceComment
 		}
 		requireDefaultCase := cfg.defaultCaseRequired
-		if directivesIncludes(uDirectives, ignoreDefaultCaseRequiredComment) {
+		if uDirectives.hasDirective(ignoreDefaultCaseRequiredDirective) {
 			requireDefaultCase = false
 		}
-		if directivesIncludes(uDirectives, enforceDefaultCaseRequiredComment) {
+		if uDirectives.hasDirective(enforceDefaultCaseRequiredDirective) {
 			// We have "if" instead of "else if" here in case of conflicting ignore/enforce directives.
 			// In that case, because this is second, we will default to enforcing.
 			requireDefaultCase = true
