@@ -25,7 +25,8 @@ const (
 
 type directiveSet int64
 
-func parseDirectiveSet(commentGroups []*ast.CommentGroup) (out directiveSet) {
+func parseDirectives(commentGroups []*ast.CommentGroup) directiveSet {
+	var out directiveSet
 	for _, commentGroup := range commentGroups {
 		for _, comment := range commentGroup.List {
 			commentLine := comment.Text
@@ -48,10 +49,10 @@ func parseDirectiveSet(commentGroups []*ast.CommentGroup) (out directiveSet) {
 			}
 		}
 	}
-	return
+	return out
 }
 
-func (d directiveSet) hasDirective(directive directive) bool {
+func (d directiveSet) has(directive directive) bool {
 	return int64(d)&int64(directive) != 0
 }
 

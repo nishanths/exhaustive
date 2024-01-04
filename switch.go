@@ -82,24 +82,24 @@ func switchChecker(pass *analysis.Pass, cfg switchConfig, generated boolCache, c
 		sw := n.(*ast.SwitchStmt)
 
 		switchComments := comments.get(pass.Fset, file)[sw]
-		uDirectives := parseDirectiveSet(switchComments)
+		uDirectives := parseDirectives(switchComments)
 
-		if !cfg.explicit && uDirectives.hasDirective(ignoreDirective) {
+		if !cfg.explicit && uDirectives.has(ignoreDirective) {
 			// Skip checking of this switch statement due to ignore
 			// comment. Still return true because there may be nested
 			// switch statements that are not to be ignored.
 			return true, resultIgnoreComment
 		}
-		if cfg.explicit && !uDirectives.hasDirective(enforceDirective) {
+		if cfg.explicit && !uDirectives.has(enforceDirective) {
 			// Skip checking of this switch statement due to missing
 			// enforce comment.
 			return true, resultNoEnforceComment
 		}
 		requireDefaultCase := cfg.defaultCaseRequired
-		if uDirectives.hasDirective(ignoreDefaultCaseRequiredDirective) {
+		if uDirectives.has(ignoreDefaultCaseRequiredDirective) {
 			requireDefaultCase = false
 		}
-		if uDirectives.hasDirective(enforceDefaultCaseRequiredDirective) {
+		if uDirectives.has(enforceDefaultCaseRequiredDirective) {
 			// We have "if" instead of "else if" here in case of conflicting ignore/enforce directives.
 			// In that case, because this is second, we will default to enforcing.
 			requireDefaultCase = true

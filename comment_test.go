@@ -55,7 +55,7 @@ func TestDirectives(t *testing.T) {
 				},
 			},
 		}
-		directives := parseDirectiveSet(commentGroups)
+		directives := parseDirectives(commentGroups)
 		if directives != 0 {
 			t.Errorf("unexpected directives: %d", directives)
 		}
@@ -87,7 +87,7 @@ func TestDirectives(t *testing.T) {
 				},
 			},
 		}
-		directives := parseDirectiveSet(commentGroups)
+		directives := parseDirectives(commentGroups)
 		expected := ignoreDirective | enforceDirective |
 			ignoreDefaultCaseRequiredDirective | enforceDefaultCaseRequiredDirective
 
@@ -119,7 +119,7 @@ func TestDirectives(t *testing.T) {
 			},
 		}
 
-		directives := parseDirectiveSet(commentGroups)
+		directives := parseDirectives(commentGroups)
 		if directives != ignoreDirective|enforceDefaultCaseRequiredDirective {
 			t.Errorf("unexpected directives: %d", directives)
 		}
