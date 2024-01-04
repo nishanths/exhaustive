@@ -323,3 +323,10 @@ func localVarDeclaration() {
 		})
 	)
 }
+
+func invalidDirectiveMap() {
+	//exhaustive:enfocre
+	var _ = map[Direction]int{ // want "^failed to parse directives: invalid directive \"enfocre\"$"
+		N: 1,
+	}
+}

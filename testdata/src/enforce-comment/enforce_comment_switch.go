@@ -82,3 +82,13 @@ func _reverse_nested() {
 		}
 	}
 }
+
+func invalidDirectiveSwitch() {
+	var d Direction
+
+	//exhaustive:ingore
+	switch d { // want "^failed to parse directives: invalid directive \"ingore\"$"
+	case N:
+	}
+
+}

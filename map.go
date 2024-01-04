@@ -77,7 +77,10 @@ func mapChecker(pass *analysis.Pass, cfg mapConfig, generated boolCache, comment
 			}
 		}
 
-		directives := parseDirectives(relatedComments)
+		directives, err := parseDirectives(relatedComments)
+		if err != nil {
+			pass.Report(makeInvalidDirectiveDiagnostic(lit, err))
+		}
 
 		if !cfg.explicit && directives.has(ignoreDirective) {
 			// Skip checking of this map literal due to ignore

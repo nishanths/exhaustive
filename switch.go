@@ -82,7 +82,10 @@ func switchChecker(pass *analysis.Pass, cfg switchConfig, generated boolCache, c
 		sw := n.(*ast.SwitchStmt)
 
 		switchComments := comments.get(pass.Fset, file)[sw]
-		uDirectives := parseDirectives(switchComments)
+		uDirectives, err := parseDirectives(switchComments)
+		if err != nil {
+			pass.Report(makeInvalidDirectiveDiagnostic(sw, err))
+		}
 
 		if !cfg.explicit && uDirectives.has(ignoreDirective) {
 			// Skip checking of this switch statement due to ignore
@@ -134,6 +137,7 @@ func switchChecker(pass *analysis.Pass, cfg switchConfig, generated boolCache, c
 			// to have a default case. We check this first to avoid
 			// early-outs
 			pass.Report(makeMissingDefaultDiagnostic(sw, dedupEnumTypes(toEnumTypes(es))))
+
 			return true, resultMissingDefaultCase
 		}
 		if len(checkl.remaining()) == 0 {
@@ -196,6 +200,17 @@ func makeMissingDefaultDiagnostic(sw *ast.SwitchStmt, enumTypes []enumType) anal
 		Message: fmt.Sprintf(
 			"missing default case in switch of type %s",
 			diagnosticEnumTypes(enumTypes),
+		),
+	}
+}
+
+func makeInvalidDirectiveDiagnostic(node ast.Node, err error) analysis.Diagnostic {
+	return analysis.Diagnostic{
+		Pos: node.Pos(),
+		End: node.End(),
+		Message: fmt.Sprintf(
+			"failed to parse directives: %s",
+			err.Error(),
 		),
 	}
 }

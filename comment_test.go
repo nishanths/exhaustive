@@ -40,7 +40,7 @@ func TestDirectives(t *testing.T) {
 			{
 				List: []*ast.Comment{
 					{
-						Text: "//exhaustive:foo",
+						Text: "//exhauster:foo",
 					},
 				},
 			},
@@ -55,19 +55,76 @@ func TestDirectives(t *testing.T) {
 				},
 			},
 		}
-		directives := parseDirectives(commentGroups)
+		directives, err := parseDirectives(commentGroups)
+		if err != nil {
+			t.Errorf("unexpected error: %s", err)
+		}
 		if directives != 0 {
 			t.Errorf("unexpected directives: %d", directives)
 		}
 	})
 
-	t.Run("several conflicting directives", func(t *testing.T) {
+	t.Run("invalid directive", func(t *testing.T) {
+		commentGroups := []*ast.CommentGroup{
+			{
+				List: []*ast.Comment{
+					{
+						Text: "//exhauster:foo",
+					},
+				},
+			},
+			{
+				List: []*ast.Comment{
+					{
+						Text: "//exhaustive:enfocre",
+					},
+				},
+			},
+		}
+		_, err := parseDirectives(commentGroups)
+		if err == nil {
+			t.Errorf("expectedly no error on invalid directive")
+			return
+		}
+		if err.Error() != `invalid directive "enfocre"` {
+			t.Errorf("unexpected error: %s", err)
+		}
+	})
+
+	t.Run("conflicting enforcement directives", func(t *testing.T) {
 		commentGroups := []*ast.CommentGroup{
 			{
 				List: []*ast.Comment{
 					{
 						Text: "//exhaustive:ignore",
 					},
+					{
+						Text: "//exhaustive:enforce",
+					},
+				},
+			},
+			{
+				List: []*ast.Comment{
+					{
+						Text: "//exhaustive:ignore-default-case-required",
+					},
+				},
+			},
+		}
+		_, err := parseDirectives(commentGroups)
+		if err == nil {
+			t.Errorf("unexpectedly no error on conflicting directives")
+			return
+		}
+		if err.Error() != `conflicting directives "ignore" and "enforce"` {
+			t.Errorf("unexpected error: %s", err)
+		}
+	})
+
+	t.Run("conflicting default case enforcement directives", func(t *testing.T) {
+		commentGroups := []*ast.CommentGroup{
+			{
+				List: []*ast.Comment{
 					{
 						Text: "//exhaustive:enforce",
 					},
@@ -87,13 +144,12 @@ func TestDirectives(t *testing.T) {
 				},
 			},
 		}
-		directives := parseDirectives(commentGroups)
-		expected := ignoreDirective | enforceDirective |
-			ignoreDefaultCaseRequiredDirective | enforceDefaultCaseRequiredDirective
-
-		if directives != directiveSet(expected) {
-			t.Errorf("unexpected directives: %d", directives)
+		_, err := parseDirectives(commentGroups)
+		if err == nil {
+			t.Errorf("unexpectedly no error on conflicting directives")
+			return
 		}
+
 	})
 
 	t.Run("directives with trailing text and surrounding non-directives", func(t *testing.T) {
@@ -110,16 +166,16 @@ func TestDirectives(t *testing.T) {
 						Text: "//exhaustive:enforce-default-case-required\tbar",
 					},
 					{
-						Text: "//exhaustive:ignore-default-case-garbage",
-					},
-					{
 						Text: "This comment doesn't matter",
 					},
 				},
 			},
 		}
 
-		directives := parseDirectives(commentGroups)
+		directives, err := parseDirectives(commentGroups)
+		if err != nil {
+			t.Errorf("unexpected error: %s", err)
+		}
 		if directives != ignoreDirective|enforceDefaultCaseRequiredDirective {
 			t.Errorf("unexpected directives: %d", directives)
 		}
