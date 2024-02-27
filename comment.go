@@ -1,7 +1,6 @@
 package exhaustive
 
 import (
-	"errors"
 	"fmt"
 	"go/ast"
 	"go/token"
@@ -14,11 +13,6 @@ const (
 	enforceComment                    = "enforce"
 	ignoreDefaultCaseRequiredComment  = "ignore-default-case-required"
 	enforceDefaultCaseRequiredComment = "enforce-default-case-required"
-)
-
-var (
-	errConflictingDirectives = errors.New("conflicting directives")
-	errInvalidDirective      = errors.New("invalid directive")
 )
 
 type directive int64
@@ -54,7 +48,7 @@ func parseDirectives(commentGroups []*ast.CommentGroup) (directiveSet, error) {
 			case enforceDefaultCaseRequiredComment:
 				out |= enforceDefaultCaseRequiredDirective
 			default:
-				return out, fmt.Errorf("%w %q", errInvalidDirective, directive)
+				return out, fmt.Errorf("invalid directive %q", directive)
 			}
 		}
 	}
@@ -68,14 +62,11 @@ func (d directiveSet) has(directive directive) bool {
 func (d directiveSet) validate() error {
 	enforceConflict := ignoreDirective | enforceDirective
 	if d&(directiveSet(enforceConflict)) == directiveSet(enforceConflict) {
-		return fmt.Errorf("%w %q and %q", errConflictingDirectives, ignoreComment, enforceComment)
+		return fmt.Errorf("conflicting directives %q and %q", ignoreComment, enforceComment)
 	}
 	defaultCaseRequiredConflict := ignoreDefaultCaseRequiredDirective | enforceDefaultCaseRequiredDirective
 	if d&(directiveSet(defaultCaseRequiredConflict)) == directiveSet(defaultCaseRequiredConflict) {
-		return fmt.Errorf(
-			"%w %q and %q", errConflictingDirectives,
-			ignoreDefaultCaseRequiredComment, enforceDefaultCaseRequiredComment,
-		)
+		return fmt.Errorf("conflicting directives %q and %q", ignoreDefaultCaseRequiredComment, enforceDefaultCaseRequiredComment)
 	}
 	return nil
 }
