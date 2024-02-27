@@ -77,13 +77,18 @@ func mapChecker(pass *analysis.Pass, cfg mapConfig, generated boolCache, comment
 			}
 		}
 
-		if !cfg.explicit && hasCommentPrefix(relatedComments, ignoreComment) {
+		directives, err := parseDirectives(relatedComments)
+		if err != nil {
+			pass.Report(makeInvalidDirectiveDiagnostic(lit, err))
+		}
+
+		if !cfg.explicit && directives.has(ignoreDirective) {
 			// Skip checking of this map literal due to ignore
 			// comment. Still return true because there may be nested
 			// map literals that are not to be ignored.
 			return true, resultIgnoreComment
 		}
-		if cfg.explicit && !hasCommentPrefix(relatedComments, enforceComment) {
+		if cfg.explicit && !directives.has(enforceDirective) {
 			return true, resultNoEnforceComment
 		}
 
