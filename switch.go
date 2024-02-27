@@ -210,7 +210,7 @@ func makeInvalidDirectiveDiagnostic(node ast.Node, err error) analysis.Diagnosti
 		End: node.End(),
 		Message: fmt.Sprintf(
 			"failed to parse directives: %s",
-			err.Error(),
+			err,
 		),
 	}
 }
