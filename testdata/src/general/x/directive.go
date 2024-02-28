@@ -4,7 +4,7 @@ func _() {
 	var d Direction
 
 	// This comment should not produce an diagnostic (note unknown prefix "exhauster:"
-	//instead of "exhaustive:".
+	// instead of "exhaustive:").
 	//exhauster:foo
 	switch d {
 	case N:
@@ -16,7 +16,7 @@ func _() {
 	}
 
 	// This comment should not produce an diagnostic (note unknown prefix "exhauster:"
-	//instead of "exhaustive:".
+	// instead of "exhaustive:").
 	//exhauster:foo
 	_ = map[Direction]int{
 		N:                1,
