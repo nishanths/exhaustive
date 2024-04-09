@@ -367,27 +367,51 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 			},
 		}},
 		{"DeclGroupIgnoredEnum", enumMembers{
-			[]string{"DeclGroupIgnoredMamberC"},
+			[]string{"DeclGroupIgnoredMemberC"},
 			map[string]token.Pos{
-				"DeclGroupIgnoredMamberC": 0,
+				"DeclGroupIgnoredMemberC": 0,
 			},
 			map[string]constantValue{
-				"DeclGroupIgnoredMamberC": `3`,
+				"DeclGroupIgnoredMemberC": `3`,
 			},
 			map[constantValue][]string{
-				`3`: {"DeclGroupIgnoredMamberC"},
+				`3`: {"DeclGroupIgnoredMemberC"},
 			},
 		}},
 		{"DeclIgnoredEnum", enumMembers{
-			[]string{"DeclIgnoredMamberB"},
+			[]string{"DeclIgnoredMemberB"},
 			map[string]token.Pos{
-				"DeclIgnoredMamberB": 0,
+				"DeclIgnoredMemberB": 0,
 			},
 			map[string]constantValue{
-				"DeclIgnoredMamberB": `2`,
+				"DeclIgnoredMemberB": `2`,
 			},
 			map[constantValue][]string{
-				`2`: {"DeclIgnoredMamberB"},
+				`2`: {"DeclIgnoredMemberB"},
+			},
+		}},
+		{"DeclTypeInnerNotIgnore", enumMembers{
+			[]string{"DeclTypeInnerNotIgnoreMember"},
+			map[string]token.Pos{
+				"DeclTypeInnerNotIgnoreMember": 0,
+			},
+			map[string]constantValue{
+				"DeclTypeInnerNotIgnoreMember": `5`,
+			},
+			map[constantValue][]string{
+				`5`: {"DeclTypeInnerNotIgnoreMember"},
+			},
+		}},
+		{"DeclTypeIgnoredValue", enumMembers{
+			[]string{"DeclTypeNotIgnoredValue"},
+			map[string]token.Pos{
+				"DeclTypeNotIgnoredValue": 0,
+			},
+			map[string]constantValue{
+				"DeclTypeNotIgnoredValue": `1`,
+			},
+			map[constantValue][]string{
+				`1`: {"DeclTypeNotIgnoredValue"},
 			},
 		}},
 	}
