@@ -7,6 +7,7 @@ import (
 	"go/types"
 	"strings"
 
+	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/ast/inspector"
 )
 
@@ -63,7 +64,7 @@ func (em *enumMembers) factString() string {
 	return buf.String()
 }
 
-func findEnums(pkgScopeOnly bool, pkg *types.Package, inspect *inspector.Inspector, info *types.Info) map[enumType]enumMembers {
+func findEnums(pass *analysis.Pass, pkgScopeOnly bool, pkg *types.Package, inspect *inspector.Inspector, info *types.Info) map[enumType]enumMembers {
 	result := make(map[enumType]enumMembers)
 
 	inspect.Preorder([]ast.Node{&ast.GenDecl{}}, func(n ast.Node) {
@@ -71,6 +72,17 @@ func findEnums(pkgScopeOnly bool, pkg *types.Package, inspect *inspector.Inspect
 		if gen.Tok != token.CONST {
 			return
 		}
+
+		dirs, err := parseDirectives([]*ast.CommentGroup{gen.Doc})
+		if err != nil {
+			pass.Report(makeInvalidDirectiveDiagnostic(gen, err))
+			return
+		}
+
+		if dirs.has(ignoreDirective) {
+			return
+		}
+
 		for _, s := range gen.Specs {
 			for _, name := range s.(*ast.ValueSpec).Names {
 				enumTyp, memberName, val, ok := possibleEnumMember(name, info)

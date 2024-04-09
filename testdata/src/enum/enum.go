@@ -86,3 +86,20 @@ const (
 )
 
 func (WithMethod) String() string { return "whatever" }
+
+type DeclGroupIgnoredEnum int // want DeclGroupIgnoredEnum:"^DeclGroupIgnoredMamberC$"
+
+//exhaustive:ignore
+const (
+	DeclGroupIgnoredMamberA DeclGroupIgnoredEnum = 1
+	DeclGroupIgnoredMamberB DeclGroupIgnoredEnum = 2
+)
+
+const DeclGroupIgnoredMamberC DeclGroupIgnoredEnum = 3
+
+type DeclIgnoredEnum int // want DeclIgnoredEnum:"^DeclIgnoredMamberB$"
+
+//exhaustive:ignore
+const DeclIgnoredMamberA DeclIgnoredEnum = 1
+
+const DeclIgnoredMamberB DeclIgnoredEnum = 2

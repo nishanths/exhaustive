@@ -96,7 +96,7 @@ func TestFindEnums(t *testing.T) {
 
 	for _, pkgOnly := range [...]bool{false, true} {
 		t.Run(fmt.Sprint("pkgOnly", pkgOnly), func(t *testing.T) {
-			result := findEnums(pkgOnly, testdataEnumPkg.Types, inspect, testdataEnumPkg.TypesInfo)
+			result := findEnums(nil, pkgOnly, testdataEnumPkg.Types, inspect, testdataEnumPkg.TypesInfo)
 			checkEnums(t, transform(result), pkgOnly)
 		})
 	}
@@ -364,6 +364,30 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 			map[constantValue][]string{
 				`0`: {"Float64A"},
 				`1`: {"Float64B"},
+			},
+		}},
+		{"DeclGroupIgnoredEnum", enumMembers{
+			[]string{"DeclGroupIgnoredMamberC"},
+			map[string]token.Pos{
+				"DeclGroupIgnoredMamberC": 0,
+			},
+			map[string]constantValue{
+				"DeclGroupIgnoredMamberC": `3`,
+			},
+			map[constantValue][]string{
+				`3`: {"DeclGroupIgnoredMamberC"},
+			},
+		}},
+		{"DeclIgnoredEnum", enumMembers{
+			[]string{"DeclIgnoredMamberB"},
+			map[string]token.Pos{
+				"DeclIgnoredMamberB": 0,
+			},
+			map[string]constantValue{
+				"DeclIgnoredMamberB": `2`,
+			},
+			map[constantValue][]string{
+				`2`: {"DeclIgnoredMamberB"},
 			},
 		}},
 	}
