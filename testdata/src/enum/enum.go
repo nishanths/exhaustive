@@ -131,3 +131,11 @@ const (
 	//exhaustive:ignore
 	DeclTypeIsIgnoredValue DeclTypeIgnoredValue = 2
 )
+
+type DeclTypePartialIgnore int // want DeclTypePartialIgnore:"^DeclTypePartialIgnoreNotIgnored$"
+
+const (
+	//exhaustive:ignore
+	DeclTypePartialIgnoreIgnored    DeclTypePartialIgnore = 1
+	DeclTypePartialIgnoreNotIgnored DeclTypePartialIgnore = 2
+)

@@ -414,6 +414,18 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 				`1`: {"DeclTypeNotIgnoredValue"},
 			},
 		}},
+		{"DeclTypePartialIgnore", enumMembers{
+			[]string{"DeclTypePartialIgnoreNotIgnored"},
+			map[string]token.Pos{
+				"DeclTypePartialIgnoreNotIgnored": 0,
+			},
+			map[string]constantValue{
+				"DeclTypePartialIgnoreNotIgnored": `2`,
+			},
+			map[constantValue][]string{
+				`2`: {"DeclTypePartialIgnoreNotIgnored"},
+			},
+		}},
 	}
 
 	for _, c := range wantPkg {

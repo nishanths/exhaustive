@@ -75,14 +75,14 @@ func findEnums(pass *analysis.Pass, pkgScopeOnly bool, pkg *types.Package, inspe
 			return
 		}
 
-		if isIgnoreDecl(pass, gen.Doc) {
+		if hasIgnoreDecl(pass, gen.Doc) {
 			return
 		}
 
 		for _, s := range gen.Specs {
 			s := s.(*ast.ValueSpec)
-			if isIgnoreDecl(pass, s.Doc) {
-				return
+			if hasIgnoreDecl(pass, s.Doc) {
+				continue
 			}
 
 			for _, name := range s.Names {
@@ -167,12 +167,12 @@ func findIgnoredTypes(pass *analysis.Pass, inspect *inspector.Inspector, info *t
 			return
 		}
 
-		doIgnoreDecl := isIgnoreDecl(pass, gen.Doc)
+		doIgnoreDecl := hasIgnoreDecl(pass, gen.Doc)
 
 		for _, s := range gen.Specs {
 			t := s.(*ast.TypeSpec)
 
-			doIgnoreSpec := doIgnoreDecl || isIgnoreDecl(pass, t.Doc)
+			doIgnoreSpec := doIgnoreDecl || hasIgnoreDecl(pass, t.Doc)
 			if !doIgnoreSpec {
 				continue
 			}
@@ -201,7 +201,7 @@ func validBasic(basic *types.Basic) bool {
 	return false
 }
 
-func isIgnoreDecl(pass *analysis.Pass, doc *ast.CommentGroup) bool {
+func hasIgnoreDecl(pass *analysis.Pass, doc *ast.CommentGroup) bool {
 	dirs, err := parseDirectives([]*ast.CommentGroup{doc})
 	if err != nil {
 		pass.Report(makeInvalidDirectiveDiagnostic(doc, err))
