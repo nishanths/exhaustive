@@ -7,6 +7,7 @@ import (
 	"go/types"
 	"strings"
 
+	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/ast/inspector"
 )
 
@@ -63,16 +64,33 @@ func (em *enumMembers) factString() string {
 	return buf.String()
 }
 
-func findEnums(pkgScopeOnly bool, pkg *types.Package, inspect *inspector.Inspector, info *types.Info) map[enumType]enumMembers {
+func findEnums(pass *analysis.Pass, pkgScopeOnly bool, pkg *types.Package, inspect *inspector.Inspector, info *types.Info) map[enumType]enumMembers {
 	result := make(map[enumType]enumMembers)
+
+	ignoredTypes := findIgnoredTypes(pass, inspect, info)
 
 	inspect.Preorder([]ast.Node{&ast.GenDecl{}}, func(n ast.Node) {
 		gen := n.(*ast.GenDecl)
 		if gen.Tok != token.CONST {
 			return
 		}
+
+		if hasIgnoreDecl(pass, gen.Doc) {
+			return
+		}
+
 		for _, s := range gen.Specs {
-			for _, name := range s.(*ast.ValueSpec).Names {
+			s := s.(*ast.ValueSpec)
+			if hasIgnoreDecl(pass, s.Doc) {
+				continue
+			}
+
+			for _, name := range s.Names {
+
+				if _, ignored := ignoredTypes[info.Defs[name].Type()]; ignored {
+					continue
+				}
+
 				enumTyp, memberName, val, ok := possibleEnumMember(name, info)
 				if !ok {
 					continue
@@ -140,6 +158,32 @@ func possibleEnumMember(constName *ast.Ident, info *types.Info) (et enumType, na
 	return enumType{tn}, obj.Name(), determineConstVal(constName, info), true
 }
 
+func findIgnoredTypes(pass *analysis.Pass, inspect *inspector.Inspector, info *types.Info) map[types.Type]struct{} {
+	ignoredTypes := map[types.Type]struct{}{}
+
+	inspect.Preorder([]ast.Node{&ast.GenDecl{}}, func(n ast.Node) {
+		gen := n.(*ast.GenDecl)
+		if gen.Tok != token.TYPE {
+			return
+		}
+
+		doIgnoreDecl := hasIgnoreDecl(pass, gen.Doc)
+
+		for _, s := range gen.Specs {
+			t := s.(*ast.TypeSpec)
+
+			doIgnoreSpec := doIgnoreDecl || hasIgnoreDecl(pass, t.Doc)
+			if !doIgnoreSpec {
+				continue
+			}
+
+			ignoredTypes[info.Defs[t.Name].Type()] = struct{}{}
+		}
+	})
+
+	return ignoredTypes
+}
+
 func determineConstVal(name *ast.Ident, info *types.Info) constantValue {
 	c := info.ObjectOf(name).(*types.Const)
 	return constantValue(c.Val().ExactString())
@@ -155,6 +199,15 @@ func validBasic(basic *types.Basic) bool {
 		return true
 	}
 	return false
+}
+
+func hasIgnoreDecl(pass *analysis.Pass, doc *ast.CommentGroup) bool {
+	dirs, err := parseDirectives([]*ast.CommentGroup{doc})
+	if err != nil {
+		pass.Report(makeInvalidDirectiveDiagnostic(doc, err))
+		return false
+	}
+	return dirs.has(ignoreDirective)
 }
 
 // validNamedBasic returns whether the type t is a named type whose underlying

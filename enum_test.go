@@ -96,7 +96,7 @@ func TestFindEnums(t *testing.T) {
 
 	for _, pkgOnly := range [...]bool{false, true} {
 		t.Run(fmt.Sprint("pkgOnly", pkgOnly), func(t *testing.T) {
-			result := findEnums(pkgOnly, testdataEnumPkg.Types, inspect, testdataEnumPkg.TypesInfo)
+			result := findEnums(nil, pkgOnly, testdataEnumPkg.Types, inspect, testdataEnumPkg.TypesInfo)
 			checkEnums(t, transform(result), pkgOnly)
 		})
 	}
@@ -364,6 +364,66 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 			map[constantValue][]string{
 				`0`: {"Float64A"},
 				`1`: {"Float64B"},
+			},
+		}},
+		{"DeclGroupIgnoredEnum", enumMembers{
+			[]string{"DeclGroupIgnoredMemberC"},
+			map[string]token.Pos{
+				"DeclGroupIgnoredMemberC": 0,
+			},
+			map[string]constantValue{
+				"DeclGroupIgnoredMemberC": `3`,
+			},
+			map[constantValue][]string{
+				`3`: {"DeclGroupIgnoredMemberC"},
+			},
+		}},
+		{"DeclIgnoredEnum", enumMembers{
+			[]string{"DeclIgnoredMemberB"},
+			map[string]token.Pos{
+				"DeclIgnoredMemberB": 0,
+			},
+			map[string]constantValue{
+				"DeclIgnoredMemberB": `2`,
+			},
+			map[constantValue][]string{
+				`2`: {"DeclIgnoredMemberB"},
+			},
+		}},
+		{"DeclTypeInnerNotIgnore", enumMembers{
+			[]string{"DeclTypeInnerNotIgnoreMember"},
+			map[string]token.Pos{
+				"DeclTypeInnerNotIgnoreMember": 0,
+			},
+			map[string]constantValue{
+				"DeclTypeInnerNotIgnoreMember": `5`,
+			},
+			map[constantValue][]string{
+				`5`: {"DeclTypeInnerNotIgnoreMember"},
+			},
+		}},
+		{"DeclTypeIgnoredValue", enumMembers{
+			[]string{"DeclTypeNotIgnoredValue"},
+			map[string]token.Pos{
+				"DeclTypeNotIgnoredValue": 0,
+			},
+			map[string]constantValue{
+				"DeclTypeNotIgnoredValue": `1`,
+			},
+			map[constantValue][]string{
+				`1`: {"DeclTypeNotIgnoredValue"},
+			},
+		}},
+		{"DeclTypePartialIgnore", enumMembers{
+			[]string{"DeclTypePartialIgnoreNotIgnored"},
+			map[string]token.Pos{
+				"DeclTypePartialIgnoreNotIgnored": 0,
+			},
+			map[string]constantValue{
+				"DeclTypePartialIgnoreNotIgnored": `2`,
+			},
+			map[constantValue][]string{
+				`2`: {"DeclTypePartialIgnoreNotIgnored"},
 			},
 		}},
 	}

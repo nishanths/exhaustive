@@ -29,6 +29,9 @@ type directiveSet int64
 func parseDirectives(commentGroups []*ast.CommentGroup) (directiveSet, error) {
 	var out directiveSet
 	for _, commentGroup := range commentGroups {
+		if commentGroup == nil {
+			continue
+		}
 		for _, comment := range commentGroup.List {
 			commentLine := comment.Text
 			if !strings.HasPrefix(commentLine, exhaustiveComment) {

@@ -86,3 +86,56 @@ const (
 )
 
 func (WithMethod) String() string { return "whatever" }
+
+type DeclGroupIgnoredEnum int // want DeclGroupIgnoredEnum:"^DeclGroupIgnoredMemberC$"
+
+//exhaustive:ignore
+const (
+	DeclGroupIgnoredMemberA DeclGroupIgnoredEnum = 1
+	DeclGroupIgnoredMemberB DeclGroupIgnoredEnum = 2
+)
+
+const DeclGroupIgnoredMemberC DeclGroupIgnoredEnum = 3
+
+type DeclIgnoredEnum int // want DeclIgnoredEnum:"^DeclIgnoredMemberB$"
+
+//exhaustive:ignore
+const DeclIgnoredMemberA DeclIgnoredEnum = 1
+
+const DeclIgnoredMemberB DeclIgnoredEnum = 2
+
+//exhaustive:ignore
+type DeclTypeIgnoredEnum int
+
+const (
+	DeclTypeIgnoredMemberA DeclTypeIgnoredEnum = 1
+	DeclTypeIgnoredMemberB DeclTypeIgnoredEnum = 2
+)
+
+type (
+	//exhaustive:ignore
+	DeclTypeInnerIgnore    int
+	DeclTypeInnerNotIgnore int // want DeclTypeInnerNotIgnore:"^DeclTypeInnerNotIgnoreMember$"
+)
+
+const (
+	DeclTypeInnerIgnoreMemberA   DeclTypeInnerIgnore    = 3
+	DeclTypeInnerIgnoreMemberB   DeclTypeInnerIgnore    = 4
+	DeclTypeInnerNotIgnoreMember DeclTypeInnerNotIgnore = 5
+)
+
+type DeclTypeIgnoredValue int // want DeclTypeIgnoredValue:"^DeclTypeNotIgnoredValue$"
+
+const (
+	DeclTypeNotIgnoredValue DeclTypeIgnoredValue = 1
+	//exhaustive:ignore
+	DeclTypeIsIgnoredValue DeclTypeIgnoredValue = 2
+)
+
+type DeclTypePartialIgnore int // want DeclTypePartialIgnore:"^DeclTypePartialIgnoreNotIgnored$"
+
+const (
+	//exhaustive:ignore
+	DeclTypePartialIgnoreIgnored    DeclTypePartialIgnore = 1
+	DeclTypePartialIgnoreNotIgnored DeclTypePartialIgnore = 2
+)
