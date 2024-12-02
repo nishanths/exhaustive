@@ -11,6 +11,7 @@ func TestExhaustive(t *testing.T) {
 	runTest := func(t *testing.T, pattern string, setup ...func()) {
 		t.Helper()
 		t.Run(pattern, func(t *testing.T) {
+			t.Parallel()
 			resetFlags()
 			// default to checking switch and map for test.
 			fCheck = stringsFlag{
