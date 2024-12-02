@@ -73,7 +73,7 @@ func TestEnumMembersFact(t *testing.T) {
 }
 
 // This test exists to prevent regressions where changes made to a fact type used
-// by the Analyzer makes the type fail to gob-encode/decode. Particuarly:
+// by the Analyzer makes the type fail to gob-encode/decode. Particularly:
 //
 //   - gob values cannot seem to have nil pointers.
 //   - fields must be exported to survive the encode/decode.
