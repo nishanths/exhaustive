@@ -13,19 +13,19 @@ import (
 
 // checkEnumMembersLiteral checks that an enumMembers literal is correctly
 // defined in tests.
-func checkEnumMembersLiteral(id string, v enumMembers) {
+func checkEnumMembersLiteral(t *testing.T, id string, v enumMembers) {
 	var count int
 	for _, names := range v.ValueToNames {
 		count += len(names)
 	}
 	if len(v.Names) != len(v.NameToPos) {
-		panic(fmt.Sprintf("%s: wrong lengths: %d != %d (test definition bug)", id, len(v.Names), len(v.NameToPos)))
+		t.Fatalf("%s: wrong lengths: %d != %d (test definition bug)", id, len(v.Names), len(v.NameToPos))
 	}
 	if len(v.Names) != len(v.NameToValue) {
-		panic(fmt.Sprintf("%s: wrong lengths: %d != %d (test definition bug)", id, len(v.Names), len(v.NameToValue)))
+		t.Fatalf("%s: wrong lengths: %d != %d (test definition bug)", id, len(v.Names), len(v.NameToValue))
 	}
 	if len(v.Names) != count {
-		panic(fmt.Sprintf("%s: wrong lengths: %d != %d (test definition bug)", id, len(v.Names), count))
+		t.Fatalf("%s: wrong lengths: %d != %d (test definition bug)", id, len(v.Names), count)
 	}
 }
 
@@ -88,7 +88,7 @@ func TestFindEnums(t *testing.T) {
 		cfg := &packages.Config{Mode: packages.NeedTypesInfo | packages.NeedTypes | packages.NeedSyntax}
 		pkgs, err := packages.Load(cfg, "./testdata/src/enum")
 		if err != nil {
-			panic(err)
+			t.Fatal(err)
 		}
 		return pkgs[0]
 	}()
@@ -429,7 +429,7 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 	}
 
 	for _, c := range wantPkg {
-		checkEnumMembersLiteral(c.typeName, c.members)
+		checkEnumMembersLiteral(t, c.typeName, c.members)
 	}
 
 	wantInner := []checkEnum{
@@ -486,7 +486,7 @@ func checkEnums(t *testing.T, got []checkEnum, pkgOnly bool) {
 	}
 
 	for _, c := range wantInner {
-		checkEnumMembersLiteral(c.typeName, c.members)
+		checkEnumMembersLiteral(t, c.typeName, c.members)
 	}
 
 	want := append([]checkEnum{}, wantPkg...)
