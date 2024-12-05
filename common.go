@@ -223,7 +223,7 @@ func exprConstVal(e ast.Expr, info *types.Info) (constantValue, bool) {
 	}
 }
 
-// stripTypeConversions removing type conversions from the experession.
+// stripTypeConversions removing type conversions from the expression.
 func stripTypeConversions(e ast.Expr, info *types.Info) ast.Expr {
 	c, ok := e.(*ast.CallExpr)
 	if !ok {

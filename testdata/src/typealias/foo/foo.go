@@ -4,7 +4,7 @@ import "typealias/bar"
 
 type T1 = bar.T2
 
-// None of these constants can constitue T2's enum members
+// None of these constants can constitute T2's enum members
 // because they are not in the same package as the enum type T2.
 const (
     A        = bar.A // matches bar.A by value; can be listed in switch case instead of bar.A
