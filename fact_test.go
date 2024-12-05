@@ -33,7 +33,7 @@ func TestEnumMembersFact(t *testing.T) {
 				},
 			},
 		}
-		checkEnumMembersLiteral("Biome", e.Members)
+		checkEnumMembersLiteral(t, "Biome", e.Members)
 		if want := "Tundra,Savanna,Desert"; e.String() != want {
 			t.Errorf("got %v, want %v", e.String(), want)
 		}
@@ -65,7 +65,7 @@ func TestEnumMembersFact(t *testing.T) {
 				},
 			},
 		}
-		checkEnumMembersLiteral("Token", e.Members)
+		checkEnumMembersLiteral(t, "Token", e.Members)
 		if want := "_,add,sub,mul,quotient,remainder"; e.String() != want {
 			t.Errorf("got %v, want %v", e.String(), want)
 		}
