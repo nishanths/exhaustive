@@ -22,6 +22,7 @@ func registerFlags() {
 	Analyzer.Flags.BoolVar(&fDefaultCaseRequired, DefaultCaseRequiredFlag, false, "switch statement requires default case even if exhaustive")
 	Analyzer.Flags.Var(&fIgnoreEnumMembers, IgnoreEnumMembersFlag, "ignore constants matching `regexp`")
 	Analyzer.Flags.Var(&fIgnoreEnumTypes, IgnoreEnumTypesFlag, "ignore types matching `regexp`")
+	Analyzer.Flags.Var(&fEnforceEnumTypes, EnforceEnumTypesFlag, "only check enum types matching `regexp`")
 	Analyzer.Flags.BoolVar(&fPackageScopeOnly, PackageScopeOnlyFlag, false, "only discover enums declared in file-level blocks")
 
 	var unused string
@@ -40,6 +41,7 @@ const (
 	DefaultCaseRequiredFlag        = "default-case-required"
 	IgnoreEnumMembersFlag          = "ignore-enum-members"
 	IgnoreEnumTypesFlag            = "ignore-enum-types"
+	EnforceEnumTypesFlag           = "enforce-enum-types"
 	PackageScopeOnlyFlag           = "package-scope-only"
 
 	// Deprecated flag names.
@@ -57,6 +59,7 @@ var (
 	fDefaultCaseRequired        bool
 	fIgnoreEnumMembers          regexpFlag
 	fIgnoreEnumTypes            regexpFlag
+	fEnforceEnumTypes           regexpFlag
 	fPackageScopeOnly           bool
 )
 
@@ -71,6 +74,7 @@ func resetFlags() {
 	fDefaultCaseRequired = false
 	fIgnoreEnumMembers = regexpFlag{}
 	fIgnoreEnumTypes = regexpFlag{}
+	fEnforceEnumTypes = regexpFlag{}
 	fPackageScopeOnly = false
 }
 
@@ -129,6 +133,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 				checkGenerated:             fCheckGenerated,
 				ignoreConstant:             fIgnoreEnumMembers.re,
 				ignoreType:                 fIgnoreEnumTypes.re,
+				enforceType:                fEnforceEnumTypes.re,
 			}
 			checker := switchChecker(pass, conf, generated, comments)
 			inspect.WithStack([]ast.Node{&ast.SwitchStmt{}}, toVisitor(checker))
@@ -139,6 +144,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 				checkGenerated: fCheckGenerated,
 				ignoreConstant: fIgnoreEnumMembers.re,
 				ignoreType:     fIgnoreEnumTypes.re,
+				enforceType:    fEnforceEnumTypes.re,
 			}
 			checker := mapChecker(pass, conf, generated, comments)
 			inspect.WithStack([]ast.Node{&ast.CompositeLit{}}, toVisitor(checker))

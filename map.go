@@ -15,6 +15,7 @@ type mapConfig struct {
 	checkGenerated bool
 	ignoreConstant *regexp.Regexp // can be nil
 	ignoreType     *regexp.Regexp // can be nil
+	enforceType    *regexp.Regexp // can be nil
 }
 
 // mapChecker returns a node visitor that checks for exhaustiveness of
@@ -95,6 +96,12 @@ func mapChecker(pass *analysis.Pass, cfg mapConfig, generated boolCache, comment
 		es, ok := composingEnumTypes(pass, mapType.Key())
 		if !ok || len(es) == 0 {
 			return true, resultEnumTypes
+		}
+
+		var okFilter bool
+		es, okFilter = filterEnforcedTypes(es, cfg.enforceType)
+		if !okFilter {
+			return true, resultTypeNotEnforced
 		}
 
 		var checkl checklist

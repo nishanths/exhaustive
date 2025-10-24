@@ -19,6 +19,23 @@ type enumTypeAndMembers struct {
 	members enumMembers
 }
 
+func enumTypeQualifiedName(et enumType) string {
+	return fmt.Sprintf("%s.%s", et.Pkg().Path(), et.TypeName.Name())
+}
+
+func filterEnforcedTypes(es []enumTypeAndMembers, enforce *regexp.Regexp) ([]enumTypeAndMembers, bool) {
+	if enforce == nil {
+		return es, len(es) > 0
+	}
+	filtered := es[:0]
+	for _, e := range es {
+		if enforce.MatchString(enumTypeQualifiedName(e.typ)) {
+			filtered = append(filtered, e)
+		}
+	}
+	return filtered, len(filtered) > 0
+}
+
 func fromNamed(pass *analysis.Pass, t *types.Named, typeparam bool) (result []enumTypeAndMembers, ok bool) {
 	if tpkg := t.Obj().Pkg(); tpkg == nil {
 		// go/types documentation says: nil for labels and
@@ -291,7 +308,7 @@ func (c *checklist) add(et enumType, em enumMembers, includeUnexported bool) {
 		if c.reMatch(c.ignoreConstantRe, fmt.Sprintf("%s.%s", et.Pkg().Path(), name)) {
 			return
 		}
-		if c.reMatch(c.ignoreTypeRe, fmt.Sprintf("%s.%s", et.Pkg().Path(), et.TypeName.Name())) {
+		if c.reMatch(c.ignoreTypeRe, enumTypeQualifiedName(et)) {
 			return
 		}
 		mem := member{

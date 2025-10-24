@@ -138,6 +138,7 @@ Summary:
 	-default-signifies-exhaustive  bool                     false
 	-ignore-enum-members           regexp pattern           (none)
 	-ignore-enum-types             regexp pattern           (none)
+	-enforce-enum-types            regexp pattern           (none)
 	-package-scope-only            bool                     false
 
 Descriptions:
@@ -182,6 +183,11 @@ Descriptions:
 
 	-ignore-enum-types
 		Similar to -ignore-enum-members but for types.
+
+	-enforce-enum-types
+		Only check enum types whose fully qualified name (package path
+		followed by the type name) matches the specified regular expression.
+		When this flag is unset, all enum types are checked.
 
 	-package-scope-only
 		Only discover enums declared in file-level blocks. By

@@ -47,6 +47,7 @@ const (
 	resultMissingDefaultCase   = "missing required default case"
 	resultReportedDiagnostic   = "reported diagnostic"
 	resultEnumTypes            = "invalid or empty composing enum types"
+	resultTypeNotEnforced      = "enum type not enforced"
 )
 
 // switchConfig is configuration for switchChecker.
@@ -57,6 +58,7 @@ type switchConfig struct {
 	checkGenerated             bool
 	ignoreConstant             *regexp.Regexp // can be nil
 	ignoreType                 *regexp.Regexp // can be nil
+	enforceType                *regexp.Regexp // can be nil
 }
 
 // switchChecker returns a node visitor that checks exhaustiveness of
@@ -120,6 +122,12 @@ func switchChecker(pass *analysis.Pass, cfg switchConfig, generated boolCache, c
 		es, ok := composingEnumTypes(pass, t.Type)
 		if !ok || len(es) == 0 {
 			return true, resultEnumTypes
+		}
+
+		var okFilter bool
+		es, okFilter = filterEnforcedTypes(es, cfg.enforceType)
+		if !okFilter {
+			return true, resultTypeNotEnforced
 		}
 
 		var checkl checklist

@@ -75,6 +75,12 @@ func TestExhaustive(t *testing.T) {
 		fExplicitExhaustiveMap = true
 	})
 
+	runTest(t, "enforceenumtypes/...", func() {
+		fEnforceEnumTypes = regexpFlag{
+			regexp.MustCompile(`^enforceenumtypes\.MetricType$`),
+		}
+	})
+
 	// To satisfy exhaustiveness, it is sufficient for each unique constant
 	// value of the members to be listed, not each member by name.
 	runTest(t, "duplicate-enum-value/...")
