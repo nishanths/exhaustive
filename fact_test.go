@@ -94,6 +94,111 @@ func TestFactsGob(t *testing.T) {
 	}
 }
 
+func TestEnumMembersFactGobDeterministic(t *testing.T) {
+	fact := enumMembersFact{
+		Members: enumMembers{
+			Names: []string{
+				"Member00",
+				"Member01",
+				"Member02",
+				"Member03",
+				"Member04",
+				"Member05",
+				"Member06",
+				"Member07",
+				"Member08",
+				"Member09",
+				"Member10",
+				"Member11",
+				"Member12",
+				"Member13",
+				"Member14",
+				"Member15",
+			},
+			NameToPos: map[string]token.Pos{
+				"Member00": 100,
+				"Member01": 101,
+				"Member02": 102,
+				"Member03": 103,
+				"Member04": 104,
+				"Member05": 105,
+				"Member06": 106,
+				"Member07": 107,
+				"Member08": 108,
+				"Member09": 109,
+				"Member10": 110,
+				"Member11": 111,
+				"Member12": 112,
+				"Member13": 113,
+				"Member14": 114,
+				"Member15": 115,
+			},
+			NameToValue: map[string]constantValue{
+				"Member00": "0",
+				"Member01": "1",
+				"Member02": "2",
+				"Member03": "3",
+				"Member04": "4",
+				"Member05": "5",
+				"Member06": "6",
+				"Member07": "7",
+				"Member08": "8",
+				"Member09": "9",
+				"Member10": "10",
+				"Member11": "11",
+				"Member12": "12",
+				"Member13": "13",
+				"Member14": "14",
+				"Member15": "15",
+			},
+			ValueToNames: map[constantValue][]string{
+				"0":  {"Member00"},
+				"1":  {"Member01"},
+				"2":  {"Member02"},
+				"3":  {"Member03"},
+				"4":  {"Member04"},
+				"5":  {"Member05"},
+				"6":  {"Member06"},
+				"7":  {"Member07"},
+				"8":  {"Member08"},
+				"9":  {"Member09"},
+				"10": {"Member10"},
+				"11": {"Member11"},
+				"12": {"Member12"},
+				"13": {"Member13"},
+				"14": {"Member14"},
+				"15": {"Member15"},
+			},
+		},
+	}
+
+	first := encodeFact(t, &fact)
+	var decoded enumMembersFact
+	if err := gob.NewDecoder(bytes.NewReader(first)).Decode(&decoded); err != nil {
+		t.Fatalf("failed to gob-decode: %s", err)
+	}
+	if !reflect.DeepEqual(decoded, fact) {
+		t.Fatalf("decoded fact mismatch:\ngot  %#v\nwant %#v", decoded, fact)
+	}
+
+	for i := 0; i < 100; i++ {
+		got := encodeFact(t, &fact)
+		if !bytes.Equal(got, first) {
+			t.Fatalf("gob encoding changed on iteration %d: first length %d, got length %d", i, len(first), len(got))
+		}
+	}
+}
+
+func encodeFact(t *testing.T, fact *enumMembersFact) []byte {
+	t.Helper()
+
+	var buf bytes.Buffer
+	if err := gob.NewEncoder(&buf).Encode(fact); err != nil {
+		t.Fatalf("failed to gob-encode: %s", err)
+	}
+	return buf.Bytes()
+}
+
 func checkOneFactType(t *testing.T, fact analysis.Fact) {
 	t.Helper()
 
