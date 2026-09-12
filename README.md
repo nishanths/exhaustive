@@ -1,104 +1,73 @@
-# exhaustive
+The exhaustive static analysis checks that expression switch
+statements, in which the type of the switch expression is an
+enumerated type, are exhaustive.
 
-[![Godoc][godoc-svg]][godoc]
+The analysis is implemented in multiple passes; see the packages
+in the 'passes/\*' directories.
+Package enumerated find declarations of enumerated types and
+enumerated constants.
+Package exhaustive scans a syntax tree for eligible
+expression switch statements and checks that the switch
+statements are exhaustive.
 
-`exhaustive` checks exhaustiveness of enum switch statements in Go source code.
+Documentation:
 
-For the definition of enum and the definition of exhaustiveness used by this
-program, see [godoc][godoc-doc]. For the changelog, see [CHANGELOG][changelog]
-in the GitHub wiki. The program can be configured to additionally check
-exhaustiveness of keys in map literals whose key type is an enum.
+<https://pkg.go.dev/github.com/nishanths/exhaustive/passes/enumerated>
 
-## Usage
+<https://pkg.go.dev/github.com/nishanths/exhaustive/passes/exhaustive>
 
-Command:
+# Usage
+
+The exhaustive command can be installed with 'go install'.
+
+	go install github.com/nishanths/exhaustive/cmd/exhaustive@latest
+
+The synopsis of the command is:
+
+	exhaustive [-B] [-d] [-defrequire] [-e] [-g] [-i] [-p] [-check string]
+	           [-constignore value] [-typeignore value] [-typeonly value] [packages]
+
+The flags are documented in the package comments. See links to
+documentation above.
+
+The packages in this module can be imported and used from external
+analysis driver programs. See <https://golang.org/x/tools/go/analysis>
+for details. The analysis driver program may want to make
+available to users the set of flags defined by both the
+enumerated analyzer and the exhaustive analyzer.
+
+# Examples
+
+Given the following Go source code:
 
 ```
-go install github.com/nishanths/exhaustive/cmd/exhaustive@latest
+package example
 
-exhaustive [flags] [packages]
-```
-
-For available flags, refer to the [Flags][godoc-flags] section in godoc or run
-`exhaustive -h`.
-
-Package:
-
-```
-go get github.com/nishanths/exhaustive
-
-import "github.com/nishanths/exhaustive"
-```
-
-The `exhaustive.Analyzer` variable follows guidelines in the
-[`golang.org/x/tools/go/analysis`][xanalysis] package. This should make it
-possible to integrate `exhaustive` with your own analysis driver program.
-
-## Example
-
-Given an enum:
-
-```go
-package token // import "example.org/token"
-
-type Token int
+type vcs int
 
 const (
-	Add Token = iota
-	Subtract
-	Multiply
-	Quotient
-	Remainder
+	bzr vcs = iota
+	fossil
+	git
+	hg
+	svn
+	darcs
 )
-```
 
-and code that switches on the enum:
-
-```go
-package calc
-
-import "example.org/token"
-
-func x(t token.Token) {
-	switch t {
-	case token.Add:
-	case token.Subtract:
-	case token.Remainder:
-	default:
+func f(v vcs) {
+	switch v {
+	case bzr:
+	case fossil:
+	case git:
+	case svn:
 	}
 }
 ```
 
-running `exhaustive` with default flags will produce:
+the exhaustive command produces the following diagnostic:
 
-```
-calc.go:6:2: missing cases in switch of type token.Token: token.Multiply, token.Quotient
-```
+    example.go:15:2: switch not exhaustive: missing cases: hg, darcs
 
-Specify flag `-check=switch,map` to additionally check exhaustiveness of keys
-in map literals. For example:
-
-```go
-var m = map[token.Token]rune{
-	token.Add:      '+',
-	token.Subtract: '-',
-	token.Multiply: '*',
-	token.Quotient: '/',
-}
-```
-
-```
-calc.go:14:9: missing keys in map of key type token.Token: token.Remainder
-```
-
-## Contributing
-
-Issues and changes are welcome. Please discuss substantial changes in an issue
-first.
-
-[godoc]: https://pkg.go.dev/github.com/nishanths/exhaustive
-[godoc-svg]: https://pkg.go.dev/badge/github.com/nishanths/exhaustive.svg
-[godoc-doc]: https://pkg.go.dev/github.com/nishanths/exhaustive#section-documentation
-[godoc-flags]: https://pkg.go.dev/github.com/nishanths/exhaustive#hdr-Flags
-[xanalysis]: https://pkg.go.dev/golang.org/x/tools/go/analysis
-[changelog]: https://github.com/nishanths/exhaustive/wiki/CHANGELOG
+Though it is not so in the example, in general the enumerated
+type declarations and the switch statements can be in different
+packages.

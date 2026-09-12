@@ -1,0 +1,69 @@
+package defrequire_directivetrue
+
+type t1 int
+
+const (
+	x0 t1 = iota
+	x1
+)
+
+func f1() {
+	var t t1
+
+	switch t { // want "^switch not exhaustive: missing cases: x1$"
+	case x0:
+	}
+
+	switch t {
+	case x0:
+	case x1:
+	}
+
+	switch t {
+	case x0:
+	case x1:
+	default:
+	}
+}
+
+func f2() {
+	var t t1
+
+	//exhaustive:defrequire=true
+	switch t { // want "^missing default case$" "^switch not exhaustive: missing cases: x1$"
+	case x0:
+	}
+
+	//exhaustive:defrequire=true
+	switch t { // want "^missing default case$"
+	case x0:
+	case x1:
+	}
+
+	//exhaustive:defrequire=true
+	switch t {
+	case x0:
+	case x1:
+	default:
+	}
+
+	// Deprecated spellings of the same comment directives as above:
+
+	//exhaustive:enforce-default-case-required
+	switch t { // want "^missing default case$" "^switch not exhaustive: missing cases: x1$"
+	case x0:
+	}
+
+	//exhaustive:enforce-default-case-required
+	switch t { // want "^missing default case$"
+	case x0:
+	case x1:
+	}
+
+	//exhaustive:enforce-default-case-required
+	switch t {
+	case x0:
+	case x1:
+	default:
+	}
+}

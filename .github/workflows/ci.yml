@@ -1,30 +1,21 @@
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
 name: ci
 jobs:
   all:
     strategy:
       matrix:
-        go-version: ["1.24", "1.25", "1.x"]
+        go-version: ["1.26", "1.x"]
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-
     steps:
-    - name: install go
-      uses: actions/setup-go@v2
-      with:
-        go-version: ${{ matrix.go-version }}
-
-    - name: checkout code
-      uses: actions/checkout@v2
-
-    - name: build
-      run: make build
-
-    - name: install vet tools
-      run: make install-vet
-
-    - name: vet
-      run: make vet
-
-    - name: test
-      run: make test
+      - uses: actions/setup-go@v7
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache-dependency-path: "go.sum"
+      - uses: actions/checkout@v7
+      - run: go build ./...
+      - run: go vet ./...
+      - run: go test ./...

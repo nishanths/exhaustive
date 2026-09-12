@@ -1,12 +1,5 @@
 .DS_Store
-*.swp
-tags
+/cover.out
 
 # binary
-/cmd/exhaustive/exhaustive
 /exhaustive
-
-# testing artifacts
-/coverage.out
-
-/CHANGELOG.md
