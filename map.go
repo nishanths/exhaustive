@@ -34,16 +34,18 @@ func mapChecker(pass *analysis.Pass, cfg mapConfig, generated boolCache, comment
 
 		lit := n.(*ast.CompositeLit)
 
-		mapType, ok := pass.TypesInfo.Types[lit.Type].Type.(*types.Map)
-		if !ok {
-			namedType, ok2 := pass.TypesInfo.Types[lit.Type].Type.(*types.Named)
-			if !ok2 {
-				return true, resultNotMapLiteral
-			}
-			mapType, ok = namedType.Underlying().(*types.Map)
+		var mapType *types.Map
+		switch tt := types.Unalias(pass.TypesInfo.Types[lit.Type].Type).(type) {
+		case *types.Map:
+			mapType = tt
+		case *types.Named:
+			var ok bool
+			mapType, ok = tt.Underlying().(*types.Map)
 			if !ok {
 				return true, resultNotMapLiteral
 			}
+		default:
+			return true, resultNotMapLiteral
 		}
 
 		if len(lit.Elts) == 0 {

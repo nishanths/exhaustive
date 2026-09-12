@@ -144,7 +144,7 @@ func possibleEnumMember(constName *ast.Ident, info *types.Info) (et enumType, na
 		return enumType{}, "", "", false
 	}
 
-	named := obj.Type().(*types.Named) // guaranteed by validNamedBasic
+	named := types.Unalias(obj.Type()).(*types.Named) // guaranteed by validNamedBasic
 	tn := named.Obj()
 
 	// By definition, enum type's scope and enum member's scope must be the
@@ -216,8 +216,9 @@ func hasIgnoreDecl(pass *analysis.Pass, doc *ast.CommentGroup) bool {
 //
 // The following is guaranteed:
 //
-//	validNamedBasic(t) == true => t.(*types.Named)
+//	validNamedBasic(t) == true => types.Unalias(t).(*types.Named)
 func validNamedBasic(t types.Type) bool {
+	t = types.Unalias(t)
 	named, ok := t.(*types.Named)
 	if !ok {
 		return false

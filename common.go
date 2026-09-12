@@ -73,6 +73,9 @@ func fromTypeParam(pass *analysis.Pass, tp *types.TypeParam, typeparam bool) (re
 
 func fromType(pass *analysis.Pass, t types.Type, typeparam bool) (result []enumTypeAndMembers, ok bool) {
 	switch t := t.(type) {
+	case *types.Alias:
+		return fromType(pass, types.Unalias(t), typeparam)
+
 	case *types.Named:
 		return fromNamed(pass, t, typeparam)
 
