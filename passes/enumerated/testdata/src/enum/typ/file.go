@@ -7,6 +7,27 @@ type (
 	t2 t1  // want t2:"^permittedtype$" t2:"^enumerated$" t2:"^elements:x1 = 10, x2 = 20, x7 = 70, x8 = 80, x08 = 80, x008 = 80, x9 = 90, x10 = 100, x11 = 110, x12 = 120, x13 = 130, x14 = 140$"
 	t3 t2  // want t3:"^permittedtype$" t3:"^enumerated$" t3:"^elements:y1 = 10, y2 = 20, y5 = 50$"
 
+	// test cases for all permitted underlying types
+	_ bool       // want _:"^permittedtype$"
+	_ byte       // want _:"^permittedtype$"
+	_ complex64  // want _:"^permittedtype$"
+	_ complex128 // want _:"^permittedtype$"
+	_ float32    // want _:"^permittedtype$"
+	_ float64    // want _:"^permittedtype$"
+	_ int        // want _:"^permittedtype$"
+	_ int8       // want _:"^permittedtype$"
+	_ int16      // want _:"^permittedtype$"
+	_ int32      // want _:"^permittedtype$"
+	_ int64      // want _:"^permittedtype$"
+	_ rune       // want _:"^permittedtype$"
+	_ string     // want _:"^permittedtype$"
+	_ uint       // want _:"^permittedtype$"
+	_ uint8      // want _:"^permittedtype$"
+	_ uint16     // want _:"^permittedtype$"
+	_ uint32     // want _:"^permittedtype$"
+	_ uint64     // want _:"^permittedtype$"
+	_ uintptr    // want _:"^permittedtype$"
+
 	q1 interface{}    // not permitted: underlying type is not *types.Basic
 	q2 *int           // ditto
 	q3 []byte         // ditto
