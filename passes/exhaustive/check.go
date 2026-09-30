@@ -16,14 +16,14 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
-func checkExprSwitch(pass *analysis.Pass, opts *options) {
+func checkSwitch(pass *analysis.Pass, opts *options) {
 	var (
 		in             = pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 		enums          = pass.ResultOf[enumerated.Analyzer].(enumerated.Result)
 		commentsByFile = make(map[*ast.File]ast.CommentMap)
 		// Helper functions.
 		printExpr = func(e ast.Expr) string { return printNode(pass.Fset, ast.Unparen(e)) }
-		typeError = func(e ast.Expr) string { return fmt.Sprintf("%s: could not determine type", printExpr(e)) }
+		errorType = func(e ast.Expr) string { return fmt.Sprintf("%s: could not determine type", printExpr(e)) }
 	)
 
 	in.Root().Inspect([]ast.Node{(*ast.SwitchStmt)(nil)}, func(c inspector.Cursor) (descend bool) {
@@ -70,7 +70,7 @@ func checkExprSwitch(pass *analysis.Pass, opts *options) {
 
 		tagType := pass.TypesInfo.TypeOf(sw.Tag)
 		if tagType == nil {
-			pass.Reportf(sw.Tag.Pos(), "%s", typeError(sw.Tag))
+			pass.Reportf(sw.Tag.Pos(), "%s", errorType(sw.Tag))
 			return true
 		}
 
@@ -87,14 +87,12 @@ func checkExprSwitch(pass *analysis.Pass, opts *options) {
 		// (they are specified at source code level) than
 		// include/exclude pattern flags. Hence an
 		// enforce directive, if present, should take
-		// precdence over any include/exclude patterns.
+		// precedence over any include/exclude patterns.
 		if !directives[dirEnforce] {
 			if !proceedInclExclPattern(t, opts) {
 				return true
 			}
 		}
-
-		unsatisfied := mustSatisfy(pass.Pkg, cs, opts)
 
 		needDefault := opts.defaultCaseRequired
 		if v, ok := directives[dirDefrequire]; ok {
@@ -102,7 +100,7 @@ func checkExprSwitch(pass *analysis.Pass, opts *options) {
 		}
 		foundDefault := false
 
-		// Analyze case clauses.
+		unsatisfied := mustSatisfy(pass.Pkg, cs, opts)
 		for _, cc := range sw.Body.List {
 			cc := cc.(*ast.CaseClause)
 			if cc.List == nil {
@@ -115,7 +113,7 @@ func checkExprSwitch(pass *analysis.Pass, opts *options) {
 			for _, expr := range cc.List {
 				tv, ok := pass.TypesInfo.Types[expr]
 				if !ok {
-					pass.Reportf(expr.Pos(), "%s", typeError(expr))
+					pass.Reportf(expr.Pos(), "%s", errorType(expr))
 					continue
 				}
 				if tv.Value != nil {
@@ -193,7 +191,7 @@ func knownEnumeratedType(enums enumerated.Result, t types.Type) (*types.Named, [
 }
 
 // The result from mustSatisfy is the set of constant values that
-// must satisified to be exhaustive. The result is prepared in
+// must satisfied to be exhaustive. The result is prepared in
 // the context of the current package and the given options.
 //
 // The keys of the returned map are the set of constant values in
@@ -206,7 +204,7 @@ func mustSatisfy(currentPkg *types.Package, cs []*types.Const, opts *options) ma
 		if c.Pkg() != currentPkg && !ast.IsExported(c.Name()) {
 			continue
 		}
-		if isPkgLevel(c) && matchAny(opts.excludeConstPatterns)(fullname(c)) {
+		if isPkgLevel(c) && matchAny(opts.excludeConstPatterns, fullname(c)) {
 			continue
 		}
 		ret[c.Val().ExactString()] = append(ret[c.Val().ExactString()], c)
@@ -256,7 +254,7 @@ func formatUnsatisfiedNames(passPkg *types.Package, unsatisfied map[string][]*ty
 
 func proceedInclExclPattern(t *types.Named, opts *options) bool {
 	if len(opts.includeTypePatterns) != 0 {
-		if isPkgLevel(t.Obj()) && matchAny(opts.includeTypePatterns)(fullname(t.Obj())) {
+		if isPkgLevel(t.Obj()) && matchAny(opts.includeTypePatterns, fullname(t.Obj())) {
 			return true
 		}
 		// Include patterns provided and none of
@@ -272,7 +270,7 @@ func proceedInclExclPattern(t *types.Named, opts *options) bool {
 	// Note that the behavior described above is not
 	// guaranteed by the analyzer. Users must expect
 	// undefined behavior in this scenario.
-	if isPkgLevel(t.Obj()) && matchAny(opts.excludeTypePatterns)(fullname(t.Obj())) {
+	if isPkgLevel(t.Obj()) && matchAny(opts.excludeTypePatterns, fullname(t.Obj())) {
 		return false
 	}
 	return true // default is to include
@@ -284,7 +282,7 @@ func checkMapLiteral(pass *analysis.Pass, opts *options) {
 		enums          = pass.ResultOf[enumerated.Analyzer].(enumerated.Result)
 		commentsByFile = make(map[*ast.File]ast.CommentMap)
 		printExpr      = func(e ast.Expr) string { return printNode(pass.Fset, ast.Unparen(e)) }
-		typeError      = func(e ast.Expr) string { return fmt.Sprintf("%s: could not determine type", printExpr(e)) }
+		errorType      = func(e ast.Expr) string { return fmt.Sprintf("%s: could not determine type", printExpr(e)) }
 	)
 
 	in.Root().Inspect([]ast.Node{(*ast.CompositeLit)(nil)}, func(c inspector.Cursor) (descend bool) {
@@ -293,11 +291,10 @@ func checkMapLiteral(pass *analysis.Pass, opts *options) {
 			return false
 		}
 
-		lit := c.Node().(*ast.CompositeLit)
+		compLit := c.Node().(*ast.CompositeLit)
 
-		mapType, ok := pass.TypesInfo.Types[lit].Type.Underlying().(*types.Map)
+		mapType, ok := pass.TypesInfo.Types[compLit].Type.Underlying().(*types.Map)
 		if !ok {
-			// composite literal is not a map.
 			return true
 		}
 
@@ -308,7 +305,7 @@ func checkMapLiteral(pass *analysis.Pass, opts *options) {
 		}
 		directives, err := parseDirectives(compositeLitComments(pass, fileComments, c))
 		if err != nil {
-			pass.Reportf(lit.Pos(), "error parsing comment directives: %s", err)
+			pass.Reportf(compLit.Pos(), "error parsing comment directives: %s", err)
 			return true
 		}
 		if opts.needEnforceDirective && !directives[dirEnforce] {
@@ -322,7 +319,7 @@ func checkMapLiteral(pass *analysis.Pass, opts *options) {
 		if directives[dirEnforce] {
 			defer func() {
 				if reasonUnchecked != "" {
-					pass.Reportf(lit.Pos(), "enforce directive present and map literal not checked: %s", reasonUnchecked)
+					pass.Reportf(compLit.Pos(), "enforce directive present and map literal not checked: %s", reasonUnchecked)
 				}
 			}()
 		}
@@ -340,15 +337,15 @@ func checkMapLiteral(pass *analysis.Pass, opts *options) {
 		}
 
 		unsatisfied := mustSatisfy(pass.Pkg, cs, opts)
-		for _, elt := range lit.Elts {
+		for _, elt := range compLit.Elts {
 			kv, ok := elt.(*ast.KeyValueExpr)
 			if !ok {
-				pass.Reportf(elt.Pos(), "%s: not a key-value expression", elt)
+				pass.Reportf(elt.Pos(), "%s: not key-value expression", printExpr(elt))
 				continue
 			}
 			tv, ok := pass.TypesInfo.Types[kv.Key]
 			if !ok {
-				pass.Reportf(kv.Key.Pos(), "%s", typeError(kv.Key))
+				pass.Reportf(kv.Key.Pos(), "%s", errorType(kv.Key))
 				continue
 			}
 			if tv.Value != nil {
@@ -356,7 +353,7 @@ func checkMapLiteral(pass *analysis.Pass, opts *options) {
 			}
 		}
 		if len(unsatisfied) != 0 {
-			pass.Reportf(lit.Pos(), "map literal not exhaustive: missing keys: %s", formatUnsatisfiedNames(pass.Pkg, unsatisfied))
+			pass.Reportf(compLit.Pos(), "map literal not exhaustive: missing keys: %s", formatUnsatisfiedNames(pass.Pkg, unsatisfied))
 		}
 		return true
 	})

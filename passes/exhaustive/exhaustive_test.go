@@ -19,8 +19,9 @@ func TestAnalyzer(t *testing.T) {
 		analysistest.Run(t, analysistest.TestData(), Analyzer, patterns...)
 	}
 
-	// Note: Some 'swtch' testdata files include test cases for
-	// both expression switch statements and map literals.
+	// Note: Many testdata files under the 'swtch' directory
+	// include test cases for both expression switch
+	// statements and map literals.
 	//
 	run(t, func() { fCheck = "switch,mapliteral" }, "swtch/general", "swtch/directive")
 	run(t, func() { fCheck = "switch,mapliteral"; fNeedEnforceDirective = true }, "swtch/directive/enforce")
@@ -65,10 +66,10 @@ func TestAnalyzer(t *testing.T) {
 	run(t, func() { fCheck = "switch" }, "readmeexample/...")
 }
 
-// This test does not assert that the analyses produce expected
+// This test does not check that the analysis produces expected
 // diagnostics, facts, results, etc. It only checks that the
-// analyses run without errors and without panics on real-world
-// packages.
+// analysis runs without errors and without panics on real
+// packages, such as those in the standard library.
 func TestRealPackages(t *testing.T) {
 	analyze := func(args []string, as ...*analysis.Analyzer) error {
 		cfg := packages.Config{
@@ -98,23 +99,27 @@ func TestRealPackages(t *testing.T) {
 		}
 	}
 
-	run(t, func() { fCheck = "switch" }, "net")
+	run(t, func() { fCheck = "switch,mapliteral" }, "net")
 
 	if testing.Short() {
 		t.Skip("skipping extra tests in short mode")
 		return
 	}
 
+	// Note: This could specify the name "std" instead of
+	// specifying individual package names, but in low memory
+	// environments where tests might run the analysis will
+	// commonly run out of memory for the former.
 	run(t, func() { fCheck = "switch,mapliteral" },
-		"fmt/...",
+		"fmt",
 		"go/...",
-		"html/template/...",
+		"html/template",
 		"io/...",
 		"net/...",
 		"os/...",
-		"reflect/...",
+		"reflect",
 		"regexp/...",
 		"runtime/...",
 		"sync/...",
-		"unsafe/...")
+		"unsafe")
 }

@@ -42,11 +42,11 @@ func Run(args []string, loadMode packages.LoadMode, as ...*analysis.Analyzer) (e
 		}
 	}
 
-	cfg := packages.Config{
+	cfg := &packages.Config{
 		Mode:  loadMode | packages.NeedModule,
 		Tests: includeTests,
 	}
-	pkgs, err := packages.Load(&cfg, args...)
+	pkgs, err := packages.Load(cfg, args...)
 	if err != nil {
 		log.Printf("error loading packages: %s", err)
 		exitAtLeast(1)

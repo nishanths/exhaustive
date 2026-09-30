@@ -81,7 +81,7 @@ const (
 	x2                         // want x2:"^enumerated$" x2:"^elementof:t2$"
 	x3 = iota * 10             // not permitted: (untyped constant), the type is not an enumerated type
 	x4                         // ditto
-	x5 int         = 50        // not permitted: predeclared defined type int is not an enumerated type
+	x5 int         = 50        // not permitted: predeclared type int
 	x6             = 60        // ditto
 	x7 t2          = iota * 10 // want x7:"^enumerated$" x7:"^elementof:t2$"
 	x8                         // want x8:"^enumerated$" x8:"^elementof:t2$"
@@ -96,7 +96,7 @@ const (
 	y1 t3  = 10 // want y1:"^enumerated$" y1:"^elementof:t3$"
 	y2 t3  = 20 // want y2:"^enumerated$" y2:"^elementof:t3$"
 	y3     = 30 // not permitted: untyped constant, type is not an enumerated type
-	y4 int = 40 // not permitted: predeclared defined type int is not an enumerated type
+	y4 int = 40 // not permitted: predeclared type int
 	y5 t3  = 50 // want y5:"^enumerated$" y5:"^elementof:t3$"
 )
 

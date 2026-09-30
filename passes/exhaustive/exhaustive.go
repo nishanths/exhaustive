@@ -31,9 +31,9 @@ func init() {
 	Analyzer.Flags.BoolVar(&fDefaultRequired, "defrequire", fDefaultRequired, "default case must always be present")
 	Analyzer.Flags.StringVar(&fCheck, "check", fCheck, "specify the syntax tree elements that the analysis should check")
 	Analyzer.Flags.BoolVar(&fCheckGenerated, "g", fCheckGenerated, "analyze generated files, too")
-	Analyzer.Flags.Var(&fExcludeType, "typeignore", "switch statements in which the type is matched by regexp are not checked")
-	Analyzer.Flags.Var(&fIncludeType, "typeonly", "only switch statements in which the type is matched by regexp are checked")
-	Analyzer.Flags.Var(&fExcludeConst, "constignore", "constant names matched by regexp do not have to be included in case expressions")
+	Analyzer.Flags.Var(&fExcludeType, "typeignore", "switch statements in which the type name is matched by `regexp` are not checked")
+	Analyzer.Flags.Var(&fIncludeType, "typeonly", "only switch statements in which the type name is matched by `regexp` are checked")
+	Analyzer.Flags.Var(&fExcludeConst, "constignore", "constant names matched by `regexp` do not have to be included in case expressions")
 }
 
 var (
@@ -60,8 +60,8 @@ func resetFlags() {
 
 // repeatFlag defines a flag that may be repeated to specify
 // multiple values.
-// Note: The default behavior of package flags is to use the last
-// specified value for a flag.
+// Note: The default behavior of package flag when a flag is
+// repeated is to use the last value.
 type repeatFlag[T any] struct {
 	raw  []string
 	vals []T
@@ -138,7 +138,7 @@ func run(pass *analysis.Pass) (any, error) {
 	for _, v := range elems {
 		switch v {
 		case exprswitch:
-			checkExprSwitch(pass, &opts)
+			checkSwitch(pass, &opts)
 		case mapliteral:
 			checkMapLiteral(pass, &opts)
 		}
@@ -149,9 +149,9 @@ func run(pass *analysis.Pass) (any, error) {
 type directive int
 
 const (
-	dirIgnore     directive = iota // value in directives map is boolean
-	dirEnforce                     // value in directives map is boolean
-	dirDefrequire                  // value in directives map is tri-state (unset, false, true)
+	dirIgnore directive = iota
+	dirEnforce
+	dirDefrequire
 )
 
 // A comment directive is matched by the regular
@@ -240,15 +240,13 @@ func fullname(obj types.Object) string {
 	return b.String()
 }
 
-func matchAny(rs []*regexp.Regexp) func(string) bool {
-	return func(s string) bool {
-		for _, r := range rs {
-			if r.MatchString(s) {
-				return true
-			}
+func matchAny(rs []*regexp.Regexp, s string) bool {
+	for _, r := range rs {
+		if r.MatchString(s) {
+			return true
 		}
-		return false
 	}
+	return false
 }
 
 func head[T any](seq iter.Seq[T]) T {

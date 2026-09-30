@@ -25,7 +25,7 @@ The exhaustive command can be installed with 'go install'.
 The synopsis of the command is:
 
 	exhaustive [-B] [-d] [-defrequire] [-e] [-g] [-i] [-p] [-check string]
-	           [-constignore value] [-typeignore value] [-typeonly value] [packages]
+	           [-constignore regexp] [-typeignore regexp] [-typeonly regexp] [packages]
 
 The flags are documented in the package comments. See links to
 documentation above.
@@ -33,7 +33,7 @@ documentation above.
 The packages in this module can be imported and used from external
 analysis driver programs. See <https://golang.org/x/tools/go/analysis>
 for details. The analysis driver program may want to make
-available to users the set of flags defined by both the
+available to users the flag sets defined by both the
 enumerated analyzer and the exhaustive analyzer.
 
 # Examples
@@ -66,7 +66,7 @@ func f(v vcs) {
 
 the exhaustive command produces the following diagnostic:
 
-    example.go:15:2: switch not exhaustive: missing cases: hg, darcs
+	example.go:15:2: switch not exhaustive: missing cases: hg, darcs
 
 Though it is not so in the example, in general the enumerated
 type declarations and the switch statements can be in different

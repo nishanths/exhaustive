@@ -133,6 +133,22 @@ func f6() {
 			X4: true,
 		},
 	}
+
+	_ = map[T1]*map[T1]bool{ // want "^map literal not exhaustive: missing keys: X2, X3$"
+		X0: {}, // want "^map literal not exhaustive: missing keys: X0, X1, X2, X3, X4$"
+		X1: { // want "^map literal not exhaustive: missing keys: X0, X2$"
+			X1: true,
+			X3: true,
+			X4: true,
+		},
+		X4: {
+			X0: true,
+			X1: true,
+			X3: true,
+			X2: true,
+			X4: true,
+		},
+	}
 }
 
 // switch statement with default case
@@ -160,7 +176,7 @@ func f7() {
 	}
 }
 
-// type conversions
+// type conversions; and literal values.
 func f8() {
 	var t T1
 
@@ -231,23 +247,36 @@ func f9(t T1) {
 	}
 }
 
-// no type expression on composite literal.
+// inner composite literal type omitted
 func f10() {
-	type a []map[T1]bool
-	_ = a{
+	_ = []map[T1]bool{
+		{X1: true},           // want "^map literal not exhaustive: missing keys: X0, X2, X3, X4$"
+		{X0: true, X3: true}, // want "^map literal not exhaustive: missing keys: X1, X2, X4$"
+	}
+	_ = []*map[T1]bool{
 		{X1: true},           // want "^map literal not exhaustive: missing keys: X0, X2, X3, X4$"
 		{X0: true, X3: true}, // want "^map literal not exhaustive: missing keys: X1, X2, X4$"
 	}
 }
 
-// composite literal of named type with underlying type map.
+// composite literal with underlying type map
 func f11() {
 	type n map[T1]bool
-	_ = n{X1: true} // want "^map literal not exhaustive: missing keys: X0, X2, X3, X4$"
+	_ = map[T1]bool{X1: true}    // want "^map literal not exhaustive: missing keys: X0, X2, X3, X4$"
+	_ = n{X1: true}              // want "^map literal not exhaustive: missing keys: X0, X2, X3, X4$"
+	_ = map[T1]bool(n{X1: true}) // want "^map literal not exhaustive: missing keys: X0, X2, X3, X4$"
+	_ = n(map[T1]bool{X1: true}) // want "^map literal not exhaustive: missing keys: X0, X2, X3, X4$"
+}
+
+// pointer to map type; address operators
+func f12() {
+	type n map[T1]bool
+	_ = &map[T1]bool{X0: true, X3: true} // want "^map literal not exhaustive: missing keys: X1, X2, X4$"
+	_ = &n{X0: true, X3: true}           // want "^map literal not exhaustive: missing keys: X1, X2, X4$"
 }
 
 // type of the switch expression is not an enumerated type
-func f12() {
+func f13() {
 	var v int
 	switch v {
 	}
@@ -263,13 +292,13 @@ func f12() {
 }
 
 // no switch expression
-func f13() {
+func f14() {
 	switch {
 	}
 }
 
 // type aliases
-func f14() {
+func f15() {
 	var a typ.A1
 
 	switch a { // want "^switch not exhaustive: missing cases: typnew.Z0, typnew.Z2, typnew.Z4$"

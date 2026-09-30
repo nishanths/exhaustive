@@ -194,12 +194,16 @@ func permittedEnumeratedType(t types.Type) (*types.Named, bool) {
 	// As of go1.26, the Go spec and package go/types vary in
 	// terminology.
 	// For our purposes, an enumerated type must be (in Go
-	// spec terminology) a defined type but not one of the
-	// predeclared defined types. This concept is represented
-	// by *types.Named in go/types. Note also that
-	// *types.Named in packages go/types is different from
-	// the term "named type" as used in the Go spec.
+	// spec terminology) a defined type. It must not be one
+	// of the predeclared types[*]. This concept is
+	// represented by *types.Named in go/types.
 	//
+	// [*] Note: parts of the Go spec say that bool, the
+	// predeclared numeric types (except byte and rune), and
+	// string are defined types.
+	//
+	// Note: *types.Named in packages go/types is different
+	// from the term "named type" as used in the Go spec.
 	n, ok := t.(*types.Named)
 	if !ok {
 		return nil, false

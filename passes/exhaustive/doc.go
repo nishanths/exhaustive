@@ -17,8 +17,8 @@ is not exhaustive. For example:
 # Expression switch statements
 
 An expression switch statement is eligible to be checked if the
-type of its switch expression is either an enumerated type or an
-alias for an enumerated type. An expression switch statement is
+type of its switch expression is an enumerated type (or an alias
+for an enumerated type). An expression switch statement is
 exhaustive if every value of the [enumerated type] in the switch
 expression is included in the case clause expressions.
 
@@ -55,7 +55,7 @@ exhaustive. See flag -d to control this behavior.
 
 # Handling of type aliases
 
-For example, given an enumerated type:
+For example, given an enumerated type
 
 	package newpkg
 
@@ -66,7 +66,7 @@ For example, given an enumerated type:
 		X1
 	)
 
-and the following alias declaration:
+and the following alias declaration
 
 	package oldpkg
 
@@ -95,13 +95,11 @@ declaration upon following the alias chain.
 	case oldpkg.X1: // equivalently newpkg.X1
 	}
 
-# Other syntax elements
+# Other syntax tree elements
 
-If configured via flags, the analysis can check that map literals
-are exhaustive. The check is similar to that of expression switch
-statements. The key expressions in the map literal are used
-instead of the case expressions, and the key type of the map
-specifies the enumerated type.
+If configured via flags, the analysis can check that additional
+kinds of elements in the syntax tree, such as map literals, are
+exhaustive. See flag -check.
 
 # Flags
 
@@ -112,39 +110,44 @@ enumerated constants. See its documentation for details.
 The exhaustive analyzer defined in this package supports the
 following flags.
 
-	[-d] [-defrequire] [-e] [-g] [-check string] [-constignore value] [-typeignore value] [-typeonly value]
+	[-d] [-defrequire] [-e] [-g] [-check string] [-constignore regexp] [-typeignore regexp] [-typeonly regexp]
 
 The flags are described below.
 
 The -check flag specifies the kinds of elements in the syntax
 tree that the analysis should check. The argument is a
-comma-separated list of one or more of these words: switch,
+comma-separated list of one or more of these names: switch,
 mapliteral. The default argument is "switch".
 
-	switch        check that expression switch statements are exhaustive
-	mapliteral    check that map literals are exhaustive
+	Name          Description
 
-The -d changes the behvaior of the analysis such that including
+	switch        check that expression switch statements
+	              are exhaustive
+
+	mapliteral    check that composite literals of underlying
+	              type map are exhaustive
+
+The -d changes the behavior of the analysis such that including
 a default case makes a switch statement exhaustive regardless of
 other case clauses. The -e flags restricts checking to only
 those switch statements that have an '//exhaustive:enforce'
 comment directive. The -g flag enables checking switch statements
-found in generated files. The -defrequire flag specifies that a
-checked switch statement must include a default case; the default
-value of the flag is off.
+found in generated files. The -defrequire flag additionally
+checks that each checked switch statement includes a default
+case; the default value of the flag is off.
 
-The -typeignore, -typeonly, and -constignore flags each specify a
-regular expression pattern in Go package regexp syntax. These
-flags may each be repeated to specify multiple patterns. By
-default the analysis checks all eligible switch statements. If
-the type name of a switch expression is matched by a -typeignore
-regexp, then that switch statement will not be checked. If
--typeonly flags are specified, then only those switch statements
-in which the type name of the switch expression is matched by a
--typeonly regexp will be checked.
+The -typeignore, -typeonly, and -constignore flags accept a
+regular expression pattern in Go package regexp syntax; these
+flags may be repeated to specify multiple patterns. If the type
+name of a switch expression is matched by a -typeignore regexp,
+then that switch statement will not be checked. If -typeonly
+flags are specified then only those switch statements in which
+the type name of the switch expression is matched by a -typeonly
+regexp will be checked. By default the analysis checks all
+eligible switch statements.
 
 Constant names matched by a -constignore regexp do not have to be
-included in case clauses for the switch statement to be
+included in case expressions for the switch statement to be
 exhaustive.
 
 These regexp flags are applicable only when the type or constant
@@ -170,22 +173,24 @@ The analysis supports the following comment directives.
 
 TODO: Some comment directives are not documented.
 
-The comment directives may be placed on a supported syntax tree
-element; see -check flag. The analysis does not check a switch
-statement if it has an 'ignore' directive. The 'enforce'
-directive forces the check of a switch statement that may
-otherwise be ignored due to configuration elsewhere.
+The comment directives have effect if placed in the source on an
+element that is configured to be checked (see flag -check). The
+analysis does not check a switch statement if it has an 'ignore'
+directive. The 'enforce' directive forces the check of a switch
+statement that may otherwise be ignored due to configuration
+elsewhere.
 
 For switch statements the comment must be associated with the
 switch statement node as defined by func NewCommentMap in package
 go/ast. The comment has effect only for the switch statement that
 it is associated with, and not for any descendant switch
-statements. For map literals the analysis considers line
+statements. For map literals the analysis considers the line
 comments, doc comments, and associated comments of the nearest
 ancestor *ast.AssignStmt node or *ast.ValueSpec and *ast.GenDecl
-nodes. See source code for exact details.
+nodes. See the source code for exact details.
 
-In general, the following comment placements should work as expected:
+In general, the following comment placements should work as
+expected:
 
 	//exhaustive:ignore
 	switch t {

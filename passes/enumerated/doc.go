@@ -7,8 +7,8 @@ enumerated constants.
 An enumerated type is a [defined type] whose underlying type is
 either a boolean, numeric, or string type. The type definition
 must not specify type parameters. An enumerated type cannot
-directly be one of the predeclared defined types; it must be a
-distinct, newly defined type.
+directly be one of the predeclared types; it must be a new,
+distinct type.
 
 Examples of valid and invalid types:
 
@@ -17,12 +17,12 @@ Examples of valid and invalid types:
 	type T3 T1          // T3: valid
 	type Q1 []int       // Q1: invalid: underlying type []int is not a boolean, numeric, or string type
 	type S1[E any] int  // S1: invalid: parameterized
-	int                 // int: invalid: int is a predeclared defined type
+	int                 // int: invalid: predeclared type
 
 The possible values of a given enumerated type are the values of
 each enumerated constant of that type. A type that is valid but
 has an empty set of values is not considered an enumerated type
-by this packake.
+by this package.
 
 # Enumerated constants
 
@@ -46,7 +46,7 @@ The enumerated constants of a given enumerated type may be
 declared across multiple [ConstDecl] productions. The constant
 value of an enumerated constant may be any allowed [constant
 expression]; this includes literal values, values generated with
-iota, and values referencing constant identifiers. It is
+iota, and values containing constant identifiers. It is
 permitted for multiple enumerated constants of a given enumerated
 type to have the same constant value.
 
