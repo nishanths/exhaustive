@@ -18,11 +18,11 @@ func TestMain(m *testing.M) {
 }
 
 func TestAnalyzer(t *testing.T) {
-	run := func(t *testing.T, setup func(), pattern ...string) []*analysistest.Result {
+	run := func(t *testing.T, setup func(), patterns ...string) []*analysistest.Result {
 		t.Helper()
 		resetFlags()
 		setup()
-		return analysistest.Run(t, analysistest.TestData(), Analyzer, pattern...)
+		return analysistest.Run(t, analysistest.TestData(), Analyzer, patterns...)
 	}
 
 	run(t, func() {}, "enum/typ")
