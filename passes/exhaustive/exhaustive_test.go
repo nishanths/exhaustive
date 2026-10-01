@@ -30,7 +30,7 @@ func TestAnalyzer(t *testing.T) {
 	run(t, func() { fCheck = "switch" }, "swtch/defrequire/directive1")
 	run(t, func() { fCheck = "switch,mapliteral"; fCheckGenerated = true }, "swtch/generated")
 	run(t, func() {
-		fCheck = "switch"
+		fCheck = "switch,mapliteral"
 		fExcludeType = repeatFlag[*regexp.Regexp]{vals: []*regexp.Regexp{
 			regexp.MustCompile("t1"),
 			regexp.MustCompile("^swtch/pattern\\.P3$"), // no effect: not package-level declaration
@@ -43,7 +43,7 @@ func TestAnalyzer(t *testing.T) {
 		}}
 	}, "swtch/pattern")
 	run(t, func() {
-		fCheck = "switch"
+		fCheck = "switch,mapliteral"
 		fIncludeType = repeatFlag[*regexp.Regexp]{vals: []*regexp.Regexp{
 			regexp.MustCompile("t1"),
 			regexp.MustCompile("^swtch/pattern\\.P3$"), // no effect: not package-level declaration

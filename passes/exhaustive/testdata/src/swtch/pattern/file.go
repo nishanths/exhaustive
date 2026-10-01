@@ -57,3 +57,13 @@ func f1() {
 	case typnew.Z4:
 	}
 }
+
+func g1() {
+	_ = map[t1]bool{
+		w1: true,
+	}
+
+	_ = map[P1]bool{ // want "^map literal not exhaustive: missing keys: x0, x3$"
+		x1: true,
+	}
+}
