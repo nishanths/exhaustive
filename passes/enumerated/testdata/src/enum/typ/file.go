@@ -4,7 +4,7 @@ import "unsafe"
 
 type (
 	t1 int // want t1:"^permittedtype$" t1:"^enumerated$" t1:"^elements:bit0 = 1, mask0 = 0, bit1 = 2, mask1 = 1, bit3 = 8, mask3 = 7$"
-	t2 t1  // want t2:"^permittedtype$" t2:"^enumerated$" t2:"^elements:x1 = 10, x2 = 20, x7 = 70, x8 = 80, x08 = 80, x008 = 80, x9 = 90, x10 = 100, x11 = 110, x12 = 120, x13 = 130, x14 = 140$"
+	t2 t1  // want t2:"^permittedtype$" t2:"^enumerated$" t2:"^elements:x1 = 10, x2 = 20, x7 = 70, x8 = 80, x08 = 80, x008 = 80, x9 = 90, x10 = 100, x11 = 110, x12 = 120, x13 = 130, x14 = 140, x15 = 141, x16 = 16$"
 	t3 t2  // want t3:"^permittedtype$" t3:"^enumerated$" t3:"^elements:y1 = 10, y2 = 20, y5 = 50$"
 
 	// test cases for all permitted underlying types
@@ -110,6 +110,25 @@ const (
 const x12 t2 = (iota + 12) * 10 // want x12:"^enumerated$" x12:"^elementof:t2$"
 const x13 t2 = 130              // want x13:"^enumerated$" x13:"^elementof:t2$"
 const x14 t2 = (iota + 14) * 10 // want x14:"^enumerated$" x14:"^elementof:t2$"
+
+const astring = "0123456789abcdef"
+
+// constant expressions; using built-in functions, using other
+// constant identifiers.
+const (
+	x15 t2 = t2(max(0, 1)) + x14 // want x15:"^enumerated$" x15:"^elementof:t2$"
+	x16 t2 = t2(len(astring))    // want x16:"^enumerated$" x16:"^elementof:t2$"
+)
+
+func f1() {
+	// complex constants
+	type t1 complex64 // want t1:"^permittedtype$" t1:"^enumerated$" t1:"^elements:x0 = \\(0 \\+ -1i\\), x1 = \\(0 \\+ 1i\\)$"
+	const (
+		x0 t1 = complex(0, -1) // want x0:"^enumerated$" x0:"^elementof:t1$"
+		x1 t1 = 1i             // want x1:"^enumerated$" x1:"^elementof:t1$"
+
+	)
+}
 
 type M1 int // want M1:"^permittedtype$" M1:"^enumerated$" M1:"^elements:V0 = 0, VV0 = 0, V1 = 1, V2 = 2, vv2 = 2, V3 = 3, vv3 = 3, V4 = 4, V5 = 5$"
 
