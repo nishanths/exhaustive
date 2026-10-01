@@ -125,7 +125,7 @@ mapliteral. The default argument is "switch".
 	              are exhaustive
 
 	mapliteral    check that composite literals of underlying
-	              type map are exhaustive
+	              type map (or pointer to) are exhaustive
 
 The -d changes the behavior of the analysis such that including
 a default case makes a switch statement exhaustive regardless of

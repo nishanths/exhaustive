@@ -293,7 +293,7 @@ func checkMapLiteral(pass *analysis.Pass, opts *options) {
 
 		compLit := c.Node().(*ast.CompositeLit)
 
-		mapType, ok := pass.TypesInfo.Types[compLit].Type.Underlying().(*types.Map)
+		mapType, ok := unpointer(pass.TypesInfo.Types[compLit].Type.Underlying()).(*types.Map)
 		if !ok {
 			return true
 		}
@@ -357,6 +357,17 @@ func checkMapLiteral(pass *analysis.Pass, opts *options) {
 		}
 		return true
 	})
+}
+
+func unpointer(t types.Type) types.Type {
+	for {
+		switch a := t.(type) {
+		case *types.Pointer:
+			t = a.Elem()
+		default:
+			return t
+		}
+	}
 }
 
 func compositeLitComments(pass *analysis.Pass, comments ast.CommentMap, c inspector.Cursor) []*ast.CommentGroup {
