@@ -24,8 +24,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ---
 
-Parts of the testdata content, such as the FileMode type, originated
-from source files in the Go standard library.
+Parts of the testdata content originated from code in the Go spec
+and the standard Go library.
 
 Copyright 2009 The Go Authors.
 
