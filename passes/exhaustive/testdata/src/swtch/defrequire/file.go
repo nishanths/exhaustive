@@ -29,7 +29,7 @@ func f1() {
 func f2() {
 	var t t1
 
-	//exhaustive:defrequire=false
+	//exhaustive:defrequire=0
 	switch t {
 	case x0:
 	case x1:
@@ -41,7 +41,7 @@ func f2() {
 	case x1:
 	}
 
-	//exhaustive:defrequire=true
+	//exhaustive:defrequire=1
 	switch t { // want "^missing default case$"
 	case x0:
 	case x1:
@@ -57,8 +57,8 @@ func f2() {
 func f3() {
 	var t t1
 
-	//exhaustive:defrequire=false
-	//exhaustive:defrequire=true
+	//exhaustive:defrequire=0
+	//exhaustive:defrequire=1
 	switch t { // want "^error parsing comment directives: conflicting directives$"
 	case x0:
 	case x1:
@@ -76,7 +76,7 @@ func f4() {
 	var t t1
 
 	//exhaustive:ignore
-	//exhaustive:defrequire=true
+	//exhaustive:defrequire=1
 	switch t {
 	case x0:
 	case x1:

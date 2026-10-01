@@ -27,7 +27,7 @@ func TestAnalyzer(t *testing.T) {
 	run(t, func() { fCheck = "switch,mapliteral"; fNeedEnforceDirective = true }, "swtch/directive/enforce")
 	run(t, func() { fCheck = "switch"; fDefaultEx = true }, "swtch/def")
 	run(t, func() { fCheck = "switch"; fDefaultRequired = true }, "swtch/defrequire")
-	run(t, func() { fCheck = "switch" }, "swtch/defrequire/directivetrue")
+	run(t, func() { fCheck = "switch" }, "swtch/defrequire/directive1")
 	run(t, func() { fCheck = "switch,mapliteral"; fCheckGenerated = true }, "swtch/generated")
 	run(t, func() {
 		fCheck = "switch"

@@ -1,4 +1,4 @@
-package defrequire_directivetrue
+package defrequire_directive1
 
 type t1 int
 
@@ -29,18 +29,18 @@ func f1() {
 func f2() {
 	var t t1
 
-	//exhaustive:defrequire=true
+	//exhaustive:defrequire=1
 	switch t { // want "^missing default case$" "^switch not exhaustive: missing cases: x1$"
 	case x0:
 	}
 
-	//exhaustive:defrequire=true
+	//exhaustive:defrequire=1
 	switch t { // want "^missing default case$"
 	case x0:
 	case x1:
 	}
 
-	//exhaustive:defrequire=true
+	//exhaustive:defrequire=1
 	switch t {
 	case x0:
 	case x1:

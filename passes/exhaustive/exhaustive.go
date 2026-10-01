@@ -189,13 +189,13 @@ func parseDirectives(groups []*ast.CommentGroup) (map[directive]bool, error) {
 						result[dirIgnore] = true
 					case "enforce":
 						result[dirEnforce] = true
-					case "defrequire=false", "ignore-default-case-required":
+					case "defrequire=0", "ignore-default-case-required":
 						// Note: The latter name is supported but deprecated.
 						if v, ok := result[dirDefrequire]; ok && v != false {
 							return nil, errConflict
 						}
 						result[dirDefrequire] = false
-					case "defrequire=true", "enforce-default-case-required":
+					case "defrequire=1", "enforce-default-case-required":
 						// Ditto note.
 						if v, ok := result[dirDefrequire]; ok && v != true {
 							return nil, errConflict

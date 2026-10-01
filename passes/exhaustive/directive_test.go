@@ -49,15 +49,15 @@ func TestParseDirective(t *testing.T) {
 			{List: []*ast.Comment{{Text: "//exhaustive:enforce"}}},
 		}, nil, "conflicting directives"},
 		{"conflict3", []*ast.CommentGroup{
-			{List: []*ast.Comment{{Text: "//exhaustive:defrequire=false"}}},
-			{List: []*ast.Comment{{Text: "//exhaustive:defrequire=true"}}},
+			{List: []*ast.Comment{{Text: "//exhaustive:defrequire=0"}}},
+			{List: []*ast.Comment{{Text: "//exhaustive:defrequire=1"}}},
 		}, nil, "conflicting directives"},
 		{"conflictalt1", []*ast.CommentGroup{
 			{List: []*ast.Comment{{Text: "//exhaustive:ignore-default-case-required"}}},
 			{List: []*ast.Comment{{Text: "//exhaustive:enforce-default-case-required"}}},
 		}, nil, "conflicting directives"},
 		{"conflictalt2", []*ast.CommentGroup{
-			{List: []*ast.Comment{{Text: "//exhaustive:defrequire=false"}}},
+			{List: []*ast.Comment{{Text: "//exhaustive:defrequire=0"}}},
 			{List: []*ast.Comment{{Text: "//exhaustive:enforce-default-case-required"}}},
 		}, nil, "conflicting directives"},
 		{"typical", []*ast.CommentGroup{
@@ -72,10 +72,10 @@ func TestParseDirective(t *testing.T) {
 			{List: []*ast.Comment{{Text: "//exhaustive:enforce"}}},
 		}, map[directive]bool{dirEnforce: true}, ""},
 		{"single3", []*ast.CommentGroup{
-			{List: []*ast.Comment{{Text: "//exhaustive:defrequire=false"}}},
+			{List: []*ast.Comment{{Text: "//exhaustive:defrequire=0"}}},
 		}, map[directive]bool{dirDefrequire: false}, ""},
 		{"single4", []*ast.CommentGroup{
-			{List: []*ast.Comment{{Text: "//exhaustive:defrequire=true"}}},
+			{List: []*ast.Comment{{Text: "//exhaustive:defrequire=1"}}},
 		}, map[directive]bool{dirDefrequire: true}, ""},
 		{"singlealt1", []*ast.CommentGroup{
 			{List: []*ast.Comment{{Text: "//exhaustive:ignore-default-case-required"}}},
@@ -85,11 +85,11 @@ func TestParseDirective(t *testing.T) {
 		}, map[directive]bool{dirDefrequire: true}, ""},
 		{"multi1", []*ast.CommentGroup{
 			{List: []*ast.Comment{{Text: "//exhaustive:enforce"}}},
-			{List: []*ast.Comment{{Text: "//exhaustive:defrequire=false"}}},
+			{List: []*ast.Comment{{Text: "//exhaustive:defrequire=0"}}},
 		}, map[directive]bool{dirEnforce: true, dirDefrequire: false}, ""},
 		{"multi2", []*ast.CommentGroup{
 			{List: []*ast.Comment{{Text: "//exhaustive:enforce"}}},
-			{List: []*ast.Comment{{Text: "//exhaustive:defrequire=true"}}},
+			{List: []*ast.Comment{{Text: "//exhaustive:defrequire=1"}}},
 		}, map[directive]bool{dirEnforce: true, dirDefrequire: true}, ""},
 		{"multialt1", []*ast.CommentGroup{
 			{List: []*ast.Comment{{Text: "//exhaustive:ignore"}}},
@@ -102,7 +102,7 @@ func TestParseDirective(t *testing.T) {
 			// There are multiple directives.
 			{List: []*ast.Comment{{Text: "// hello, world"}}},
 			{List: []*ast.Comment{{Text: "// comment"}, {Text: "//foo:x"}, {Text: "//exhaustive:enforce"}, {Text: "// comment"}}},
-			{List: []*ast.Comment{{Text: "//bar:y"}, {Text: "//exhaustive:defrequire=true"}, {Text: "// comment"}}},
+			{List: []*ast.Comment{{Text: "//bar:y"}, {Text: "//exhaustive:defrequire=1"}, {Text: "// comment"}}},
 		}, map[directive]bool{dirEnforce: true, dirDefrequire: true}, ""},
 	}
 
