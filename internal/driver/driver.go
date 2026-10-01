@@ -29,8 +29,12 @@ func ParseFlags(progname string, as ...*analysis.Analyzer) {
 		})
 	}
 	flag.Usage = func() {
-		syn := synopsis(progname, len("usage: "), false, slicemap(as, func(a *analysis.Analyzer) flag.FlagSet { return a.Flags }))
-		fmt.Fprintf(os.Stderr, "usage: %s\n", syn)
+		var sets []flag.FlagSet
+		for _, a := range as {
+			sets = append(sets, a.Flags)
+		}
+		s := synopsis(progname, len("usage: "), false, sets)
+		fmt.Fprintf(os.Stderr, "usage: %s\n", s)
 	}
 	flag.Parse()
 }
@@ -121,11 +125,11 @@ func synopsis(progname string, prefixlen int, includeHelpInvoc bool, sets []flag
 	})
 
 	const maxwidth = 80
-	indentlen := 8
+	argindent := 8
 	if includeHelpInvoc {
 		// Multiple invocations need to be printed. The
 		// lines must align with program name.
-		indentlen = prefixlen + len(progname) + 1
+		argindent = prefixlen + len(progname) + 1
 	}
 	lastarg := "[packages]" // last argument must never be alone on its own line
 	var width int
@@ -143,18 +147,18 @@ func synopsis(progname string, prefixlen int, includeHelpInvoc bool, sets []flag
 	}
 
 	printarg := func(arg string, prelast bool) {
-		w := width + 1 + len(arg)
+		need := 1 + len(arg)
 		if prelast {
-			w = width + 1 + len(arg) + 1 + len(lastarg)
+			need = 1 + len(arg) + 1 + len(lastarg)
 		}
-		if w <= maxwidth {
+		if width+need <= maxwidth {
 			fmt.Fprintf(&b, " %s", arg)
 			width += 1 + len(arg)
 			return
 		}
 		fmt.Fprintf(&b, "\n")
-		fmt.Fprintf(&b, "%s%s", strings.Repeat(" ", indentlen), arg)
-		width = indentlen + len(arg)
+		fmt.Fprintf(&b, "%s%s", strings.Repeat(" ", argindent), arg)
+		width = argindent + len(arg)
 	}
 
 	// Regular invocation.
@@ -175,15 +179,4 @@ func synopsis(progname string, prefixlen int, includeHelpInvoc bool, sets []flag
 	}
 
 	return b.String()
-}
-
-func slicemap[S ~[]E, E, F any](s S, fn func(E) F) []F {
-	var ret []F
-	if len(s) > 0 {
-		ret = make([]F, len(s))
-	}
-	for i := range s {
-		ret[i] = fn(s[i])
-	}
-	return ret
 }
