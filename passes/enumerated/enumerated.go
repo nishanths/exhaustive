@@ -54,14 +54,11 @@ func run(pass *analysis.Pass) (any, error) {
 		rejectBitwise:   fNoBitwise,
 	})
 
-	var ts []*types.Named
 	var cs []*types.Const
 	for _, f := range pass.AllObjectFacts() {
 		switch ff := f.Fact.(type) {
 		case *isEnumeratedFact:
 			switch ff.Kind {
-			case "type":
-				ts = append(ts, f.Object.(*types.TypeName).Type().(*types.Named))
 			case "constant":
 				cs = append(cs, f.Object.(*types.Const))
 			}
@@ -69,9 +66,6 @@ func run(pass *analysis.Pass) (any, error) {
 	}
 
 	m := make(map[*types.Named][]*types.Const)
-	for _, t := range ts {
-		m[t] = nil
-	}
 	for _, c := range cs {
 		t := c.Type().(*types.Named)
 		m[t] = append(m[t], c)
@@ -167,6 +161,12 @@ func find(pass *analysis.Pass, opts *options) {
 		})
 	}
 
+	// Note that the logic in this function implies that each
+	// enumerated type in m has at least one enumerated
+	// constant.
+	// The implementation matches the behavior documented in
+	// the package comment.
+	//
 	m := make(map[*types.Named][]*types.Const)
 	for _, c := range cs {
 		t := c.Type().(*types.Named)
