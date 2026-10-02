@@ -30,20 +30,19 @@ func TestAnalyzer(t *testing.T) {
 	run(t, func() { fNoBitwise = true }, "enum/nobitwise")
 	run(t, func() { fIota = true; fNoBitwise = true }, "enum/iotavalue_nobitwise")
 	run(t, func() { fPkgLevel = true }, "enum/pkglevel")
-	run(t, func() {}, "enum/depchain/...")
+	run(t, func() {}, "depchain/...")
 	run(t, func() {}, "packagedoc/...")
 }
 
 func TestResult(t *testing.T) {
-	// Note: c.C1 absent: not an enumerated type
-	//       e.E1 absent: not a dependency of package a
 	wantresult := map[string][]string{
-		"enum/depchain/d.D1": {"const enum/depchain/d.X0 enum/depchain/d.D1", "const enum/depchain/d.X1 enum/depchain/d.D1"},
-		"enum/depchain/d.D2": {"const enum/depchain/d.Z0 enum/depchain/d.D2", "const enum/depchain/d.Z1 enum/depchain/d.D2", "const enum/depchain/d.Z2 enum/depchain/d.D2"},
-		"enum/depchain/c.C2": {"const enum/depchain/c.Y0 enum/depchain/c.C2", "const enum/depchain/c.Y1 enum/depchain/c.C2"},
-		"enum/depchain/a.A1": {"const enum/depchain/a.Y0 enum/depchain/a.A1", "const enum/depchain/a.Y1 enum/depchain/a.A1"},
+		"depchain/d.D1": {"const depchain/d.DX0 depchain/d.D1", "const depchain/d.DX1 depchain/d.D1"},
+		"depchain/d.D2": {"const depchain/d.DZ0 depchain/d.D2", "const depchain/d.DZ1 depchain/d.D2", "const depchain/d.DZ2 depchain/d.D2"},
+		"depchain/c.C2": {"const depchain/c.CY0 depchain/c.C2", "const depchain/c.CY1 depchain/c.C2"},
+		"depchain/b.B1": {"const depchain/b.BY0 depchain/b.B1", "const depchain/b.BY1 depchain/b.B1"},
+		"depchain/a.A1": {"const depchain/a.AY0 depchain/a.A1", "const depchain/a.AY1 depchain/a.A1"},
 	}
-	r := analysistest.Run(t, analysistest.TestData(), Analyzer, "enum/depchain/a")
+	r := analysistest.Run(t, analysistest.TestData(), Analyzer, "depchain/a")
 	if len(r) != 1 {
 		t.Errorf("len(r): got: %d, want: 1", len(r))
 	} else if got := transform(r[0].Action.Result.(Result)); !reflect.DeepEqual(got, wantresult) {
