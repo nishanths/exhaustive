@@ -46,27 +46,27 @@ package example
 type vcs int
 
 const (
-	bzr vcs = iota
+	bazaar vcs = iota
 	fossil
 	git
-	hg
-	svn
+	mercurial
+	subversion
 	darcs
 )
 
 func f(v vcs) {
 	switch v {
-	case bzr:
+	case bazaar:
 	case fossil:
 	case git:
-	case svn:
+	case subversion:
 	}
 }
 ```
 
 the exhaustive command produces the following diagnostic:
 
-	example.go:15:2: switch not exhaustive: missing cases: hg, darcs
+	example.go:15:2: switch not exhaustive: missing cases: mercurial, darcs
 
 Though it is not so in the example, in general the enumerated
 type declarations and the switch statements can be in different

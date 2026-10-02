@@ -3,19 +3,19 @@ package example
 type vcs int
 
 const (
-	bzr vcs = iota
+	bazaar vcs = iota
 	fossil
 	git
-	hg
-	svn
+	mercurial
+	subversion
 	darcs
 )
 
 func f(v vcs) {
-	switch v { // want "^switch not exhaustive: missing cases: hg, darcs$"
-	case bzr:
+	switch v { // want "^switch not exhaustive: missing cases: mercurial, darcs$"
+	case bazaar:
 	case fossil:
 	case git:
-	case svn:
+	case subversion:
 	}
 }
