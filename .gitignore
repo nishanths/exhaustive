@@ -1,5 +1,10 @@
 .DS_Store
-/cover.out
+/cover*.out
+/coverprofiles
+/tools
 
 # binary
 /exhaustive
+# binary in script tests
+/cmd/exhaustive/exhaustive-scripttest
+/cmd/exhaustive/exhaustive-scripttest-*

@@ -1,0 +1,217 @@
+# no errors and no diagnostics
+
+cd $WORK/example.com
+exhaustive example.com/quux
+stdout -count=1 ^$
+stderr -count=1 ^$
+
+# diagnostics
+
+! exhaustive example.com/foo
+stderr -count=2 ^.
+stderr -count=1 ${/}'example.com'${/}'foo'${/}'foo.go:16:2: switch not exhaustive: missing cases: a\.AX0, a\.AX2$'
+stderr -count=1 ${/}'example.com'${/}'foo'${/}'foo.go:26:2: switch not exhaustive: missing cases: VT1$'
+
+! exhaustive example.com/bar
+stderr -count=1 ^.
+stderr -count=1 ${/}'example.com'${/}'bar'${/}'bar.go:11:2: switch not exhaustive: missing cases: d\.DX0'
+
+# multiple package arguments
+
+! exhaustive example.com/quux example.com/bar
+stderr -count=1 ^.
+stderr -count=1 ${/}'example.com'${/}'bar'${/}'bar.go:11:2: switch not exhaustive: missing cases: d\.DX0'
+
+# flags
+
+! exhaustive -p example.com/foo
+stderr -count=1 ^.
+stderr -count=1 ${/}'example.com'${/}'foo'${/}'foo.go:16:2: switch not exhaustive: missing cases: a\.AX0, a\.AX2$'
+
+! exhaustive -typeignore='^example.com/a\.A1$' example.com/foo
+stderr -count=1 ^.
+stderr -count=1 ${/}'example.com'${/}'foo'${/}'foo.go:26:2: switch not exhaustive: missing cases: VT1$'
+
+exhaustive -p -typeignore='^example.com/a\.A1$' example.com/foo
+stdout -count=1 ^$
+stderr -count=1 ^$
+
+# errors
+
+! exhaustive example.com/baz
+stderr -count=3 ^.
+stderr -count=1 ${/}'example.com'${/}'baz'${/}'baz.go:13:1: expected declaration, found xxxcompileerror$'
+stderr -count=1 'enumerated: analysis skipped due to errors in package'
+stderr -count=1 'exhaustive: failed prerequisites: enumerated@example.com/baz'
+
+! exhaustive .
+stderr -count=1 '^-: no Go files in .+'${/}'example.com$'
+
+! exhaustive example.net
+stderr -count=1 '^-: no required module provides package example\.net;.+$'
+
+# note: parts of the txtar contents below were copied from
+# passes/enumerated/testdata/*/depchain.
+-- example.com/go.mod --
+module example.com
+go 1.26.0
+
+-- example.com/foo/foo.go --
+package foo
+
+import "example.com/a"
+
+func f1() {
+	type T1 int
+
+	const (
+		VT0 T1 = iota
+		VT1
+	)
+
+	var val1 a.A1
+	var val2 T1
+
+	switch val1 {
+	case a.AX1:
+	}
+
+	switch val1 {
+	case a.AX0:
+	case a.AX1:
+	case a.AX2:
+	}
+
+	switch val2 {
+	case VT0:
+	}
+}
+
+-- example.com/bar/bar.go --
+package bar
+
+import "example.com/b"
+import "example.com/c"
+
+func f1() {
+	var val1 c.C1
+	var val2 int
+	var val3 b.B2
+
+	switch val1 {
+	case c.CX1:
+	}
+	switch val2 {
+	case b.BX0:
+	}
+	switch val3 {
+	}
+}
+
+-- example.com/baz/baz.go --
+package baz
+
+import "example.com/a"
+
+func f1() {
+	var val1 a.A1
+
+	switch val1 {
+	case a.AX1:
+	}
+}
+
+xxxcompileerror
+
+-- example.com/quux/quux.go --
+package quux
+
+import "example.com/a"
+
+func f1() {
+	var val1 a.A1
+	switch val1 {
+	case a.AX0:
+	case a.AX1:
+	case a.AX2:
+	}
+}
+
+-- example.com/a/file.go --
+package a
+
+import _ "example.com/b"
+import _ "example.com/c"
+
+type A1 int
+
+const (
+	AX0 A1 = iota
+	AX1
+	AX2
+)
+
+-- example.com/b/file.go --
+package b
+
+type B1 int
+
+const (
+	BY0 B1 = iota
+	BY1
+)
+
+const (
+	BX0 int = iota
+	BX1
+)
+
+type B2 int
+
+-- example.com/c/file.go --
+package c
+
+import "example.com/d"
+
+type C1 = d.D1
+
+const (
+	CX0 = d.DX0
+	CX1 = d.DX1
+)
+
+type C2 int
+
+const (
+	CY0 C2 = iota
+	CY1
+)
+
+-- example.com/d/file.go --
+package d
+
+type D1 int
+
+const (
+	DX0 D1 = iota
+	DX1
+)
+
+type D2 int
+
+const (
+	DZ0 D2 = iota
+	DZ1
+	DZ2
+)
+
+-- example.com/e/file.go --
+package e
+
+type E1 int
+
+const (
+	EV0 E1 = iota
+	EV1
+	EV2
+)

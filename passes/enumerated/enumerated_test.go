@@ -42,7 +42,7 @@ func TestResult(t *testing.T) {
 		"depchain/d.D2": {"const depchain/d.DZ0 depchain/d.D2", "const depchain/d.DZ1 depchain/d.D2", "const depchain/d.DZ2 depchain/d.D2"},
 		"depchain/c.C2": {"const depchain/c.CY0 depchain/c.C2", "const depchain/c.CY1 depchain/c.C2"},
 		"depchain/b.B1": {"const depchain/b.BY0 depchain/b.B1", "const depchain/b.BY1 depchain/b.B1"},
-		"depchain/a.A1": {"const depchain/a.AY0 depchain/a.A1", "const depchain/a.AY1 depchain/a.A1"},
+		"depchain/a.A1": {"const depchain/a.AX0 depchain/a.A1", "const depchain/a.AX1 depchain/a.A1", "const depchain/a.AX2 depchain/a.A1"},
 	}
 	r := analysistest.Run(t, filepath.Join(analysistest.TestData(), "src", "depchain"), Analyzer, "depchain/a")
 	if len(r) != 1 {

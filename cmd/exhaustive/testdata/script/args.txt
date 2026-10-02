@@ -1,0 +1,11 @@
+exhaustive -h
+stdout ^$
+stderr -count=2 ^.
+stderr -count=1 '^usage: exhaustive \[-B\] \[-d\] .+'
+stderr -count=1 '^        .+ \[-typeonly regexp\] \[packages\]$'
+
+! exhaustive -invalid
+stdout ^$
+stderr -count=3 ^.
+stderr -count=1 '^flag provided but not defined: -invalid$'
+stderr -count=1 '^usage: exhaustive .+'

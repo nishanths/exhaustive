@@ -2,7 +2,10 @@ module github.com/nishanths/exhaustive
 
 go 1.26.0
 
-require golang.org/x/tools v0.50.0
+require (
+	golang.org/x/tools v0.50.0
+	rsc.io/script v0.0.2
+)
 
 require (
 	golang.org/x/mod v0.41.0 // indirect
