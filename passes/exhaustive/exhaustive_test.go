@@ -14,7 +14,7 @@ import (
 
 func TestAnalyzer(t *testing.T) {
 	testdata := analysistest.TestData()
-	run := func(t *testing.T,setup func(), patterns ...string) []*analysistest.Result {
+	run := func(t *testing.T, setup func(), patterns ...string) []*analysistest.Result {
 		t.Helper()
 		resetFlags()
 		setup()

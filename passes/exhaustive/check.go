@@ -4,6 +4,8 @@ import (
 	"cmp"
 	"fmt"
 	"go/ast"
+	"go/printer"
+	"go/token"
 	"go/types"
 	"maps"
 	"slices"
@@ -12,144 +14,140 @@ import (
 	"github.com/nishanths/exhaustive/passes/enumerated"
 
 	"golang.org/x/tools/go/analysis"
-	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/inspector"
 )
 
-func checkSwitch(pass *analysis.Pass, opts *options) {
-	var (
-		in             = pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
-		enums          = pass.ResultOf[enumerated.Analyzer].(enumerated.Result)
-		commentsByFile = make(map[*ast.File]ast.CommentMap)
-		// Helper functions.
-		printExpr = func(e ast.Expr) string { return printNode(pass.Fset, ast.Unparen(e)) }
-		errorType = func(e ast.Expr) string { return fmt.Sprintf("%s: could not determine type", printExpr(e)) }
-	)
+func formatNode(fset *token.FileSet, n ast.Node) string {
+	var buf strings.Builder
+	if err := printer.Fprint(&buf, fset, n); err != nil {
+		// this should not happen for a valid program?
+		// package x/tools/go/internal/astutil func Format
+		// ignores the error in a similar situation.
+		return "<?>"
+	}
+	return buf.String()
+}
 
-	in.Root().Inspect([]ast.Node{(*ast.SwitchStmt)(nil)}, func(c inspector.Cursor) (descend bool) {
-		file := head(c.Enclosing((*ast.File)(nil))).Node().(*ast.File)
-		if !opts.checkGenerated && ast.IsGenerated(file) {
-			return false
-		}
+// Helper functions.
+func formatExpr(pass *analysis.Pass, e ast.Expr) string { return formatNode(pass.Fset, ast.Unparen(e)) }
+func errorType(pass *analysis.Pass, e ast.Expr) string {
+	return fmt.Sprintf("%s: could not determine type", formatExpr(pass, e))
+}
 
-		sw := c.Node().(*ast.SwitchStmt)
+func checkSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, fileComments ast.CommentMap, opts *options) {
+	directives, err := parseDirectives(fileComments[sw])
+	if err != nil {
+		pass.Reportf(sw.Pos(), "error parsing comment directives: %s", err)
+		return
+	}
+	if opts.needEnforceDirective && !directives[dirEnforce] {
+		return
+	}
+	if directives[dirIgnore] {
+		return
+	}
 
-		// Parse comment directives.
-		fileComments, ok := commentsByFile[file]
-		if !ok {
-			fileComments = ast.NewCommentMap(pass.Fset, file, file.Comments)
-			commentsByFile[file] = fileComments
-		}
-		directives, err := parseDirectives(fileComments[sw])
-		if err != nil {
-			pass.Reportf(sw.Pos(), "error parsing comment directives: %s", err)
-			return true
-		}
-		if opts.needEnforceDirective && !directives[dirEnforce] {
-			return true
-		}
-		if directives[dirIgnore] {
-			return true
-		}
+	reasonUnchecked := ""
+	if directives[dirEnforce] {
+		defer func() {
+			if reasonUnchecked != "" {
+				pass.Reportf(sw.Pos(), "enforce directive present and switch not checked: %s", reasonUnchecked)
+			}
+		}()
+	}
 
-		reasonUnchecked := ""
-		if directives[dirEnforce] {
-			defer func() {
-				if reasonUnchecked != "" {
-					pass.Reportf(sw.Pos(), "enforce directive present and switch statement not checked: %s", reasonUnchecked)
-				}
-			}()
-		}
+	// The tag will be nil for switch statements of
+	// the form "switch { ... }".
+	if sw.Tag == nil {
+		reasonUnchecked = "no switch expression"
+		return
+	}
 
-		// The tag will be nil for switch statements of
-		// the form "switch { ... }".
-		if sw.Tag == nil {
-			reasonUnchecked = "missing switch expression"
-			return true
-		}
+	tagType := pass.TypesInfo.TypeOf(sw.Tag)
+	if tagType == nil {
+		pass.Reportf(sw.Tag.Pos(), "%s", errorType(pass, sw.Tag))
+		return
+	}
 
-		tagType := pass.TypesInfo.TypeOf(sw.Tag)
-		if tagType == nil {
-			pass.Reportf(sw.Tag.Pos(), "%s", errorType(sw.Tag))
-			return true
-		}
+	enums := pass.ResultOf[enumerated.Analyzer].(enumerated.Result)
+	t, cs, ok := knownEnumeratedType(enums, tagType)
+	if !ok {
+		reasonUnchecked = "switch expression type is not an enumerated type"
+		return
+	}
 
-		t, cs, ok := knownEnumeratedType(enums, tagType)
-		if !ok {
-			reasonUnchecked = "switch expression type is not an enumerated type"
-			return true
+	// Handle user-specified include/exclude pattern
+	// flags.
+	//
+	// Note that comment directives are more specific
+	// (they are specified at source code level) than
+	// include/exclude pattern flags. Hence an
+	// enforce directive, if present, should take
+	// precedence over any include/exclude patterns.
+	if !directives[dirEnforce] {
+		if !proceedInclExclPatterns(t, opts) {
+			return
 		}
+	}
 
-		// Handle user-specified include/exclude pattern
-		// flags.
-		//
-		// Note that comment directives are more specific
-		// (they are specified at source code level) than
-		// include/exclude pattern flags. Hence an
-		// enforce directive, if present, should take
-		// precedence over any include/exclude patterns.
-		if !directives[dirEnforce] {
-			if !proceedInclExclPattern(t, opts) {
-				return true
+	needDefault := opts.defaultCaseRequired
+	if v, ok := directives[dirDefrequire]; ok {
+		needDefault = v
+	}
+	foundDefault := false
+
+	unsatisfied := mustSatisfyValues(pass.Pkg, cs, opts)
+	for _, cc := range sw.Body.List {
+		cc := cc.(*ast.CaseClause)
+		if cc.List == nil {
+			foundDefault = true
+			if opts.defaultCaseExhaustive {
+				clear(unsatisfied)
+				break
 			}
 		}
-
-		needDefault := opts.defaultCaseRequired
-		if v, ok := directives[dirDefrequire]; ok {
-			needDefault = v
-		}
-		foundDefault := false
-
-		unsatisfied := mustSatisfy(pass.Pkg, cs, opts)
-		for _, cc := range sw.Body.List {
-			cc := cc.(*ast.CaseClause)
-			if cc.List == nil {
-				foundDefault = true
-				if opts.defaultCaseExhaustive {
-					clear(unsatisfied)
-					break
-				}
+		for _, expr := range cc.List {
+			tv, ok := pass.TypesInfo.Types[expr]
+			if !ok {
+				pass.Reportf(expr.Pos(), "%s", errorType(pass, expr))
+				continue
 			}
-			for _, expr := range cc.List {
-				tv, ok := pass.TypesInfo.Types[expr]
-				if !ok {
-					pass.Reportf(expr.Pos(), "%s", errorType(expr))
-					continue
-				}
-				if tv.Value != nil {
-					delete(unsatisfied, tv.Value.ExactString())
-				}
+			if tv.Value != nil {
+				delete(unsatisfied, tv.Value.ExactString())
 			}
 		}
-		if needDefault && !foundDefault {
-			pass.Reportf(sw.Pos(), "missing default case")
-		}
-		if len(unsatisfied) != 0 {
-			pass.Reportf(sw.Pos(), "switch not exhaustive: missing cases: %s", formatUnsatisfiedNames(pass.Pkg, unsatisfied))
-		}
-		return true
-	})
+	}
+	if needDefault && !foundDefault {
+		pass.Reportf(sw.Pos(), "missing default case")
+	}
+	if len(unsatisfied) != 0 {
+		pass.Reportf(sw.Pos(), "switch not exhaustive: missing cases: %s", formatUnsatisfiedNames(pass.Pkg, unsatisfied))
+	}
+}
+
+func checkTypeSwitch(pass *analysis.Pass, typsw *ast.TypeSwitchStmt, fileComments ast.CommentMap, opts *options) {
+	panic("TODO: not implemented")
 }
 
 // knownEnumeratedType reports whether the given type (which
-// typically is the type of an arbitrary expression) is an
+// typically is the type for an arbitrary expression) is an
 // enumerated type. It returns the enumerated type and the
 // enumerated constants of that type.
 func knownEnumeratedType(enums enumerated.Result, t types.Type) (*types.Named, []*types.Const, bool) {
 	for {
 		switch concrete := t.(type) {
 		case *types.Array,
-			*types.Interface,
-			*types.TypeParam,
-			*types.Union,
 			*types.Basic,
 			*types.Chan,
+			*types.Interface,
 			*types.Map,
 			*types.Pointer,
 			*types.Signature,
 			*types.Slice,
 			*types.Struct,
-			*types.Tuple:
+			*types.Tuple,
+			*types.TypeParam,
+			*types.Union:
 			return nil, nil, false
 		case *types.Alias:
 			t = concrete.Rhs()
@@ -190,15 +188,15 @@ func knownEnumeratedType(enums enumerated.Result, t types.Type) (*types.Named, [
 	}
 }
 
-// The result from mustSatisfy is the set of constant values that
-// must satisfied to be exhaustive. The result is prepared in
+// The result from mustSatisfyValues is the set of constant values that
+// must be satisfied to be exhaustive. The result is prepared in
 // the context of the current package and the given options.
 //
 // The keys of the returned map are the set of constant values in
 // (go/constant.Value).ExactString representation.
 // Note that it is possible for the same constant value to have
 // multiple names, i.e. multiple *types.Const.
-func mustSatisfy(currentPkg *types.Package, cs []*types.Const, opts *options) map[string][]*types.Const {
+func mustSatisfyValues(currentPkg *types.Package, cs []*types.Const, opts *options) map[string][]*types.Const {
 	ret := make(map[string][]*types.Const)
 	for _, c := range cs {
 		if c.Pkg() != currentPkg && !ast.IsExported(c.Name()) {
@@ -252,16 +250,16 @@ func formatUnsatisfiedNames(passPkg *types.Package, unsatisfied map[string][]*ty
 	return buf.String()
 }
 
-func proceedInclExclPattern(t *types.Named, opts *options) bool {
+func proceedInclExclPatterns(t *types.Named, opts *options) bool {
 	if len(opts.includeTypePatterns) != 0 {
 		if isPkgLevel(t.Obj()) && matchAny(opts.includeTypePatterns, fullname(t.Obj())) {
 			return true
 		}
-		// Include patterns provided and none of
+		// Include patterns were provided and none of
 		// them matched.
 		return false
 	}
-	// Exclusion should be checked and performed only if a
+	// Exclusion should be checked for and performed only if a
 	// positive match for explicit inclusion did not happen
 	// earlier.
 	// This way, if an object name is matched by both include
@@ -274,87 +272,65 @@ func proceedInclExclPattern(t *types.Named, opts *options) bool {
 	return true // default is to include
 }
 
-func checkMapLiteral(pass *analysis.Pass, opts *options) {
-	var (
-		in             = pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
-		enums          = pass.ResultOf[enumerated.Analyzer].(enumerated.Result)
-		commentsByFile = make(map[*ast.File]ast.CommentMap)
-		printExpr      = func(e ast.Expr) string { return printNode(pass.Fset, ast.Unparen(e)) }
-		errorType      = func(e ast.Expr) string { return fmt.Sprintf("%s: could not determine type", printExpr(e)) }
-	)
+func checkMapLiteral(pass *analysis.Pass, c inspector.Cursor, compLit *ast.CompositeLit, fileComments ast.CommentMap, opts *options) {
+	mapType, ok := unpointer(pass.TypesInfo.Types[compLit].Type.Underlying()).(*types.Map)
+	if !ok {
+		return
+	}
 
-	in.Root().Inspect([]ast.Node{(*ast.CompositeLit)(nil)}, func(c inspector.Cursor) (descend bool) {
-		file := head(c.Enclosing((*ast.File)(nil))).Node().(*ast.File)
-		if !opts.checkGenerated && ast.IsGenerated(file) {
-			return false
+	directives, err := parseDirectives(compositeLitComments(pass, fileComments, c))
+	if err != nil {
+		pass.Reportf(compLit.Pos(), "error parsing comment directives: %s", err)
+		return
+	}
+	if opts.needEnforceDirective && !directives[dirEnforce] {
+		return
+	}
+	if directives[dirIgnore] {
+		return
+	}
+
+	reasonUnchecked := ""
+	if directives[dirEnforce] {
+		defer func() {
+			if reasonUnchecked != "" {
+				pass.Reportf(compLit.Pos(), "enforce directive present and map literal not checked: %s", reasonUnchecked)
+			}
+		}()
+	}
+
+	enums := pass.ResultOf[enumerated.Analyzer].(enumerated.Result)
+	t, cs, ok := knownEnumeratedType(enums, mapType.Key())
+	if !ok {
+		reasonUnchecked = "key type is not an enumerated type"
+		return
+	}
+
+	if !directives[dirEnforce] {
+		if !proceedInclExclPatterns(t, opts) {
+			return
 		}
+	}
 
-		compLit := c.Node().(*ast.CompositeLit)
-
-		mapType, ok := unpointer(pass.TypesInfo.Types[compLit].Type.Underlying()).(*types.Map)
+	unsatisfied := mustSatisfyValues(pass.Pkg, cs, opts)
+	for _, elt := range compLit.Elts {
+		kv, ok := elt.(*ast.KeyValueExpr)
 		if !ok {
-			return true
+			pass.Reportf(elt.Pos(), "%s: not key-value expression", formatExpr(pass, elt))
+			continue
 		}
-
-		fileComments, ok := commentsByFile[file]
+		tv, ok := pass.TypesInfo.Types[kv.Key]
 		if !ok {
-			fileComments = ast.NewCommentMap(pass.Fset, file, file.Comments)
-			commentsByFile[file] = fileComments
+			pass.Reportf(kv.Key.Pos(), "%s", errorType(pass, kv.Key))
+			continue
 		}
-		directives, err := parseDirectives(compositeLitComments(pass, fileComments, c))
-		if err != nil {
-			pass.Reportf(compLit.Pos(), "error parsing comment directives: %s", err)
-			return true
+		if tv.Value != nil {
+			delete(unsatisfied, tv.Value.ExactString())
 		}
-		if opts.needEnforceDirective && !directives[dirEnforce] {
-			return true
-		}
-		if directives[dirIgnore] {
-			return true
-		}
-
-		reasonUnchecked := ""
-		if directives[dirEnforce] {
-			defer func() {
-				if reasonUnchecked != "" {
-					pass.Reportf(compLit.Pos(), "enforce directive present and map literal not checked: %s", reasonUnchecked)
-				}
-			}()
-		}
-
-		t, cs, ok := knownEnumeratedType(enums, mapType.Key())
-		if !ok {
-			reasonUnchecked = "key type is not an enumerated type"
-			return true
-		}
-
-		if !directives[dirEnforce] {
-			if !proceedInclExclPattern(t, opts) {
-				return true
-			}
-		}
-
-		unsatisfied := mustSatisfy(pass.Pkg, cs, opts)
-		for _, elt := range compLit.Elts {
-			kv, ok := elt.(*ast.KeyValueExpr)
-			if !ok {
-				pass.Reportf(elt.Pos(), "%s: not key-value expression", printExpr(elt))
-				continue
-			}
-			tv, ok := pass.TypesInfo.Types[kv.Key]
-			if !ok {
-				pass.Reportf(kv.Key.Pos(), "%s", errorType(kv.Key))
-				continue
-			}
-			if tv.Value != nil {
-				delete(unsatisfied, tv.Value.ExactString())
-			}
-		}
-		if len(unsatisfied) != 0 {
-			pass.Reportf(compLit.Pos(), "map literal not exhaustive: missing keys: %s", formatUnsatisfiedNames(pass.Pkg, unsatisfied))
-		}
-		return true
-	})
+	}
+	if len(unsatisfied) != 0 {
+		pass.Reportf(compLit.Pos(), "map literal not exhaustive: missing keys: %s", formatUnsatisfiedNames(pass.Pkg, unsatisfied))
+	}
 }
 
 func unpointer(t types.Type) types.Type {

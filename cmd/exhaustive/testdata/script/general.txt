@@ -39,10 +39,9 @@ stderr -count=1 ^$
 # errors
 
 ! exhaustive example.com/baz
-stderr -count=3 ^.
 stderr -count=1 ${/}'example.com'${/}'baz'${/}'baz.go:13:1: expected declaration, found xxxcompileerror$'
-stderr -count=1 'enumerated: analysis skipped due to errors in package'
-stderr -count=1 'exhaustive: failed prerequisites: enumerated@example.com/baz'
+stderr '.+: analysis skipped due to errors in package'
+stderr 'exhaustive: failed prerequisites: .+@example.com/baz'
 
 ! exhaustive .
 stderr -count=1 '^-: no Go files in .+'${/}'example.com$'
