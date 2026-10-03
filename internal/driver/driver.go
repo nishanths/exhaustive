@@ -58,7 +58,7 @@ func Run(args []string, loadMode packages.LoadMode, as ...*analysis.Analyzer) (e
 	}
 
 	if len(pkgs) == 0 {
-		log.Println("matched no packages")
+		log.Println("no packages matched")
 		exitAtLeast(1)
 		return
 	}

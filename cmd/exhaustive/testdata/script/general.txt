@@ -50,6 +50,10 @@ stderr -count=1 '^-: no Go files in .+'${/}'example.com$'
 ! exhaustive example.net
 stderr -count=1 '^-: no required module provides package example\.net;.+$'
 
+mkdir empty
+! exhaustive ./empty/...
+stderr -count=1 'exhaustive: no packages matched$'
+
 # note: parts of the txtar contents below were copied from
 # passes/enumerated/testdata/*/depchain.
 -- example.com/go.mod --
