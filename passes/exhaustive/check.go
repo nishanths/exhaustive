@@ -11,78 +11,48 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/nishanths/exhaustive/internal/passes/finder"
 	"github.com/nishanths/exhaustive/passes/enumerated"
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/ast/inspector"
 )
 
-func formatNode(fset *token.FileSet, n ast.Node) string {
-	var buf strings.Builder
-	if err := printer.Fprint(&buf, fset, n); err != nil {
-		// this should not happen for a valid program?
-		// package x/tools/go/internal/astutil func Format
-		// ignores the error in a similar situation.
-		return "<?>"
-	}
-	return buf.String()
-}
-
-// Helper functions.
-func formatExpr(pass *analysis.Pass, e ast.Expr) string { return formatNode(pass.Fset, ast.Unparen(e)) }
-func errorType(pass *analysis.Pass, e ast.Expr) string {
-	return fmt.Sprintf("%s: could not determine type", formatExpr(pass, e))
-}
-
-func checkSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, fileComments ast.CommentMap, opts *options) {
-	directives, err := parseDirectives(fileComments[sw])
+func checkSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, comments []*ast.CommentGroup, opts *options) {
+	directives, err := parseDirectives(comments)
 	if err != nil {
 		pass.Reportf(sw.Pos(), "error parsing comment directives: %s", err)
 		return
 	}
-	if opts.needEnforceDirective && !directives[dirEnforce] {
+	if opts.checkEnforceOnly && !directives[dirEnforce] {
 		return
 	}
 	if directives[dirIgnore] {
 		return
 	}
 
-	reasonUnchecked := ""
-	if directives[dirEnforce] {
-		defer func() {
-			if reasonUnchecked != "" {
-				pass.Reportf(sw.Pos(), "enforce directive present and switch not checked: %s", reasonUnchecked)
-			}
-		}()
+	skip := func(reason string) {
+		if directives[dirEnforce] {
+			pass.Reportf(sw.Pos(), "enforce directive present and switch not checked: %s", reason)
+		}
 	}
 
 	// The tag will be nil for switch statements of
 	// the form "switch { ... }".
 	if sw.Tag == nil {
-		reasonUnchecked = "no switch expression"
-		return
-	}
-
-	tagType := pass.TypesInfo.TypeOf(sw.Tag)
-	if tagType == nil {
-		pass.Reportf(sw.Tag.Pos(), "%s", errorType(pass, sw.Tag))
+		skip("no switch expression")
 		return
 	}
 
 	enums := pass.ResultOf[enumerated.Analyzer].(enumerated.Result)
-	t, cs, ok := knownEnumeratedType(enums, tagType)
+	t, cs, ok := knownEnumeratedType(enums, pass.TypesInfo.TypeOf(sw.Tag))
 	if !ok {
-		reasonUnchecked = "switch expression type is not an enumerated type"
+		skip("switch expression type is not an enumerated type")
 		return
 	}
 
 	// Handle user-specified include/exclude pattern
-	// flags.
-	//
-	// Note that comment directives are more specific
-	// (they are specified at source code level) than
-	// include/exclude pattern flags. Hence an
-	// enforce directive, if present, should take
+	// flags. Note that comment directives take
 	// precedence over any include/exclude patterns.
 	if !directives[dirEnforce] {
 		if !proceedInclExclPatterns(t, opts) {
@@ -90,43 +60,255 @@ func checkSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, fileComments ast.Comme
 		}
 	}
 
-	needDefault := opts.defaultCaseRequired
+	needDefault := opts.requireDefaultCase
 	if v, ok := directives[dirDefrequire]; ok {
 		needDefault = v
 	}
 	foundDefault := false
 
-	unsatisfied := mustSatisfyValues(pass.Pkg, cs, opts)
+	need := needValues(pass.Pkg, cs, opts)
 	for _, cc := range sw.Body.List {
 		cc := cc.(*ast.CaseClause)
 		if cc.List == nil {
 			foundDefault = true
 			if opts.defaultCaseExhaustive {
-				clear(unsatisfied)
+				clear(need)
 				break
 			}
 		}
 		for _, expr := range cc.List {
 			tv, ok := pass.TypesInfo.Types[expr]
 			if !ok {
-				pass.Reportf(expr.Pos(), "%s", errorType(pass, expr))
 				continue
 			}
 			if tv.Value != nil {
-				delete(unsatisfied, tv.Value.ExactString())
+				delete(need, tv.Value.ExactString())
 			}
 		}
 	}
 	if needDefault && !foundDefault {
 		pass.Reportf(sw.Pos(), "missing default case")
 	}
-	if len(unsatisfied) != 0 {
-		pass.Reportf(sw.Pos(), "switch not exhaustive: missing cases: %s", formatUnsatisfiedNames(pass.Pkg, unsatisfied))
+	if len(need) != 0 {
+		pass.Reportf(sw.Pos(), "switch not exhaustive: missing cases: %s", formatMissingNames(pass.Pkg, need))
 	}
 }
 
-func checkTypeSwitch(pass *analysis.Pass, typsw *ast.TypeSwitchStmt, fileComments ast.CommentMap, opts *options) {
-	panic("TODO: not implemented")
+var universeError = types.Universe.Lookup("error")
+var universeNil = types.Universe.Lookup("nil")
+
+// shared state for type switch checks in a given package.
+type typeSwitchState struct {
+	impl map[*types.Interface]map[typename]struct{} // interface -> defined types that implement the interface
+	rel  map[*types.TypeName][]typename             // defined type -> type declarations that denote the defined type
+}
+
+type typename struct {
+	*types.TypeName
+	pointer bool
+}
+
+func (v typename) String() string {
+	return fmt.Sprintf("{%v %v}", v.TypeName.Type(), v.pointer)
+}
+
+func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*ast.CommentGroup, ch *typeSwitchState, opts *options) {
+	directives, err := parseDirectives(comments)
+	if err != nil {
+		pass.Reportf(sw.Pos(), "error parsing comment directives: %s", err)
+		return
+	}
+	if opts.checkEnforceOnly && !directives[dirEnforce] {
+		return
+	}
+	if directives[dirIgnore] {
+		return
+	}
+
+	skip := func(reason string) {
+		if directives[dirEnforce] {
+			pass.Reportf(sw.Pos(), "enforce directive present and type switch not checked: %s", reason)
+		}
+	}
+
+	var x ast.Expr
+	switch n := sw.Assign.(type) {
+	case *ast.ExprStmt:
+		x = ast.Unparen(n.X).(*ast.TypeAssertExpr).X
+	case *ast.AssignStmt:
+		x = ast.Unparen(n.Rhs[0]).(*ast.TypeAssertExpr).X
+	default:
+		pass.Reportf(sw.Assign.Pos(), "unsupported type switch syntax (type %T)", n) // not possible as of go1.27
+		return
+	}
+
+	// Go spec section on Type switches: "As with type
+	// assertions, x must be of interface type".
+	swInterface, ok := pass.TypesInfo.TypeOf(x).Underlying().(*types.Interface)
+	if !ok {
+		skip("expression in type assertion is not interface")
+		return
+	}
+
+	if !directives[dirEnforce] {
+		// Special case: Type switches of the empty interface
+		// are not checked.
+		// Note that all types implement the empty interface.
+		if swInterface.Empty() {
+			return
+		}
+		// Special case: Type switches of the error built-in interface
+		// are not checked.
+		if n, ok := types.Unalias(pass.TypesInfo.TypeOf(x)).(*types.Named); ok && n.Obj() == universeError {
+			return
+		}
+	}
+
+	r := pass.ResultOf[finder.Analyzer].(*finder.Result)
+	computeImplements(ch, r, swInterface)
+	computeTypeRelations(ch, r)
+	need := needTypes(pass.Pkg, ch, swInterface, opts)
+
+	needDefault := opts.requireDefaultCase
+	if v, ok := directives[dirDefrequire]; ok {
+		needDefault = v
+	}
+	foundDefault := false
+	foundNil := false
+
+	for _, cc := range sw.Body.List {
+		cc := cc.(*ast.CaseClause)
+		if cc.List == nil {
+			foundDefault = true
+			if opts.defaultCaseExhaustive {
+				clear(need)
+				break
+			}
+		}
+		for _, expr := range cc.List {
+			t := pass.TypesInfo.TypeOf(expr)
+			if t == nil {
+				continue
+			}
+			if !foundNil {
+				if obj, ok := t.(types.Object); ok && obj == universeNil {
+					foundNil = true
+				}
+			}
+			// Note: Go spec as of go1.27: "[The receiver's] type must be a defined type T
+			// or a pointer to a defined type T".
+			// See also: Related notes in func computeImplements.
+			switch t := types.Unalias(t).(type) {
+			case *types.Named:
+				n := t
+				delete(need, typename{n.Obj(), false})
+			case *types.Pointer:
+				if n, ok := t.Elem().(*types.Named); ok {
+					delete(need, typename{n.Obj(), true})
+				}
+			}
+		}
+	}
+
+	if needDefault && !foundDefault {
+		pass.Reportf(sw.Pos(), "missing default case")
+	}
+
+	if len(need) != 0 {
+		matchpointer := func(defined typename) func(typename) typename {
+			return func(name typename) typename {
+				return typename{name.TypeName, cmp.Or(defined.pointer, name.pointer)}
+			}
+		}
+		m := make(map[typename][]typename, len(need))
+		for k := range need {
+			m[k] = slicemap(ch.rel[k.TypeName], matchpointer(k))
+		}
+		pass.Reportf(sw.Pos(), "type switch not exhaustive: missing cases: %s", formatMissingTypes(pass.Pkg, m, opts.requireNilCase && !foundNil))
+	}
+}
+
+func computeImplements(ch *typeSwitchState, r *finder.Result, swInterface *types.Interface) {
+	if _, ok := ch.impl[swInterface]; ok {
+		return
+	}
+	ch.impl[swInterface] = make(map[typename]struct{})
+
+	add := func(n *types.Named, pointer bool) {
+		ch.impl[swInterface][typename{n.Obj(), pointer}] = struct{}{}
+	}
+
+	// Note: None of the non-interface predeclared types have methods
+	// as of go1.27 and thus they cannot implement a
+	// non-empty basic interface.
+	// If this does not hold true in future Go versions,
+	// then those predeclared types must be considered
+	// for the following "implements" checks.
+	// A similar note applies to func computeTypeRelations.
+	//
+	// Note: Go spec as of go1.27: "[The receiver's] type must be a defined type T
+	// or a pointer to a defined type T" and "T is called the receiver base type.
+	// A receiver base type cannot be a pointer or interface type".
+	//
+	// Examples
+	//
+	//   type S int   // S and *S: valid receiver types
+	//   type U *S    // U: invalid receiver type (U is a pointer type)
+	//   type V *int  // V: invalid receiver type (V is a pointer type)
+	//   type A = *S  // A: valid receiver type
+	//   type B = *A  // B: invalid receiver type (B is a 2x-pointer to a defined type)
+	//
+	// Note: See also: Go spec section 'Method sets'.
+	for tn := range r.TypeDecls {
+		switch t := types.Unalias(tn.Type()).(type) {
+		case *types.Named:
+			n := t
+			if !isInterface(n) {
+				if types.Implements(types.NewPointer(n), swInterface) {
+					add(n, true)
+				}
+				if types.Implements(n, swInterface) {
+					add(n, false)
+				}
+			}
+		case *types.Pointer:
+			if n, ok := t.Elem().(*types.Named); ok && !isInterface(n) && types.Implements(t, swInterface) {
+				add(n, true)
+			}
+		}
+	}
+}
+
+func computeTypeRelations(ch *typeSwitchState, r *finder.Result) {
+	if ch.rel != nil {
+		return
+	}
+	ch.rel = make(map[*types.TypeName][]typename, 128)
+
+	for tn := range r.TypeDecls {
+		switch t := tn.Type().(type) {
+		case *types.Alias:
+			switch tt := types.Unalias(t).(type) {
+			case *types.Named:
+				n := tt
+				ch.rel[n.Obj()] = append(ch.rel[n.Obj()], typename{tn, false})
+			case *types.Pointer:
+				if n, ok := tt.Elem().(*types.Named); ok {
+					ch.rel[n.Obj()] = append(ch.rel[n.Obj()], typename{tn, true})
+				}
+			}
+		case *types.Named:
+			n := t
+			ch.rel[n.Obj()] = append(ch.rel[n.Obj()], typename{tn, false})
+		default:
+			panic(fmt.Sprintf("internal error: unexpected type %T", t))
+		}
+	}
+}
+
+func isInterface(n *types.Named) bool {
+	_, ok := n.Underlying().(*types.Interface)
+	return ok
 }
 
 // knownEnumeratedType reports whether the given type (which
@@ -179,16 +361,16 @@ func knownEnumeratedType(enums enumerated.Result, t types.Type) (*types.Named, [
 			assert(!isNamed)
 			t = concrete.Underlying()
 		default:
-			// All possible types, as of go1.26, are handled
-			// in the cases above. This default case should
-			// never run. Nevertheless returning false
-			// is the appropriate result in this scenario.
+			// The possible types, as of go1.27, are handled
+			// in the cases above and the default case should
+			// not run. Nevertheless returning false is the appropriate
+			// result for any unhandled type.
 			return nil, nil, false
 		}
 	}
 }
 
-// The result from mustSatisfyValues is the set of constant values that
+// The result from needValues is the set of constant values that
 // must be satisfied to be exhaustive. The result is prepared in
 // the context of the current package and the given options.
 //
@@ -196,10 +378,10 @@ func knownEnumeratedType(enums enumerated.Result, t types.Type) (*types.Named, [
 // (go/constant.Value).ExactString representation.
 // Note that it is possible for the same constant value to have
 // multiple names, i.e. multiple *types.Const.
-func mustSatisfyValues(currentPkg *types.Package, cs []*types.Const, opts *options) map[string][]*types.Const {
+func needValues(currentPkg *types.Package, cs []*types.Const, opts *options) map[string][]*types.Const {
 	ret := make(map[string][]*types.Const)
 	for _, c := range cs {
-		if c.Pkg() != currentPkg && !ast.IsExported(c.Name()) {
+		if c.Pkg() != currentPkg && !c.Exported() {
 			continue
 		}
 		if isPkgLevel(c) && matchAny(opts.excludeConstPatterns, fullname(c)) {
@@ -210,18 +392,30 @@ func mustSatisfyValues(currentPkg *types.Package, cs []*types.Const, opts *optio
 	return ret
 }
 
-func formatUnsatisfiedNames(passPkg *types.Package, unsatisfied map[string][]*types.Const) string {
+func needTypes(currentPkg *types.Package, ch *typeSwitchState, swInterface *types.Interface, opts *options) map[typename]struct{} {
+	ret := make(map[typename]struct{}, len(ch.impl[swInterface]))
+	for defined := range ch.impl[swInterface] {
+		for _, name := range ch.rel[defined.TypeName] {
+			if name.Pkg() != currentPkg && !name.Exported() {
+				continue
+			}
+			ret[defined] = struct{}{}
+			break
+		}
+	}
+	return ret
+}
+
+func formatMissingNames(currentPkg *types.Package, missing map[string][]*types.Const) string {
 	// Note that the constants are grouped by value in the input.
 	// The logic below does the following: The constants in
 	// each group are sorted by AST position. The groups
 	// themselves are then sorted by AST position (of the
 	// first constant in the group).
-	groups := make([][]*types.Const, len(unsatisfied))
+	groups := make([][]*types.Const, len(missing))
 	i := 0
-	for _, cs := range unsatisfied {
-		if len(cs) == 0 {
-			panic("zero constants for value")
-		}
+	for _, cs := range missing {
+		assert(len(cs) != 0)         // unexpectedly zero constants for value
 		groups[i] = slices.Clone(cs) // do not modify input
 		slices.SortFunc(groups[i], func(a, b *types.Const) int { return cmp.Compare(a.Pos(), b.Pos()) })
 		i++
@@ -232,16 +426,86 @@ func formatUnsatisfiedNames(passPkg *types.Package, unsatisfied map[string][]*ty
 	var buf strings.Builder
 	for i, g := range groups {
 		for i, c := range g {
-			var name string
-			if passPkg != c.Pkg() && c.Pkg() != nil {
-				name = c.Pkg().Name() + "." + c.Name()
-			} else {
-				name = c.Name()
-			}
-			buf.WriteString(name)
+			buf.WriteString(nameString(currentPkg, c))
 			if i != len(g)-1 {
 				buf.WriteString("|")
 			}
+		}
+		if i != len(groups)-1 {
+			buf.WriteString(", ")
+		}
+	}
+	return buf.String()
+}
+
+func formatMissingTypes(currentPkg *types.Package, missing map[typename][]typename, missingNil bool) string {
+	type group struct {
+		defined typename
+		names   []typename
+	}
+
+	cmpfn := func(a, b typename) int {
+		switch {
+		case a.Pkg() == nil && b.Pkg() != nil:
+			return -1
+		case a.Pkg() != nil && b.Pkg() == nil:
+			return 1
+		case a.Pkg() == currentPkg && b.Pkg() != currentPkg:
+			return -1
+		case a.Pkg() != currentPkg && b.Pkg() == currentPkg:
+			return 1
+		case a.Pkg() != b.Pkg():
+			return cmp.Compare(a.Pkg().Path(), b.Pkg().Path())
+		}
+		if a.Name() != b.Name() {
+			return cmp.Compare(a.Name(), b.Name())
+		}
+		switch {
+		case !a.pointer && b.pointer:
+			return -1
+		case a.pointer && !b.pointer:
+			return 1
+		}
+		return 0
+	}
+
+	typenameString := func(t typename) string {
+		if t.pointer {
+			return "*" + nameString(currentPkg, t)
+		}
+		return nameString(currentPkg, t)
+	}
+
+	groups := make([]group, len(missing))
+	i := 0
+	for defined, names := range missing {
+		assert(len(names) != 0)      // unexpectedly zero type names for defined type
+		names := slices.Clone(names) // do not modify input
+		slices.SortFunc(names, cmpfn)
+		groups[i] = group{defined, names}
+		i++
+	}
+	slices.SortFunc(groups, func(a, b group) int { return cmpfn(a.defined, b.defined) })
+
+	// format to string
+	var buf strings.Builder
+	if missingNil {
+		buf.WriteString("nil")
+		if len(groups) > 0 {
+			buf.WriteString(", ")
+		}
+	}
+	for i, g := range groups {
+		buf.WriteString(typenameString(g.defined))
+		if len(g.names) != 0 && g.names[0] != g.defined {
+			buf.WriteString(" (")
+			for i, tn := range g.names {
+				buf.WriteString(typenameString(tn))
+				if i != len(g.names)-1 {
+					buf.WriteString("|")
+				}
+			}
+			buf.WriteString(")")
 		}
 		if i != len(groups)-1 {
 			buf.WriteString(", ")
@@ -272,37 +536,34 @@ func proceedInclExclPatterns(t *types.Named, opts *options) bool {
 	return true // default is to include
 }
 
-func checkMapLiteral(pass *analysis.Pass, c inspector.Cursor, compLit *ast.CompositeLit, fileComments ast.CommentMap, opts *options) {
+func checkMapLiteral(pass *analysis.Pass, compLit *ast.CompositeLit, comments []*ast.CommentGroup, opts *options) {
 	mapType, ok := unpointer(pass.TypesInfo.Types[compLit].Type.Underlying()).(*types.Map)
 	if !ok {
 		return
 	}
 
-	directives, err := parseDirectives(compositeLitComments(pass, fileComments, c))
+	directives, err := parseDirectives(comments)
 	if err != nil {
 		pass.Reportf(compLit.Pos(), "error parsing comment directives: %s", err)
 		return
 	}
-	if opts.needEnforceDirective && !directives[dirEnforce] {
+	if opts.checkEnforceOnly && !directives[dirEnforce] {
 		return
 	}
 	if directives[dirIgnore] {
 		return
 	}
 
-	reasonUnchecked := ""
-	if directives[dirEnforce] {
-		defer func() {
-			if reasonUnchecked != "" {
-				pass.Reportf(compLit.Pos(), "enforce directive present and map literal not checked: %s", reasonUnchecked)
-			}
-		}()
+	skip := func(reason string) {
+		if directives[dirEnforce] {
+			pass.Reportf(compLit.Pos(), "enforce directive present and map literal not checked: %s", reason)
+		}
 	}
 
 	enums := pass.ResultOf[enumerated.Analyzer].(enumerated.Result)
 	t, cs, ok := knownEnumeratedType(enums, mapType.Key())
 	if !ok {
-		reasonUnchecked = "key type is not an enumerated type"
+		skip("key type is not an enumerated type")
 		return
 	}
 
@@ -312,24 +573,22 @@ func checkMapLiteral(pass *analysis.Pass, c inspector.Cursor, compLit *ast.Compo
 		}
 	}
 
-	unsatisfied := mustSatisfyValues(pass.Pkg, cs, opts)
+	need := needValues(pass.Pkg, cs, opts)
 	for _, elt := range compLit.Elts {
 		kv, ok := elt.(*ast.KeyValueExpr)
 		if !ok {
-			pass.Reportf(elt.Pos(), "%s: not key-value expression", formatExpr(pass, elt))
 			continue
 		}
 		tv, ok := pass.TypesInfo.Types[kv.Key]
 		if !ok {
-			pass.Reportf(kv.Key.Pos(), "%s", errorType(pass, kv.Key))
 			continue
 		}
 		if tv.Value != nil {
-			delete(unsatisfied, tv.Value.ExactString())
+			delete(need, tv.Value.ExactString())
 		}
 	}
-	if len(unsatisfied) != 0 {
-		pass.Reportf(compLit.Pos(), "map literal not exhaustive: missing keys: %s", formatUnsatisfiedNames(pass.Pkg, unsatisfied))
+	if len(need) != 0 {
+		pass.Reportf(compLit.Pos(), "map literal not exhaustive: missing keys: %s", formatMissingNames(pass.Pkg, need))
 	}
 }
 
@@ -373,4 +632,27 @@ loop:
 		}
 	}
 	return slices.Collect(maps.Keys(ret)) // current callers do not care about the order
+}
+
+func nameString(currentPkg *types.Package, obj types.Object) string {
+	if currentPkg != obj.Pkg() && obj.Pkg() != nil {
+		return obj.Pkg().Name() + "." + obj.Name()
+	} else {
+		return obj.Name()
+	}
+}
+
+func formatNode(fset *token.FileSet, n ast.Node) string {
+	var buf strings.Builder
+	if err := printer.Fprint(&buf, fset, n); err != nil {
+		// this should not happen for a valid program?
+		// package x/tools/go/internal/astutil func Format
+		// ignores the error in a similar situation.
+		return "<?>"
+	}
+	return buf.String()
+}
+
+func formatExpr(pass *analysis.Pass, e ast.Expr) string {
+	return formatNode(pass.Fset, ast.Unparen(e))
 }

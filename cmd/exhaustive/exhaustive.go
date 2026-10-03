@@ -13,6 +13,7 @@ import (
 )
 
 func main() {
+	// TODO: edit Analyzer.Requires based on flags.
 	log.SetFlags(0)
 	log.SetPrefix("exhaustive: ")
 	driver.ParseFlags("exhaustive", enumerated.Analyzer, exhaustive.Analyzer)

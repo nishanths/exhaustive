@@ -191,7 +191,7 @@ func find(pass *analysis.Pass, opts *options) {
 }
 
 func permittedEnumeratedType(t types.Type) (*types.Named, bool) {
-	// As of go1.26, the Go spec and package go/types vary in
+	// As of go1.27, the Go spec and package go/types vary in
 	// terminology.
 	// For our purposes, an enumerated type must be (in Go
 	// spec terminology) a defined type. It must not be one
@@ -333,11 +333,11 @@ func constExprUsesOp(pass *analysis.Pass, ops map[token.Token]struct{}, expr ast
 
 func slicemap[S ~[]E, E, F any](s S, fn func(E) F) []F {
 	var ret []F
-	if len(s) > 0 {
+	if s != nil {
 		ret = make([]F, len(s))
-	}
-	for i := range s {
-		ret[i] = fn(s[i])
+		for i := range s {
+			ret[i] = fn(s[i])
+		}
 	}
 	return ret
 }

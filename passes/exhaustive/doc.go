@@ -50,7 +50,7 @@ exported constants for the switch statement to be exhaustive.
 A given case expression must be a [constant expression] to
 contribute towards making the switch statement exhaustive.
 
-Note that including a default case does not automatically make a
+Note that including a default case does not make a
 switch statement exhaustive. See flag -d to control this
 behavior.
 

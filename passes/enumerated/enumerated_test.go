@@ -53,14 +53,14 @@ func TestResult(t *testing.T) {
 }
 
 func transform(m map[*types.Named][]*types.Const) map[string][]string {
-	sortconst := func(a, b *types.Const) int { return cmp.Compare(a.Pos(), b.Pos()) }
+	cmpconst := func(a, b *types.Const) int { return cmp.Compare(a.Pos(), b.Pos()) }
 	strnamed := (*types.Named).String
 	strconst := (*types.Const).String
 
 	out := make(map[string][]string)
 	for t, cs := range m {
 		cs := slices.Clone(cs)
-		slices.SortFunc(cs, sortconst)
+		slices.SortFunc(cs, cmpconst)
 		out[strnamed(t)] = slicemap(cs, strconst)
 	}
 	return out

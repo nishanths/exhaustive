@@ -26,9 +26,9 @@ func TestAnalyzer(t *testing.T) {
 	// statements and map literals.
 	//
 	run(t, func() { fCheck = "switch,mapliteral" }, "test/check/swtch/general", "test/check/swtch/directive")
-	run(t, func() { fCheck = "switch,mapliteral"; fNeedEnforceDirective = true }, "test/check/swtch/directive/enforce")
+	run(t, func() { fCheck = "switch,mapliteral"; fCheckEnforceOnly = true }, "test/check/swtch/directive/enforce")
 	run(t, func() { fCheck = "switch"; fDefaultEx = true }, "test/check/swtch/def")
-	run(t, func() { fCheck = "switch"; fDefaultRequired = true }, "test/check/swtch/defrequire")
+	run(t, func() { fCheck = "switch"; fRequireDefaultCase = true }, "test/check/swtch/defrequire")
 	run(t, func() { fCheck = "switch" }, "test/check/swtch/defrequire/directive1")
 	run(t, func() { fCheck = "switch,mapliteral"; fCheckGenerated = true }, "test/check/swtch/generated")
 	run(t, func() {
@@ -63,9 +63,13 @@ func TestAnalyzer(t *testing.T) {
 
 	}, "test/check/swtch/pattern/includetype")
 	run(t, func() { fCheck = "switch" }, "test/check/swtch/unsupported")
-	run(t, func() { fCheck = "mapliteral"; fNeedEnforceDirective = true }, "test/check/mapliteral/commentassoc")
+	run(t, func() { fCheck = "mapliteral"; fCheckEnforceOnly = true }, "test/check/mapliteral/commentassoc")
 	run(t, func() { fCheck = "switch" }, "test/packagedoc/...")
 	run(t, func() { fCheck = "switch" }, "test/readmeexample/...")
+
+	if !testing.Short() {
+		run(t, func() { fCheck = "typeswitch" }, "test/check/typeswitch/gotypes")
+	}
 }
 
 // This test does not check that the analysis produces expected
@@ -103,25 +107,22 @@ func TestRealPackages(t *testing.T) {
 
 	run(t, func() { fCheck = "switch,mapliteral" }, "net")
 
-	if testing.Short() {
-		t.Skip("skipping extra tests in short mode")
-		return
+	if !testing.Short() {
+		// Note: This could specify the name "std" instead of
+		// specifying individual package names, but in low memory
+		// environments where tests might run the analysis will
+		// commonly run out of memory for the former.
+		run(t, func() { fCheck = "switch,mapliteral" },
+			"fmt",
+			"go/...",
+			"html/template",
+			"io/...",
+			"net/...",
+			"os/...",
+			"reflect",
+			"regexp/...",
+			"runtime/...",
+			"sync/...",
+			"unsafe")
 	}
-
-	// Note: This could specify the name "std" instead of
-	// specifying individual package names, but in low memory
-	// environments where tests might run the analysis will
-	// commonly run out of memory for the former.
-	run(t, func() { fCheck = "switch,mapliteral" },
-		"fmt",
-		"go/...",
-		"html/template",
-		"io/...",
-		"net/...",
-		"os/...",
-		"reflect",
-		"regexp/...",
-		"runtime/...",
-		"sync/...",
-		"unsafe")
 }

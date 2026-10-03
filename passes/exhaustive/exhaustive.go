@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"go/ast"
 	"go/types"
-	"iter"
 	"regexp"
 	"slices"
 	"strings"
 
+	"github.com/nishanths/exhaustive/internal/passes/finder"
 	"github.com/nishanths/exhaustive/passes/enumerated"
 
 	"golang.org/x/tools/go/analysis"
@@ -18,16 +18,30 @@ import (
 )
 
 var Analyzer = &analysis.Analyzer{
-	Name:     "exhaustive",
-	Doc:      "check that expression switch statements of enumerated types are exhaustive",
-	Run:      run,
-	Requires: []*analysis.Analyzer{inspect.Analyzer, enumerated.Analyzer},
+	Name: "exhaustive",
+	Doc:  "check that expression switches and type switches are exhaustive",
+	Run:  run,
+	// Note: The set of analyzers specified in the Requires field
+	// may not all be actually necessary. The set of actually necessary
+	// analyzers depends on the value of the -check flag and may be a
+	// subset of the analyzers specified here.
+	// Analysis driver programs that want improved performance
+	// may want to edit this field during program initialization
+	// before the analyzers are run.
+	//
+	// TODO: consider adding API to facilitate the above.
+	Requires: []*analysis.Analyzer{
+		inspect.Analyzer,
+		enumerated.Analyzer, // necessary if -check argument specifies 'switch' or 'mapliteral'
+		finder.Analyzer,     // necessary if -check argument specifies 'typeswitch'
+	},
 }
 
 func init() {
-	Analyzer.Flags.BoolVar(&fNeedEnforceDirective, "e", fNeedEnforceDirective, "check a switch statement only if it has '//exhaustive:enforce' comment")
+	Analyzer.Flags.BoolVar(&fCheckEnforceOnly, "e", fCheckEnforceOnly, "check a switch statement only if it has '//exhaustive:enforce' comment")
 	Analyzer.Flags.BoolVar(&fDefaultEx, "d", fDefaultEx, "including a default case makes a switch statement exhaustive")
-	Analyzer.Flags.BoolVar(&fDefaultRequired, "defrequire", fDefaultRequired, "default case must always be present")
+	Analyzer.Flags.BoolVar(&fRequireDefaultCase, "defrequire", fRequireDefaultCase, "default case must always be present")
+	Analyzer.Flags.BoolVar(&fRequireNilCase, "nilcase", fRequireNilCase, "type switches must include a nil case")
 	Analyzer.Flags.StringVar(&fCheck, "check", fCheck, "specify elements in the syntax tree that the analysis should check")
 	Analyzer.Flags.BoolVar(&fCheckGenerated, "g", fCheckGenerated, "additionally analyze generated files")
 	Analyzer.Flags.Var(&fExcludeType, "typeignore", "switch statements in which the type name is matched by `regexp` are not checked")
@@ -36,20 +50,22 @@ func init() {
 }
 
 var (
-	fNeedEnforceDirective = false
-	fDefaultEx            = false
-	fDefaultRequired      = false
-	fCheck                = string(exprswitch)
-	fCheckGenerated       = false
-	fIncludeType          = repeatFlag[*regexp.Regexp]{set: regexp.Compile}
-	fExcludeType          = repeatFlag[*regexp.Regexp]{set: regexp.Compile}
-	fExcludeConst         = repeatFlag[*regexp.Regexp]{set: regexp.Compile}
+	fCheckEnforceOnly   = false
+	fDefaultEx          = false
+	fRequireDefaultCase = false
+	fRequireNilCase     = false
+	fCheck              = string(exprswitch)
+	fCheckGenerated     = false
+	fIncludeType        = repeatFlag[*regexp.Regexp]{set: regexp.Compile}
+	fExcludeType        = repeatFlag[*regexp.Regexp]{set: regexp.Compile}
+	fExcludeConst       = repeatFlag[*regexp.Regexp]{set: regexp.Compile}
 )
 
 func resetFlags() {
-	fNeedEnforceDirective = false
+	fCheckEnforceOnly = false
 	fDefaultEx = false
-	fDefaultRequired = false
+	fRequireDefaultCase = false
+	fRequireNilCase = false
 	fCheck = string(exprswitch)
 	fCheckGenerated = false
 	fIncludeType = repeatFlag[*regexp.Regexp]{set: regexp.Compile}
@@ -112,8 +128,9 @@ func parseSyntaxElements(arg string) ([]syntaxElement, error) {
 
 type options struct {
 	defaultCaseExhaustive bool
-	defaultCaseRequired   bool
-	needEnforceDirective  bool
+	requireDefaultCase    bool
+	requireNilCase        bool
+	checkEnforceOnly      bool
 	checkGenerated        bool
 	includeTypePatterns   []*regexp.Regexp
 	excludeTypePatterns   []*regexp.Regexp
@@ -128,8 +145,9 @@ func run(pass *analysis.Pass) (any, error) {
 
 	opts := &options{
 		defaultCaseExhaustive: fDefaultEx,
-		defaultCaseRequired:   fDefaultRequired,
-		needEnforceDirective:  fNeedEnforceDirective,
+		requireDefaultCase:    fRequireDefaultCase,
+		requireNilCase:        fRequireNilCase,
+		checkEnforceOnly:      fCheckEnforceOnly,
 		checkGenerated:        fCheckGenerated,
 		includeTypePatterns:   fIncludeType.vals,
 		excludeTypePatterns:   fExcludeType.vals,
@@ -149,44 +167,31 @@ func run(pass *analysis.Pass) (any, error) {
 	}
 
 	in := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
-	commentsByFile := make(map[*ast.File]ast.CommentMap)
 
-	prepare := func(c inspector.Cursor) (ast.CommentMap, bool) {
-		file := head(c.Enclosing((*ast.File)(nil))).Node().(*ast.File)
-		if !opts.checkGenerated && ast.IsGenerated(file) {
-			return nil, false
-		}
-		comments, ok := commentsByFile[file]
-		if !ok {
-			comments = ast.NewCommentMap(pass.Fset, file, file.Comments)
-			commentsByFile[file] = comments
-		}
-		return comments, true
+	// checker state shared for all type switch checks in the package
+	typeSwitchCh := &typeSwitchState{
+		impl: make(map[*types.Interface]map[typename]struct{}),
 	}
 
-	in.Root().Inspect(nodes, func(c inspector.Cursor) (descend bool) {
-		switch n := c.Node().(type) {
-		case *ast.SwitchStmt:
-			comments, ok := prepare(c)
-			if !ok {
-				return true
-			}
-			checkSwitch(pass, n, comments, opts)
-		case *ast.CompositeLit:
-			comments, ok := prepare(c)
-			if !ok {
-				return true
-			}
-			checkMapLiteral(pass, c, n, comments, opts)
-		case *ast.TypeSwitchStmt:
-			comments, ok := prepare(c)
-			if !ok {
-				return true
-			}
-			checkTypeSwitch(pass, n, comments, opts)
-		default:
-			panic(fmt.Sprintf("internal error: unexpected type %T", n))
+	in.Root().Inspect([]ast.Node{(*ast.File)(nil)}, func(c inspector.Cursor) (descend bool) {
+		file := c.Node().(*ast.File)
+		if !opts.checkGenerated && ast.IsGenerated(file) {
+			return false
 		}
+		comments := ast.NewCommentMap(pass.Fset, file, file.Comments)
+		c.Inspect(nodes, func(c inspector.Cursor) (descend bool) {
+			switch n := c.Node().(type) {
+			case *ast.SwitchStmt:
+				checkSwitch(pass, n, comments[n], opts)
+			case *ast.CompositeLit:
+				checkMapLiteral(pass, n, compositeLitComments(pass, comments, c), opts)
+			case *ast.TypeSwitchStmt:
+				checkTypeSwitch(pass, n, comments[n], typeSwitchCh, opts)
+			default:
+				panic(fmt.Sprintf("internal error: unexpected node of type %T", n))
+			}
+			return true
+		})
 		return true
 	})
 
@@ -285,11 +290,15 @@ func matchAny(rs []*regexp.Regexp, s string) bool {
 	return false
 }
 
-func head[T any](seq iter.Seq[T]) T {
-	for t := range seq {
-		return t
+func slicemap[S ~[]E, E, F any](s S, fn func(E) F) []F {
+	var ret []F
+	if s != nil {
+		ret = make([]F, len(s))
+		for i := range s {
+			ret[i] = fn(s[i])
+		}
 	}
-	panic("empty sequence")
+	return ret
 }
 
 func assert(x bool) {

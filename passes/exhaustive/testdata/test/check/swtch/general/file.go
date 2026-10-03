@@ -372,7 +372,7 @@ func f17() {
 	_ = &n{X0: true, X3: true}           // want "^map literal not exhaustive: missing keys: X1, X2, X4$"
 }
 
-// type of the switch expression is not an enumerated type
+// switch expression type is not an enumerated type
 func f18() {
 	var v int
 
