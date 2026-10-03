@@ -247,7 +247,7 @@ func f9(t T1) {
 	}
 }
 
-// inner composite literal type omitted
+// inner composite literal type omitted in the source.
 func f10() {
 	_ = []map[T1]bool{
 		{X1: true},           // want "^map literal not exhaustive: missing keys: X0, X2, X3, X4$"

@@ -13,7 +13,6 @@ import (
 func TestMain(m *testing.M) {
 	testingExtraFacts = true
 	Analyzer.FactTypes = append(Analyzer.FactTypes, new(enumeratedTypeFact), new(permittedTypeFact), new(enumeratedConstantFact))
-
 	m.Run()
 }
 

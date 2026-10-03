@@ -1,3 +1,7 @@
+// This testdata file contains a variety of valid and invalid
+// declarations for use in tests. It is not meant to represent
+// enumerated types and constants seen in production code.
+
 package typ
 
 import "unsafe"
