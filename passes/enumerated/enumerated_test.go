@@ -19,32 +19,32 @@ func TestMain(m *testing.M) {
 
 func TestAnalyzer(t *testing.T) {
 	testdata := analysistest.TestData()
-	run := func(t *testing.T, dir string, setup func(), patterns ...string) []*analysistest.Result {
+	run := func(t *testing.T, setup func(), patterns ...string) []*analysistest.Result {
 		t.Helper()
 		resetFlags()
 		setup()
-		return analysistest.Run(t, filepath.Join(testdata, "src", dir), Analyzer, patterns...)
+		return analysistest.Run(t, filepath.Join(testdata, "test"), Analyzer, patterns...)
 	}
 
-	run(t, "enum", func() {}, "enum/typ")
-	run(t, "enum", func() {}, "enum/scope", "enum/scope/sub")
-	run(t, "enum", func() { fIota = true }, "enum/iotavalue")
-	run(t, "enum", func() { fNoBitwise = true }, "enum/nobitwise")
-	run(t, "enum", func() { fIota = true; fNoBitwise = true }, "enum/iotavalue_nobitwise")
-	run(t, "enum", func() { fPkgLevel = true }, "enum/pkglevel")
-	run(t, "depchain", func() {}, "depchain/...")
-	run(t, "packagedoc", func() {}, "packagedoc/...")
+	run(t, func() {}, "test/enum/typ")
+	run(t, func() {}, "test/enum/scope", "test/enum/scope/sub")
+	run(t, func() { fIota = true }, "test/enum/iotavalue")
+	run(t, func() { fNoBitwise = true }, "test/enum/nobitwise")
+	run(t, func() { fIota = true; fNoBitwise = true }, "test/enum/iotavalue_nobitwise")
+	run(t, func() { fPkgLevel = true }, "test/enum/pkglevel")
+	run(t, func() {}, "test/depchain/...")
+	run(t, func() {}, "test/packagedoc/...")
 }
 
 func TestResult(t *testing.T) {
 	wantresult := map[string][]string{
-		"depchain/d.D1": {"const depchain/d.DX0 depchain/d.D1", "const depchain/d.DX1 depchain/d.D1"},
-		"depchain/d.D2": {"const depchain/d.DZ0 depchain/d.D2", "const depchain/d.DZ1 depchain/d.D2", "const depchain/d.DZ2 depchain/d.D2"},
-		"depchain/c.C2": {"const depchain/c.CY0 depchain/c.C2", "const depchain/c.CY1 depchain/c.C2"},
-		"depchain/b.B1": {"const depchain/b.BY0 depchain/b.B1", "const depchain/b.BY1 depchain/b.B1"},
-		"depchain/a.A1": {"const depchain/a.AX0 depchain/a.A1", "const depchain/a.AX1 depchain/a.A1", "const depchain/a.AX2 depchain/a.A1"},
+		"test/depchain/d.D1": {"const test/depchain/d.DX0 test/depchain/d.D1", "const test/depchain/d.DX1 test/depchain/d.D1"},
+		"test/depchain/d.D2": {"const test/depchain/d.DZ0 test/depchain/d.D2", "const test/depchain/d.DZ1 test/depchain/d.D2", "const test/depchain/d.DZ2 test/depchain/d.D2"},
+		"test/depchain/c.C2": {"const test/depchain/c.CY0 test/depchain/c.C2", "const test/depchain/c.CY1 test/depchain/c.C2"},
+		"test/depchain/b.B1": {"const test/depchain/b.BY0 test/depchain/b.B1", "const test/depchain/b.BY1 test/depchain/b.B1"},
+		"test/depchain/a.A1": {"const test/depchain/a.AX0 test/depchain/a.A1", "const test/depchain/a.AX1 test/depchain/a.A1", "const test/depchain/a.AX2 test/depchain/a.A1"},
 	}
-	r := analysistest.Run(t, filepath.Join(analysistest.TestData(), "src", "depchain"), Analyzer, "depchain/a")
+	r := analysistest.Run(t, filepath.Join(analysistest.TestData(), "test"), Analyzer, "test/depchain/a")
 	if len(r) != 1 {
 		t.Errorf("len(r): got: %d, want: 1", len(r))
 	} else if got := transform(r[0].Action.Result.(Result)); !reflect.DeepEqual(got, wantresult) {
