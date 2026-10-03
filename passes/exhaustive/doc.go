@@ -20,7 +20,7 @@ An expression switch statement is eligible to be checked if the
 type of its switch expression is an enumerated type (or an alias
 for an enumerated type). An expression switch statement is
 exhaustive if every value of the [enumerated type] in the switch
-expression is included in the case clause expressions.
+expression is included in case clause expressions.
 
 Given the declarations:
 
@@ -45,9 +45,9 @@ the following switch statement will be checked and is exhaustive:
 If the switch statement is in a different package from the
 package that declares the enumerated type and the constants, then
 only the values corresponding to exported constants have to be
-included in the case expressions for the switch statement to be
-exhaustive. The case expression must be a [constant expression] to
-contribute towards making the switch statement exhaustive.
+included in case expressions for the switch statement to be
+exhaustive. The case expression must be a [constant expression]
+to contribute towards making the switch statement exhaustive.
 
 Note that, by default, including a default case in a switch
 statement does not automatically make a switch statement
@@ -55,7 +55,7 @@ exhaustive. See flag -d to control this behavior.
 
 # Handling of type aliases
 
-For example, given an enumerated type
+Given an enumerated type
 
 	package newpkg
 
@@ -103,12 +103,7 @@ exhaustive. See flag -check.
 
 # Flags
 
-The enumerated analyzer defined in [package enumerated] provides
-a set of flags to control the discovery of enumerated types and
-enumerated constants. See its documentation for details.
-
-The exhaustive analyzer defined in this package supports the
-following flags.
+The exhaustive analyzer supports the following flags.
 
 	[-d] [-defrequire] [-e] [-g] [-check string] [-constignore regexp] [-typeignore regexp] [-typeonly regexp]
 
@@ -121,20 +116,17 @@ mapliteral. The default argument is "switch".
 
 	Name          Description
 
-	switch        check that expression switch statements
-	              are exhaustive
+	switch        check that expression switch statements are exhaustive.
+	mapliteral    check that composite literals of underlying type map (or pointer to) are exhaustive.
 
-	mapliteral    check that composite literals of underlying
-	              type map (or pointer to) are exhaustive
-
-The -d changes the behavior of the analysis such that including
-a default case makes a switch statement exhaustive regardless of
-other case clauses. The -e flags restricts checking to only
-those switch statements that have an '//exhaustive:enforce'
+The -d flag changes the behavior of the analysis such that
+including a default case makes a switch statement exhaustive
+regardless of other case clauses. The -e flag restricts checking
+to only those switch statements that have an '//exhaustive:enforce'
 comment directive. The -g flag enables checking switch statements
 found in generated files. The -defrequire flag additionally
 checks that each checked switch statement includes a default
-case; the default value of the flag is off.
+case; the flag is off by default.
 
 The -typeignore, -typeonly, and -constignore flags accept a
 regular expression pattern in Go package regexp syntax; these
@@ -152,7 +144,7 @@ exhaustive.
 
 These regexp flags are applicable only when the type or constant
 declaration in question has a package-level declaration. The type
-name or constant name that the analyzer provides to the regexp
+name or constant name that the analysis provides to the regexp
 matching routine is a fully qualified name and always includes
 the import path. For example, given these declarations
 
@@ -163,6 +155,11 @@ the import path. For example, given these declarations
 the fully qualified name of the type S is "example.org/foo/bar.S"
 and the fully qualified name of the constant Y0 is
 "example.org/foo/bar.Y0".
+
+The enumerated analyzer, defined in [package enumerated],
+provides additional flags that control the discovery of
+enumerated types and enumerated constants. See its documentation
+for details.
 
 # Comment directives
 
@@ -205,7 +202,7 @@ expected:
 	}
 
 [package enumerated]: https://pkg.go.dev/github.com/nishanths/exhaustive/passes/enumerated
-[enumerated type]: https://pkg.go.dev/github.com/nishanths/exhaustive/passes/enumerated#hdr-Enumerated_types
+[enumerated type]: https://pkg.go.dev/github.com/nishanths/exhaustive/passes/enumerated
 [constant expression]: https://golang.org/ref/spec#Constant_expressions
 */
 package exhaustive
