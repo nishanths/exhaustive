@@ -144,3 +144,28 @@ const (
 	V4      M1 = iota       // want V4:"^enumerated$" V4:"^elementof:M1$"
 	V5                      // want V5:"^enumerated$" V5:"^elementof:M1$"
 )
+
+// exported alias for unexported type; with constants in same block.
+type A2 = t11
+
+const (
+	// Note: These constants (except Wa3) are of type t11 and they
+	// are declared in the same block as type t11.
+	// Thus these are enumerated constants of type t11.
+	//
+	Wa0 = w0 // want Wa0:"^enumerated$" Wa0:"^elementof:t11$"
+	Wa1 = w1 // want Wa1:"^enumerated$" Wa1:"^elementof:t11$"
+	Wa2 = w2 // want Wa2:"^enumerated$" Wa2:"^elementof:t11$"
+	Wa3 = 3
+	// Note: missing Wa4 = w4
+)
+
+type t11 int // want t11:"^permittedtype$" t11:"^enumerated$" t11:"^elements:Wa0 = 0, Wa1 = 1, Wa2 = 2, w0 = 0, w1 = 1, w2 = 2, w4 = 4$"
+
+const (
+	w0 t11 = iota // want w0:"^enumerated$" w0:"^elementof:t11$"
+	w1            // want w1:"^enumerated$" w1:"^elementof:t11$"
+	w2            // want w2:"^enumerated$" w2:"^elementof:t11$"
+	_
+	w4 // want w4:"^enumerated$" w4:"^elementof:t11$"
+)

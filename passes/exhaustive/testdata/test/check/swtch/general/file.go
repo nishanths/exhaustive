@@ -326,6 +326,12 @@ func f15() {
 	case typ.Za3:
 	}
 
+	var c typ.A2
+
+	switch c { // want "^switch not exhaustive: missing cases: typ.Wa0, typ.Wa2$"
+	case typ.Wa1:
+	}
+
 	_ = map[typ.A1]bool{ // want "^map literal not exhaustive: missing keys: typnew.Z0, typnew.Z2, typnew.Z4$"
 		typ.Za1: true,
 		typ.Za3: true,
@@ -346,6 +352,10 @@ func f15() {
 		typnew.Z1: true,
 		typnew.Z2: true,
 		typ.Za3:   true,
+	}
+
+	_ = map[typ.A2]bool{ // want "^map literal not exhaustive: missing keys: typ.Wa0, typ.Wa2$"
+		typ.Wa1: true,
 	}
 }
 

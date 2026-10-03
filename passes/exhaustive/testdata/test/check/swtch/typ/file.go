@@ -2,6 +2,7 @@ package typ
 
 import "test/check/swtch/typnew"
 
+// alias for type in different package
 type A1 = typnew.S1
 
 const (
@@ -15,6 +16,28 @@ const (
 	Za8  typnew.S1 = 8
 	za9  A1        = 9
 	za10 typnew.S1 = 10
+)
+
+// Note: The A2 type, t11 type, and related constants are a copy of the
+// ones in testdata/*/enum/typ/file.go. Keep in sync.
+type A2 = t11
+
+const (
+	Wa0 = w0 //
+	Wa1 = w1 //
+	Wa2 = w2 //
+	Wa3 = 3
+	// Note: missing Wa4 = w4
+)
+
+type t11 int
+
+const (
+	w0 t11 = iota //
+	w1            //
+	w2            //
+	_
+	w4 //
 )
 
 // Note: The M1 type and related V* constants are a copy of the
