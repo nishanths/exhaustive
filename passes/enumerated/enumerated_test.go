@@ -3,6 +3,7 @@ package enumerated
 import (
 	"cmp"
 	"go/types"
+	"path/filepath"
 	"reflect"
 	"slices"
 	"testing"
@@ -17,21 +18,22 @@ func TestMain(m *testing.M) {
 }
 
 func TestAnalyzer(t *testing.T) {
-	run := func(t *testing.T, setup func(), patterns ...string) []*analysistest.Result {
+	testdata := analysistest.TestData()
+	run := func(t *testing.T, dir string, setup func(), patterns ...string) []*analysistest.Result {
 		t.Helper()
 		resetFlags()
 		setup()
-		return analysistest.Run(t, analysistest.TestData(), Analyzer, patterns...)
+		return analysistest.Run(t, filepath.Join(testdata, "src", dir), Analyzer, patterns...)
 	}
 
-	run(t, func() {}, "enum/typ")
-	run(t, func() {}, "enum/scope", "enum/scope/sub")
-	run(t, func() { fIota = true }, "enum/iotavalue")
-	run(t, func() { fNoBitwise = true }, "enum/nobitwise")
-	run(t, func() { fIota = true; fNoBitwise = true }, "enum/iotavalue_nobitwise")
-	run(t, func() { fPkgLevel = true }, "enum/pkglevel")
-	run(t, func() {}, "depchain/...")
-	run(t, func() {}, "packagedoc/...")
+	run(t, "enum", func() {}, "enum/typ")
+	run(t, "enum", func() {}, "enum/scope", "enum/scope/sub")
+	run(t, "enum", func() { fIota = true }, "enum/iotavalue")
+	run(t, "enum", func() { fNoBitwise = true }, "enum/nobitwise")
+	run(t, "enum", func() { fIota = true; fNoBitwise = true }, "enum/iotavalue_nobitwise")
+	run(t, "enum", func() { fPkgLevel = true }, "enum/pkglevel")
+	run(t, "depchain", func() {}, "depchain/...")
+	run(t, "packagedoc", func() {}, "packagedoc/...")
 }
 
 func TestResult(t *testing.T) {
@@ -42,7 +44,7 @@ func TestResult(t *testing.T) {
 		"depchain/b.B1": {"const depchain/b.BY0 depchain/b.B1", "const depchain/b.BY1 depchain/b.B1"},
 		"depchain/a.A1": {"const depchain/a.AY0 depchain/a.A1", "const depchain/a.AY1 depchain/a.A1"},
 	}
-	r := analysistest.Run(t, analysistest.TestData(), Analyzer, "depchain/a")
+	r := analysistest.Run(t, filepath.Join(analysistest.TestData(), "src", "depchain"), Analyzer, "depchain/a")
 	if len(r) != 1 {
 		t.Errorf("len(r): got: %d, want: 1", len(r))
 	} else if got := transform(r[0].Action.Result.(Result)); !reflect.DeepEqual(got, wantresult) {
