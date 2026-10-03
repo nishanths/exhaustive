@@ -2,6 +2,7 @@ package exhaustive
 
 import (
 	"errors"
+	"path/filepath"
 	"regexp"
 	"testing"
 
@@ -12,42 +13,43 @@ import (
 )
 
 func TestAnalyzer(t *testing.T) {
-	run := func(t *testing.T, setup func(), patterns ...string) {
+	testdata := analysistest.TestData()
+	run := func(t *testing.T, dir string, setup func(), patterns ...string) []*analysistest.Result {
 		t.Helper()
 		resetFlags()
 		setup()
-		analysistest.Run(t, analysistest.TestData(), Analyzer, patterns...)
+		return analysistest.Run(t, filepath.Join(testdata, "src", dir), Analyzer, patterns...)
 	}
 
 	// Note: Many testdata files under the 'swtch' directory
 	// include test cases for both expression switch
 	// statements and map literals.
 	//
-	run(t, func() { fCheck = "switch,mapliteral" }, "swtch/general", "swtch/directive")
-	run(t, func() { fCheck = "switch,mapliteral"; fNeedEnforceDirective = true }, "swtch/directive/enforce")
-	run(t, func() { fCheck = "switch"; fDefaultEx = true }, "swtch/def")
-	run(t, func() { fCheck = "switch"; fDefaultRequired = true }, "swtch/defrequire")
-	run(t, func() { fCheck = "switch" }, "swtch/defrequire/directive1")
-	run(t, func() { fCheck = "switch,mapliteral"; fCheckGenerated = true }, "swtch/generated")
-	run(t, func() {
+	run(t, "check", func() { fCheck = "switch,mapliteral" }, "check/swtch/general", "check/swtch/directive")
+	run(t, "check", func() { fCheck = "switch,mapliteral"; fNeedEnforceDirective = true }, "check/swtch/directive/enforce")
+	run(t, "check", func() { fCheck = "switch"; fDefaultEx = true }, "check/swtch/def")
+	run(t, "check", func() { fCheck = "switch"; fDefaultRequired = true }, "check/swtch/defrequire")
+	run(t, "check", func() { fCheck = "switch" }, "check/swtch/defrequire/directive1")
+	run(t, "check", func() { fCheck = "switch,mapliteral"; fCheckGenerated = true }, "check/swtch/generated")
+	run(t, "check", func() {
 		fCheck = "switch,mapliteral"
 		fExcludeType = repeatFlag[*regexp.Regexp]{vals: []*regexp.Regexp{
 			regexp.MustCompile("t1"),
-			regexp.MustCompile("^swtch/pattern\\.P3$"), // no effect: not package-level declaration
-			regexp.MustCompile("^swtch/typ\\.M1$"),
+			regexp.MustCompile("^check/swtch/pattern\\.P3$"), // no effect: not package-level declaration
+			regexp.MustCompile("^check/swtch/typ\\.M1$"),
 		}}
 		fExcludeConst = repeatFlag[*regexp.Regexp]{vals: []*regexp.Regexp{
-			regexp.MustCompile("^swtch/pattern\\.x2+$"),
-			regexp.MustCompile("^swtch/pattern\\.Y0$"), // no effect: not package-level declaration
-			regexp.MustCompile("^swtch/typnew\\.Z3$"),
+			regexp.MustCompile("^check/swtch/pattern\\.x2+$"),
+			regexp.MustCompile("^check/swtch/pattern\\.Y0$"), // no effect: not package-level declaration
+			regexp.MustCompile("^check/swtch/typnew\\.Z3$"),
 		}}
-	}, "swtch/pattern")
-	run(t, func() {
+	}, "check/swtch/pattern")
+	run(t, "check", func() {
 		fCheck = "switch,mapliteral"
 		fIncludeType = repeatFlag[*regexp.Regexp]{vals: []*regexp.Regexp{
 			regexp.MustCompile("t1"),
-			regexp.MustCompile("^swtch/pattern\\.P3$"), // no effect: not package-level declaration
-			regexp.MustCompile("^swtch/typ\\.M1$"),
+			regexp.MustCompile("^check/swtch/pattern\\.P3$"), // no effect: not package-level declaration
+			regexp.MustCompile("^check/swtch/typ\\.M1$"),
 		}}
 		fExcludeConst = repeatFlag[*regexp.Regexp]{vals: []*regexp.Regexp{
 			// Note: Exclusion of constants is by
@@ -59,11 +61,11 @@ func TestAnalyzer(t *testing.T) {
 			regexp.MustCompile("typ\\.V4$"),
 		}}
 
-	}, "swtch/pattern/includetype")
-	run(t, func() { fCheck = "switch" }, "swtch/unsupported")
-	run(t, func() { fCheck = "mapliteral"; fNeedEnforceDirective = true }, "mapliteral/commentassoc")
-	run(t, func() { fCheck = "switch" }, "packagedoc/...")
-	run(t, func() { fCheck = "switch" }, "readmeexample/...")
+	}, "check/swtch/pattern/includetype")
+	run(t, "check", func() { fCheck = "switch" }, "check/swtch/unsupported")
+	run(t, "check", func() { fCheck = "mapliteral"; fNeedEnforceDirective = true }, "check/mapliteral/commentassoc")
+	run(t, "packagedoc", func() { fCheck = "switch" }, "packagedoc/...")
+	run(t, "readmeexample", func() { fCheck = "switch" }, "readmeexample/...")
 }
 
 // This test does not check that the analysis produces expected

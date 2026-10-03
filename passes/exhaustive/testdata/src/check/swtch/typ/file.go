@@ -1,6 +1,6 @@
 package typ
 
-import "swtch/typnew"
+import "check/swtch/typnew"
 
 type A1 = typnew.S1
 
