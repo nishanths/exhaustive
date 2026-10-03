@@ -229,6 +229,7 @@ func f8() {
 	}
 }
 
+// non-constant case expression
 func f9(t T1) {
 	var x T1 = X1
 
@@ -318,6 +319,7 @@ func f15() {
 	}
 
 	var b typnew.S1
+
 	switch b { // want "^switch not exhaustive: missing cases: typnew.Z0, typnew.Z4$"
 	case typnew.Z1:
 	case typnew.Z2:
@@ -328,18 +330,37 @@ func f15() {
 		typ.Za1: true,
 		typ.Za3: true,
 	}
+
 	_ = map[typ.A1]bool{ // want "^map literal not exhaustive: missing keys: typnew.Z0, typnew.Z2, typnew.Z4$"
 		typnew.Z1: true,
 		typnew.Z3: true,
 	}
+
 	_ = map[typ.A1]bool{ // want "^map literal not exhaustive: missing keys: typnew.Z0, typnew.Z4$"
 		typnew.Z1: true,
 		typnew.Z2: true,
 		typ.Za3:   true,
 	}
+
 	_ = map[typnew.S1]bool{ // want "^map literal not exhaustive: missing keys: typnew.Z0, typnew.Z4$"
 		typnew.Z1: true,
 		typnew.Z2: true,
 		typ.Za3:   true,
+	}
+}
+
+// non-identifier expression in switch expression.
+func f16() {
+	var t T1
+	f := func() T1 { return X0 }
+
+	switch t + 9999 { // want "^switch not exhaustive: missing cases: X1, X3, X4$"
+	case X0:
+	case X2:
+	}
+
+	switch f() { // want "^switch not exhaustive: missing cases: X1, X3, X4$"
+	case X0:
+	case X2:
 	}
 }
