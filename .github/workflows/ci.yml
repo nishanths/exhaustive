@@ -19,5 +19,8 @@ jobs:
       - uses: actions/checkout@v7
       - run: go build ./...
       - run: go vet ./...
-      - run: go build -o cmd/exhaustive/exhaustive-scripttest ./cmd/exhaustive
+      - if: ${{ runner.os != 'Windows' }}
+        run: go build -o cmd/exhaustive/exhaustive-scripttest ./cmd/exhaustive
+      - if: ${{ runner.os == 'Windows' }}
+        run: go build -o cmd/exhaustive/exhaustive-scripttest.exe ./cmd/exhaustive
       - run: go test ./...
