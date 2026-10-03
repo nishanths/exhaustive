@@ -354,6 +354,8 @@ func f16() {
 	var t T1
 	f := func() T1 { return X0 }
 
+	// Note: This is a weird test case, but it captures
+	// the current behavior.
 	switch t + 9999 { // want "^switch not exhaustive: missing cases: X1, X3, X4$"
 	case X0:
 	case X2:
