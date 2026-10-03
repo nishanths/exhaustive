@@ -2,6 +2,7 @@ on:
   push:
     branches:
       - master
+  workflow_dispatch
 name: ci
 jobs:
   all:
