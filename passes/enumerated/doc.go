@@ -30,10 +30,10 @@ Examples of types not permitted to be enumerated types:
 A declared constant whose type is a permitted enumerated type forms
 an enumerated constant of that type. A given type and the
 constants must be declared in the same [block] to be considered
-by the analysis. Constants declared with the [blank identifier]
-are ignored. An enumerated type must have at least one enumerated
-constant of the type. A type without any enumerated constants of
-that type is not considered an enumerated type by the analysis.
+by the analysis. A constant with the [blank identifier]
+as its name is ignored. An enumerated type must have at least one enumerated
+constant of the type. A type without any enumerated constants
+is not considered an enumerated type by the analysis.
 
 In the following example, the type T1 is an enumerated type. The
 constants X0, X1, and X2 are enumerated constants of the type.
@@ -51,7 +51,7 @@ values of the enumerated constants of the type.
 
 The enumerated constants of a given enumerated type may be
 declared across multiple [ConstDecl] productions. The constant
-value of an enumerated constant may be any value permitted by the
+value of an enumerated constant may be any value allowed by the
 language. It is permitted for multiple enumerated constants of a
 given enumerated type to have the same value.
 

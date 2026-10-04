@@ -1,8 +1,8 @@
 The exhaustive static analysis checks that expression switch
-statements, in which the type of the switch expression is an
+statements, in which switch expression type is an
 enumerated type, are exhaustive.
 
-The analysis is implemented in multiple passes; see the packages
+The overall analysis is implemented in multiple passes; see the packages
 in the 'passes/\*' directories.
 Package enumerated find declarations of enumerated types and
 enumerated constants.

@@ -1,13 +1,14 @@
 /*
 Package exhaustive checks that expression switch statements, in
-which the type of the switch expression is an enumerated type,
+which the switch expression type is an enumerated type,
 are exhaustive.
 
-The analysis consists of two passes. The first pass, implemented
-in [package enumerated], finds declarations of enumerated types
-and enumerated constants. The second pass, implemented in this
-package, scans a syntax tree for eligible switch statements and
-checks that these switch statements are exhaustive.
+The overall analysis consists of multiple passes. The first
+pass, implemented in [package enumerated], finds declarations of
+enumerated types and enumerated constants. The second pass,
+implemented in this package, scans a syntax tree for eligible
+switch statements and checks that these switch statements are
+exhaustive.
 
 The analysis produces a diagnostic if a checked switch statement
 is not exhaustive. For example:
@@ -17,12 +18,12 @@ is not exhaustive. For example:
 # Expression switch statements
 
 An expression switch statement is eligible to be checked if the
-type of its switch expression is an enumerated type (or an alias
-for an enumerated type). An expression switch statement is
-exhaustive if every value of the [enumerated type] in the switch
+switch expression type is an [enumerated type] or an alias
+for an enumerated type. An expression switch statement is
+exhaustive if every value of the enumerated type of the switch
 expression is included in case clause expressions.
 
-Given the declarations:
+Given the declarations
 
 	type T int
 
@@ -32,7 +33,7 @@ Given the declarations:
 		X2
 	)
 
-the following switch statement will be checked and is exhaustive:
+the following switch statement will be checked and is exhaustive
 
 	var t T
 
@@ -42,16 +43,16 @@ the following switch statement will be checked and is exhaustive:
 	case X2:
 	}
 
-If the switch statement is in a different package from the
-package that declares the enumerated type and the constants, then
-only the values corresponding to exported constants have to be
-included in case expressions for the switch statement to be
-exhaustive. The case expression must be a [constant expression]
-to contribute towards making the switch statement exhaustive.
+If the the switch statement and the declarations of the
+enumerated type (and constants) are in different packages, then
+it is necessary to include only the values corresponding to
+exported constants for the switch statement to be exhaustive.
+A given case expression must be a [constant expression] to
+contribute towards making the switch statement exhaustive.
 
-Note that, by default, including a default case in a switch
-statement does not automatically make a switch statement
-exhaustive. See flag -d to control this behavior.
+Note that including a default case does not automatically make a
+switch statement exhaustive. See flag -d to control this
+behavior.
 
 # Handling of type aliases
 
@@ -79,10 +80,10 @@ and the following alias declaration
 		X1 = newpkg.X1
 	)
 
-the following switch statement will be checked and is exhaustive.
-The effective enumerated type of the switch expression is
-newpkg.S, which is the type on the right-hand side of the alias
-declaration upon following the alias chain.
+the following switch statement will be checked and is
+exhaustive. The switch expression type is newpkg.S, which is the
+type on the right-hand side of the alias declaration upon
+following the alias chain.
 
 	package foo
 
@@ -130,11 +131,11 @@ case; the flag is off by default.
 
 The -typeignore, -typeonly, and -constignore flags accept a
 regular expression pattern in Go package regexp syntax; these
-flags may be repeated to specify multiple patterns. If the type
-name of a switch expression is matched by a -typeignore regexp,
+flags may be repeated to specify multiple patterns. If the
+switch expression type name is matched by a -typeignore regexp,
 then that switch statement will not be checked. If -typeonly
 flags are specified then only those switch statements in which
-the type name of the switch expression is matched by a -typeonly
+the switch expression type name is matched by a -typeonly
 regexp will be checked. If a type name is matched by both a
 -typeonly regexp and a -typeignore regexp the -typeonly match
 wins.
@@ -146,8 +147,8 @@ exhaustive.
 These regexp flags are applicable only when the type or constant
 declaration in question has a package-level declaration. The type
 name or constant name that the analysis provides to the regexp
-matching routine is a fully qualified name and always includes
-the import path. For example, given these declarations
+matching routine is always fully qualified by the import path.
+For example, given these declarations
 
 	package bar // import "example.org/foo/bar"
 	type S int
