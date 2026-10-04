@@ -135,8 +135,9 @@ name of a switch expression is matched by a -typeignore regexp,
 then that switch statement will not be checked. If -typeonly
 flags are specified then only those switch statements in which
 the type name of the switch expression is matched by a -typeonly
-regexp will be checked. By default the analysis checks all
-eligible switch statements.
+regexp will be checked. If a type name is matched by both a
+-typeonly regexp and a -typeignore regexp the -typeonly match
+wins.
 
 Constant names matched by a -constignore regexp do not have to be
 included in case expressions for the switch statement to be

@@ -266,10 +266,8 @@ func proceedInclExclPattern(t *types.Named, opts *options) bool {
 	// earlier.
 	// This way, if an object name is matched by both include
 	// and exclude patterns, the inclusion match wins.
-	//
-	// Note that the behavior described above is not
-	// guaranteed by the analyzer. Users must expect
-	// undefined behavior in this scenario.
+	// This implementation matches the behavior described
+	// in the package comment.
 	if isPkgLevel(t.Obj()) && matchAny(opts.excludeTypePatterns, fullname(t.Obj())) {
 		return false
 	}
