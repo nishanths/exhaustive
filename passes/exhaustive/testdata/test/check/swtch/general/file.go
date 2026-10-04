@@ -176,11 +176,31 @@ func f7() {
 	}
 }
 
-// type conversions; and literal values.
+// type conversion in switch expression
 func f8() {
 	var t T1
 
 	switch T1((int(T1((t))))) {
+	case X0:
+	case X1:
+	case X2:
+	case X3:
+	case X4:
+	}
+
+	switch T1((int(T1((t))))) { // want "^switch not exhaustive: missing cases: X2$"
+	case X0:
+	case X1:
+	case X3:
+	case X4:
+	}
+}
+
+// type conversion in case expression
+func f9() {
+	var t T1
+
+	switch t {
 	case T1(0):
 	case T1((int(T1((1))))):
 	case X2:
@@ -188,7 +208,7 @@ func f8() {
 	case T1(3):
 	}
 
-	switch T1((int(T1((t))))) { // want "^switch not exhaustive: missing cases: X2$"
+	switch t { // want "^switch not exhaustive: missing cases: X2$"
 	case T1(0):
 	case T1((int(T1((1))))):
 	case X4:
@@ -229,8 +249,78 @@ func f8() {
 	}
 }
 
-// non-constant case expression
-func f9(t T1) {
+// various non-identifier expression in switch expression
+func f10() {
+	var t T1
+
+	// Note: This is an unusual scenario. The test case captures
+	// the current behavior.
+	switch t + 9999 { // want "^switch not exhaustive: missing cases: X1, X3, X4$"
+	case X0:
+	case X2:
+	}
+
+	f := func() T1 { return X0 }
+	switch f() { // want "^switch not exhaustive: missing cases: X1, X3, X4$"
+	case X0:
+	case X2:
+	}
+
+	var pt *T1
+	switch *pt { // want "^switch not exhaustive: missing cases: X1, X3, X4$"
+	case X0:
+	case X2:
+	}
+}
+
+// various non-identifier constant expression in case expression
+func f11() {
+	var t T1
+
+	switch t { // want "^switch not exhaustive: missing cases: X0, X2$"
+	case X0 + 1:
+	case X2 + 1:
+	case X4:
+	}
+
+	switch t { // want "^switch not exhaustive: missing cases: X1, X2, X3$"
+	case T1(len("")):
+	case X4:
+	}
+}
+
+// constant value in switch expression
+func f12() {
+	// Note: These are unusual scenarios. The test case captures
+	// the current behavior.
+
+	const c T1 = X0
+
+	switch c + T1(1) {
+	case X0:
+	case X1:
+	case X2:
+	case X3:
+	case X4:
+	}
+
+	switch c { // want "^switch not exhaustive: missing cases: X0, X3$"
+	case X1:
+	case X2:
+	case X4:
+	default:
+	}
+
+	switch c + T1(1) { // want "^switch not exhaustive: missing cases: X0, X3$"
+	case X1:
+	case X2:
+	case X4:
+	default:
+	}
+}
+
+// non-constant value in case expression
+func f13(t T1) {
 	var x T1 = X1
 
 	switch t { // want "^switch not exhaustive: missing cases: X1, X2, X4$"
@@ -248,8 +338,8 @@ func f9(t T1) {
 	}
 }
 
-// inner composite literal type omitted in the source.
-func f10() {
+// inner composite literal type omitted in the source
+func f14() {
 	_ = []map[T1]bool{
 		{X1: true},           // want "^map literal not exhaustive: missing keys: X0, X2, X3, X4$"
 		{X0: true, X3: true}, // want "^map literal not exhaustive: missing keys: X1, X2, X4$"
@@ -260,8 +350,14 @@ func f10() {
 	}
 }
 
+// no switch expression
+func f15() {
+	switch {
+	}
+}
+
 // composite literal with underlying type map
-func f11() {
+func f16() {
 	type n map[T1]bool
 	_ = map[T1]bool{X1: true}    // want "^map literal not exhaustive: missing keys: X0, X2, X3, X4$"
 	_ = n{X1: true}              // want "^map literal not exhaustive: missing keys: X0, X2, X3, X4$"
@@ -269,16 +365,17 @@ func f11() {
 	_ = n(map[T1]bool{X1: true}) // want "^map literal not exhaustive: missing keys: X0, X2, X3, X4$"
 }
 
-// pointer to map type; address operators
-func f12() {
+// pointer to map type; address operators.
+func f17() {
 	type n map[T1]bool
 	_ = &map[T1]bool{X0: true, X3: true} // want "^map literal not exhaustive: missing keys: X1, X2, X4$"
 	_ = &n{X0: true, X3: true}           // want "^map literal not exhaustive: missing keys: X1, X2, X4$"
 }
 
 // type of the switch expression is not an enumerated type
-func f13() {
+func f18() {
 	var v int
+
 	switch v {
 	}
 
@@ -292,14 +389,8 @@ func f13() {
 	}
 }
 
-// no switch expression
-func f14() {
-	switch {
-	}
-}
-
-// type aliases
-func f15() {
+// type alias
+func f19() {
 	var a typ.A1
 
 	switch a { // want "^switch not exhaustive: missing cases: typnew.Z0, typnew.Z2, typnew.Z4$"
@@ -356,23 +447,5 @@ func f15() {
 
 	_ = map[typ.A2]bool{ // want "^map literal not exhaustive: missing keys: typ.Wa0, typ.Wa2$"
 		typ.Wa1: true,
-	}
-}
-
-// non-identifier expression in switch expression.
-func f16() {
-	var t T1
-	f := func() T1 { return X0 }
-
-	// Note: This is a weird test case, but it captures
-	// the current behavior.
-	switch t + 9999 { // want "^switch not exhaustive: missing cases: X1, X3, X4$"
-	case X0:
-	case X2:
-	}
-
-	switch f() { // want "^switch not exhaustive: missing cases: X1, X3, X4$"
-	case X0:
-	case X2:
 	}
 }
