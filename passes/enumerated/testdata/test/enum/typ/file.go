@@ -12,7 +12,6 @@ type (
 	t3 t2  // want t3:"^permittedtype$" t3:"^enumerated$" t3:"^elements:y1 = 10, y2 = 20, y5 = 50$"
 
 	// test cases for all permitted underlying types
-	_ bool       // want _:"^permittedtype$"
 	_ byte       // want _:"^permittedtype$"
 	_ complex64  // want _:"^permittedtype$"
 	_ complex128 // want _:"^permittedtype$"
@@ -35,7 +34,8 @@ type (
 	q1 interface{}    // not permitted: underlying type is not *types.Basic
 	q2 *int           // ditto
 	q3 []byte         // ditto
-	q4 unsafe.Pointer // not permitted: underlying type is *types.Basic, but the basic type is not a boolean, numeric, or string type
+	q4 unsafe.Pointer // not permitted: underlying type is *types.Basic, but the basic type is not a numeric or string type
+	_ bool            // not permitted: ditto
 	q5 struct{}       // not permitted: underlying type is not *types.Basic
 
 	m1 q1 // not permitted: underlying type is not *types.Basic

@@ -212,13 +212,12 @@ func permittedEnumeratedType(t types.Type) (*types.Named, bool) {
 	if n.TypeParams() != nil {
 		return nil, false
 	}
-	// The underlying type must be a boolean, numeric, or
-	// string type.
+	// The underlying type must be a numeric or string type.
 	basic, ok := n.Underlying().(*types.Basic)
 	if !ok {
 		return nil, false
 	}
-	if info := basic.Info(); info&(types.IsBoolean|types.IsNumeric|types.IsString) == 0 {
+	if info := basic.Info(); info&(types.IsNumeric|types.IsString) == 0 {
 		return nil, false
 	}
 	return n, true

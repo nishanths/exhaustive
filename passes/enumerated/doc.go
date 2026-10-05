@@ -4,12 +4,12 @@ enumerated constants.
 
 # Enumerated Types and Enumerated Constants
 
-A [defined type] may be an enumerated type if it satisfies the
-following conditions. The underlying type of the defined type must
-be either a boolean, numeric, or string type. The type definition
-must not specify type parameters. The type must be a new, distinct
-type; that is, the predeclared types are not directly permitted to
-be enumerated types.
+A [defined type] is permitted to be an enumerated type if it
+satisfies the following conditions. The underlying type of the
+defined type must be either a numeric or string type.
+The type definition must not specify type parameters. The type
+must be a new type; the predeclared types are
+not directly permitted to be enumerated types.
 
 Examples of types permitted to be enumerated types:
 
@@ -22,7 +22,7 @@ Examples of types permitted to be enumerated types:
 
 Examples of types not permitted to be enumerated types:
 
-	type Q1 []int       // Q1: not permitted: underlying type []int is not a boolean, numeric, or string type
+	type Q1 []int       // Q1: not permitted: underlying type []int is not a numeric or string type
 	type S1[E any] int  // S1: not permitted: parameterized
 	int32               // int32: not permitted: predeclared type
 	rune                // rune: not permitted: predeclared type
