@@ -27,7 +27,7 @@ var Analyzer = &analysis.Analyzer{
 	// subset of the analyzers specified here.
 	// Analysis driver programs that want improved performance
 	// may want to edit this field during program initialization
-	// before the analyzers are run.
+	// before analyzers are run.
 	//
 	// TODO: consider adding API to facilitate the above.
 	Requires: []*analysis.Analyzer{
@@ -38,22 +38,22 @@ var Analyzer = &analysis.Analyzer{
 }
 
 func init() {
-	Analyzer.Flags.BoolVar(&fCheckEnforceOnly, "e", fCheckEnforceOnly, "check a switch statement only if it has '//exhaustive:enforce' comment")
-	Analyzer.Flags.BoolVar(&fDefaultEx, "d", fDefaultEx, "including a default case makes a switch statement exhaustive")
-	Analyzer.Flags.BoolVar(&fRequireDefaultCase, "defrequire", fRequireDefaultCase, "default case must always be present")
-	Analyzer.Flags.BoolVar(&fRequireNilCase, "nilcase", fRequireNilCase, "type switches must include a nil case")
+	Analyzer.Flags.BoolVar(&fCheckEnforceOnly, "e", fCheckEnforceOnly, "check a switch only if it has '//exhaustive:enforce' comment")
+	Analyzer.Flags.BoolVar(&fDefaultEx, "d", fDefaultEx, "including a default case makes a switch exhaustive")
+	Analyzer.Flags.BoolVar(&fRequireDefaultCase, "defrequire", fRequireDefaultCase, "default case must always be present in expression switches")
+	Analyzer.Flags.BoolVar(&fRequireCaseNil, "casenil", fRequireCaseNil, "type switches must include a nil case")
 	Analyzer.Flags.StringVar(&fCheck, "check", fCheck, "specify elements in the syntax tree that the analysis should check")
 	Analyzer.Flags.BoolVar(&fCheckGenerated, "g", fCheckGenerated, "additionally analyze generated files")
-	Analyzer.Flags.Var(&fExcludeType, "typeignore", "switch statements in which the type name is matched by `regexp` are not checked")
-	Analyzer.Flags.Var(&fIncludeType, "typeonly", "only switch statements in which the type name is matched by `regexp` are checked")
-	Analyzer.Flags.Var(&fExcludeConst, "constignore", "constant names matched by `regexp` do not have to be included in case expressions")
+	Analyzer.Flags.Var(&fExcludeType, "typeignore", "switches in which the type name is matched by `regexp` are not checked")
+	Analyzer.Flags.Var(&fIncludeType, "typeonly", "only switches in which the type name is matched by `regexp` are checked")
+	Analyzer.Flags.Var(&fExcludeConst, "constignore", "constant names matched by `regexp` do not have to be included in the case clauses of an expression switch")
 }
 
 var (
 	fCheckEnforceOnly   = false
 	fDefaultEx          = false
 	fRequireDefaultCase = false
-	fRequireNilCase     = false
+	fRequireCaseNil     = false
 	fCheck              = string(exprswitch)
 	fCheckGenerated     = false
 	fIncludeType        = repeatFlag[*regexp.Regexp]{set: regexp.Compile}
@@ -65,7 +65,7 @@ func resetFlags() {
 	fCheckEnforceOnly = false
 	fDefaultEx = false
 	fRequireDefaultCase = false
-	fRequireNilCase = false
+	fRequireCaseNil = false
 	fCheck = string(exprswitch)
 	fCheckGenerated = false
 	fIncludeType = repeatFlag[*regexp.Regexp]{set: regexp.Compile}
@@ -129,7 +129,7 @@ func parseSyntaxElements(arg string) ([]syntaxElement, error) {
 type options struct {
 	defaultCaseExhaustive bool
 	requireDefaultCase    bool
-	requireNilCase        bool
+	requireCaseNil        bool
 	checkEnforceOnly      bool
 	checkGenerated        bool
 	includeTypePatterns   []*regexp.Regexp
@@ -146,7 +146,7 @@ func run(pass *analysis.Pass) (any, error) {
 	opts := &options{
 		defaultCaseExhaustive: fDefaultEx,
 		requireDefaultCase:    fRequireDefaultCase,
-		requireNilCase:        fRequireNilCase,
+		requireCaseNil:        fRequireCaseNil,
 		checkEnforceOnly:      fCheckEnforceOnly,
 		checkGenerated:        fCheckGenerated,
 		includeTypePatterns:   fIncludeType.vals,
@@ -167,11 +167,7 @@ func run(pass *analysis.Pass) (any, error) {
 	}
 
 	in := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
-
-	// checker state shared for all type switch checks in the package
-	typeSwitchCh := &typeSwitchState{
-		impl: make(map[*types.Interface]map[typename]struct{}),
-	}
+	typeSwitchCh := new(typeSwitchState)
 
 	in.Root().Inspect([]ast.Node{(*ast.File)(nil)}, func(c inspector.Cursor) (descend bool) {
 		file := c.Node().(*ast.File)
@@ -243,13 +239,13 @@ func parseDirectives(groups []*ast.CommentGroup) (map[directive]bool, error) {
 						result[dirEnforce] = true
 					case "defrequire=0", "ignore-default-case-required":
 						// Note: The latter name is supported but deprecated.
-						if v, ok := result[dirDefrequire]; ok && v != false {
+						if v, ok := result[dirDefrequire]; ok && v {
 							return nil, errConflict
 						}
 						result[dirDefrequire] = false
 					case "defrequire=1", "enforce-default-case-required":
 						// Ditto note.
-						if v, ok := result[dirDefrequire]; ok && v != true {
+						if v, ok := result[dirDefrequire]; ok && !v {
 							return nil, errConflict
 						}
 						result[dirDefrequire] = true

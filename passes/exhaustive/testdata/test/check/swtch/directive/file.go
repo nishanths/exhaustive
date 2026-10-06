@@ -31,19 +31,19 @@ func f1() {
 	}
 
 	//exhaustive:enforce
-	switch t1(0) { // want "^switch not exhaustive: missing cases: x1$"
+	switch t1(0) { // want "^expression switch not exhaustive: missing cases: x1$"
 	case x0:
 	}
 
 	//exhaustive:ignore
 	switch t1(0) {
 	case x0:
-		switch t1(0) { // want "^switch not exhaustive: missing cases: x0$"
+		switch t1(0) { // want "^expression switch not exhaustive: missing cases: x0$"
 		case x1:
 		}
 	}
 
-	switch t1(0) { // want "^switch not exhaustive: missing cases: x1$"
+	switch t1(0) { // want "^expression switch not exhaustive: missing cases: x1$"
 	case x0:
 		//exhaustive:ignore
 		switch t1(0) {

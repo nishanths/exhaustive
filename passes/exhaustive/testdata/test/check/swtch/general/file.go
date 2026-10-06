@@ -52,12 +52,12 @@ func f1() {
 func f2() {
 	var t T1
 
-	switch t { // want "^switch not exhaustive: missing cases: X1, X3, X4$"
+	switch t { // want "^expression switch not exhaustive: missing cases: X1, X3, X4$"
 	case X0:
 	case X2:
 	}
 
-	switch t { // want "^switch not exhaustive: missing cases: X0, X1, X2, X3, X4$"
+	switch t { // want "^expression switch not exhaustive: missing cases: X0, X1, X2, X3, X4$"
 	}
 
 	_ = map[T1]bool{ // want "^map literal not exhaustive: missing keys: X1, X3, X4$"
@@ -83,7 +83,7 @@ func f3() {
 	)
 
 	var t m1
-	switch t { // want "^switch not exhaustive: missing cases: v0\\|vv0, v1, v2\\|vv2, v4$"
+	switch t { // want "^expression switch not exhaustive: missing cases: v0\\|vv0, v1, v2\\|vv2, v4$"
 	case vv3:
 	case v5:
 	}
@@ -95,7 +95,7 @@ func f3() {
 // also: multiple names for same value.
 func f4() {
 	var t typ.M1
-	switch t { // want "^switch not exhaustive: missing cases: typ.V0\\|typ.VV0, typ.V1, typ.V2, typ.V4$"
+	switch t { // want "^expression switch not exhaustive: missing cases: typ.V0\\|typ.VV0, typ.V1, typ.V2, typ.V4$"
 	case typ.V3:
 	case typ.V5:
 	}
@@ -107,10 +107,10 @@ func f4() {
 func f6() {
 	var outer, inner T1
 
-	switch outer { // want "^switch not exhaustive: missing cases: X2, X3$"
+	switch outer { // want "^expression switch not exhaustive: missing cases: X2, X3$"
 	case X0:
 	case X1:
-		switch inner { // want "^switch not exhaustive: missing cases: X0, X2$"
+		switch inner { // want "^expression switch not exhaustive: missing cases: X0, X2$"
 		case X1:
 		case X3:
 		case X4:
@@ -164,14 +164,14 @@ func f7() {
 	default:
 	}
 
-	switch t { // want "^switch not exhaustive: missing cases: X0, X3$"
+	switch t { // want "^expression switch not exhaustive: missing cases: X0, X3$"
 	case X1:
 	case X2:
 	case X4:
 	default:
 	}
 
-	switch t { // want "^switch not exhaustive: missing cases: X0, X1, X2, X3, X4$"
+	switch t { // want "^expression switch not exhaustive: missing cases: X0, X1, X2, X3, X4$"
 	default:
 	}
 }
@@ -188,7 +188,7 @@ func f8() {
 	case X4:
 	}
 
-	switch T1((int(T1((t))))) { // want "^switch not exhaustive: missing cases: X2$"
+	switch T1((int(T1((t))))) { // want "^expression switch not exhaustive: missing cases: X2$"
 	case X0:
 	case X1:
 	case X3:
@@ -208,7 +208,7 @@ func f9() {
 	case T1(3):
 	}
 
-	switch t { // want "^switch not exhaustive: missing cases: X2$"
+	switch t { // want "^expression switch not exhaustive: missing cases: X2$"
 	case T1(0):
 	case T1((int(T1((1))))):
 	case X4:
@@ -255,19 +255,19 @@ func f10() {
 
 	// Note: This is an unusual scenario. The test case captures
 	// the current behavior.
-	switch t + 9999 { // want "^switch not exhaustive: missing cases: X1, X3, X4$"
+	switch t + 9999 { // want "^expression switch not exhaustive: missing cases: X1, X3, X4$"
 	case X0:
 	case X2:
 	}
 
 	f := func() T1 { return X0 }
-	switch f() { // want "^switch not exhaustive: missing cases: X1, X3, X4$"
+	switch f() { // want "^expression switch not exhaustive: missing cases: X1, X3, X4$"
 	case X0:
 	case X2:
 	}
 
 	var pt *T1
-	switch *pt { // want "^switch not exhaustive: missing cases: X1, X3, X4$"
+	switch *pt { // want "^expression switch not exhaustive: missing cases: X1, X3, X4$"
 	case X0:
 	case X2:
 	}
@@ -277,13 +277,13 @@ func f10() {
 func f11() {
 	var t T1
 
-	switch t { // want "^switch not exhaustive: missing cases: X0, X2$"
+	switch t { // want "^expression switch not exhaustive: missing cases: X0, X2$"
 	case X0 + 1:
 	case X2 + 1:
 	case X4:
 	}
 
-	switch t { // want "^switch not exhaustive: missing cases: X1, X2, X3$"
+	switch t { // want "^expression switch not exhaustive: missing cases: X1, X2, X3$"
 	case T1(len("")):
 	case X4:
 	}
@@ -304,14 +304,14 @@ func f12() {
 	case X4:
 	}
 
-	switch c { // want "^switch not exhaustive: missing cases: X0, X3$"
+	switch c { // want "^expression switch not exhaustive: missing cases: X0, X3$"
 	case X1:
 	case X2:
 	case X4:
 	default:
 	}
 
-	switch c + T1(1) { // want "^switch not exhaustive: missing cases: X0, X3$"
+	switch c + T1(1) { // want "^expression switch not exhaustive: missing cases: X0, X3$"
 	case X1:
 	case X2:
 	case X4:
@@ -323,7 +323,7 @@ func f12() {
 func f13(t T1) {
 	var x T1 = X1
 
-	switch t { // want "^switch not exhaustive: missing cases: X1, X2, X4$"
+	switch t { // want "^expression switch not exhaustive: missing cases: X1, X2, X4$"
 	case X0:
 	case x:
 	case x + 1:
@@ -393,17 +393,17 @@ func f18() {
 func f19() {
 	var a typ.A1
 
-	switch a { // want "^switch not exhaustive: missing cases: typnew.Z0, typnew.Z2, typnew.Z4$"
+	switch a { // want "^expression switch not exhaustive: missing cases: typnew.Z0, typnew.Z2, typnew.Z4$"
 	case typ.Za1:
 	case typ.Za3:
 	}
 
-	switch a { // want "^switch not exhaustive: missing cases: typnew.Z0, typnew.Z2, typnew.Z4$"
+	switch a { // want "^expression switch not exhaustive: missing cases: typnew.Z0, typnew.Z2, typnew.Z4$"
 	case typnew.Z1:
 	case typnew.Z3:
 	}
 
-	switch a { // want "^switch not exhaustive: missing cases: typnew.Z0, typnew.Z4$"
+	switch a { // want "^expression switch not exhaustive: missing cases: typnew.Z0, typnew.Z4$"
 	case typnew.Z1:
 	case typnew.Z2:
 	case typ.Za3:
@@ -411,7 +411,7 @@ func f19() {
 
 	var b typnew.S1
 
-	switch b { // want "^switch not exhaustive: missing cases: typnew.Z0, typnew.Z4$"
+	switch b { // want "^expression switch not exhaustive: missing cases: typnew.Z0, typnew.Z4$"
 	case typnew.Z1:
 	case typnew.Z2:
 	case typ.Za3:
@@ -419,7 +419,7 @@ func f19() {
 
 	var c typ.A2
 
-	switch c { // want "^switch not exhaustive: missing cases: typ.Wa0, typ.Wa2$"
+	switch c { // want "^expression switch not exhaustive: missing cases: typ.Wa0, typ.Wa2$"
 	case typ.Wa1:
 	}
 

@@ -30,7 +30,7 @@ var Analyzer = &analysis.Analyzer{
 func init() {
 	Analyzer.Flags.BoolVar(&fIota, "i", fIota, "only consider constants declared using iota")
 	Analyzer.Flags.BoolVar(&fNoBitwise, "B", fNoBitwise, "ignore constants declared using bitwise operators")
-	Analyzer.Flags.BoolVar(&fPkgLevel, "p", fPkgLevel, "only consider types and constants declared at package level")
+	Analyzer.Flags.BoolVar(&fPkgLevel, "p", fPkgLevel, "only consider types and constants with top-level declarations")
 }
 
 var (

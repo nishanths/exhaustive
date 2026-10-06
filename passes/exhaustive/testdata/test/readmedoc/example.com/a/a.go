@@ -1,4 +1,4 @@
-package example
+package a
 
 type vcs int
 
@@ -11,8 +11,8 @@ const (
 	darcs
 )
 
-func f(v vcs) {
-	switch v { // want "^switch not exhaustive: missing cases: mercurial, darcs$"
+func f1(v vcs) {
+	switch v { // want "^expression switch not exhaustive: missing cases: mercurial, darcs$"
 	case bazaar:
 	case fossil:
 	case git:

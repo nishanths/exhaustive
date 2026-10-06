@@ -15,7 +15,7 @@ func f1() {
 	}
 
 	//exhaustive:enforce
-	switch t { // want "^switch not exhaustive: missing cases: x1$"
+	switch t { // want "^expression switch not exhaustive: missing cases: x1$"
 	case x0:
 	}
 }

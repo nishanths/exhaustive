@@ -19,7 +19,6 @@ import (
 const progname = "exhaustive"
 
 func main() {
-	// TODO: edit Analyzer.Requires based on flags.
 	log.SetFlags(0)
 	log.SetPrefix(progname + ": ")
 
@@ -31,7 +30,11 @@ func main() {
 func editRequires(check string) {
 	// see comment on the exhaustive.Analyzer.Requires field
 	// for details.
-	need := map[string]bool{"enumerated": false, "finder": false}
+	need := map[string]bool{
+		"enumerated": false,
+		"finder":     false,
+	}
+
 	for _, v := range strings.Split(check, ",") {
 		switch v {
 		case "switch", "mapliteral":

@@ -10,7 +10,7 @@ const (
 func f1() {
 	var t t1
 
-	switch t { // want "^switch not exhaustive: missing cases: x1$"
+	switch t { // want "^expression switch not exhaustive: missing cases: x1$"
 	case x0:
 	}
 
@@ -30,7 +30,7 @@ func f2() {
 	var t t1
 
 	//exhaustive:defrequire=1
-	switch t { // want "^missing default case$" "^switch not exhaustive: missing cases: x1$"
+	switch t { // want "^missing default case$" "^expression switch not exhaustive: missing cases: x1$"
 	case x0:
 	}
 
@@ -50,7 +50,7 @@ func f2() {
 	// Deprecated spellings of the same comment directives as above:
 
 	//exhaustive:enforce-default-case-required
-	switch t { // want "^missing default case$" "^switch not exhaustive: missing cases: x1$"
+	switch t { // want "^missing default case$" "^expression switch not exhaustive: missing cases: x1$"
 	case x0:
 	}
 

@@ -52,6 +52,10 @@ func TestParseDirective(t *testing.T) {
 			{List: []*ast.Comment{{Text: "//exhaustive:defrequire=0"}}},
 			{List: []*ast.Comment{{Text: "//exhaustive:defrequire=1"}}},
 		}, nil, "conflicting directives"},
+		{"conflict4", []*ast.CommentGroup{
+			{List: []*ast.Comment{{Text: "//exhaustive:defrequire=1"}}},
+			{List: []*ast.Comment{{Text: "//exhaustive:defrequire=0"}}},
+		}, nil, "conflicting directives"},
 		{"conflictalt1", []*ast.CommentGroup{
 			{List: []*ast.Comment{{Text: "//exhaustive:ignore-default-case-required"}}},
 			{List: []*ast.Comment{{Text: "//exhaustive:enforce-default-case-required"}}},

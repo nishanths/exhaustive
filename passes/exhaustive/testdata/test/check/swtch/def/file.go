@@ -21,7 +21,7 @@ func f1() {
 	default:
 	}
 
-	switch t { // want "^switch not exhaustive: missing cases: x0$"
+	switch t { // want "^expression switch not exhaustive: missing cases: x0$"
 	case x1:
 	}
 
@@ -30,7 +30,7 @@ func f1() {
 	default:
 	}
 
-	switch t { // want "^switch not exhaustive: missing cases: x0, x1$"
+	switch t { // want "^expression switch not exhaustive: missing cases: x0, x1$"
 	}
 
 	switch t {

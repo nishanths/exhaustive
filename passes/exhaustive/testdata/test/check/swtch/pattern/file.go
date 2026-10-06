@@ -36,15 +36,15 @@ func f1() {
 	case w1:
 	}
 
-	switch P1(0) { // want "^switch not exhaustive: missing cases: x0, x3$"
+	switch P1(0) { // want "^expression switch not exhaustive: missing cases: x0, x3$"
 	case x1:
 	}
 
-	switch P2(0) { // want "^switch not exhaustive: missing cases: Y0$"
+	switch P2(0) { // want "^expression switch not exhaustive: missing cases: Y0$"
 	case Y1:
 	}
 
-	switch P3(0) { // want "^switch not exhaustive: missing cases: Z0$"
+	switch P3(0) { // want "^expression switch not exhaustive: missing cases: Z0$"
 	case Z1:
 	}
 
@@ -52,7 +52,7 @@ func f1() {
 	case typ.V1:
 	}
 
-	switch typnew.S1(0) { // want "^switch not exhaustive: missing cases: typnew.Z0, typnew.Z2$"
+	switch typnew.S1(0) { // want "^expression switch not exhaustive: missing cases: typnew.Z0, typnew.Z2$"
 	case typnew.Z1:
 	case typnew.Z4:
 	}

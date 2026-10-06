@@ -21,55 +21,80 @@ func TestAnalyzer(t *testing.T) {
 		return analysistest.Run(t, filepath.Join(testdata, "test"), Analyzer, patterns...)
 	}
 
-	// Note: Many testdata files under the 'swtch' directory
-	// include test cases for both expression switch
-	// statements and map literals.
-	//
-	run(t, func() { fCheck = "switch,mapliteral" }, "test/check/swtch/general", "test/check/swtch/directive")
-	run(t, func() { fCheck = "switch,mapliteral"; fCheckEnforceOnly = true }, "test/check/swtch/directive/enforce")
-	run(t, func() { fCheck = "switch"; fDefaultEx = true }, "test/check/swtch/def")
-	run(t, func() { fCheck = "switch"; fRequireDefaultCase = true }, "test/check/swtch/defrequire")
-	run(t, func() { fCheck = "switch" }, "test/check/swtch/defrequire/directive1")
-	run(t, func() { fCheck = "switch,mapliteral"; fCheckGenerated = true }, "test/check/swtch/generated")
-	run(t, func() {
-		fCheck = "switch,mapliteral"
-		fExcludeType = repeatFlag[*regexp.Regexp]{vals: []*regexp.Regexp{
-			regexp.MustCompile("t1"),
-			regexp.MustCompile("^test/check/swtch/pattern\\.P3$"), // no effect: not package-level declaration
-			regexp.MustCompile("^test/check/swtch/typ\\.M1$"),
-		}}
-		fExcludeConst = repeatFlag[*regexp.Regexp]{vals: []*regexp.Regexp{
-			regexp.MustCompile("^test/check/swtch/pattern\\.x2+$"),
-			regexp.MustCompile("^test/check/swtch/pattern\\.Y0$"), // no effect: not package-level declaration
-			regexp.MustCompile("^test/check/swtch/typnew\\.Z3$"),
-		}}
-	}, "test/check/swtch/pattern")
-	run(t, func() {
-		fCheck = "switch,mapliteral"
-		fIncludeType = repeatFlag[*regexp.Regexp]{vals: []*regexp.Regexp{
-			regexp.MustCompile("t1"),
-			regexp.MustCompile("^test/check/swtch/pattern\\.P3$"), // no effect: not package-level declaration
-			regexp.MustCompile("^test/check/swtch/typ\\.M1$"),
-		}}
-		fExcludeConst = repeatFlag[*regexp.Regexp]{vals: []*regexp.Regexp{
-			// Note: Exclusion of constants is by
-			// name, not by value.
-			// Therefore, though V0 == VV0 by value, the value
-			// corresponding to VV0 is still required
-			// in the switch statement cases.
-			regexp.MustCompile("typ\\.V0$"),
-			regexp.MustCompile("typ\\.V4$"),
-		}}
+	t.Run("switch", func(t *testing.T) {
+		// Note: Many testdata files under the 'swtch' directory
+		// include test cases for both expression switch
+		// statements and map literals.
+		//
+		run(t, func() { fCheck = "switch,mapliteral" }, "test/check/swtch/general", "test/check/swtch/directive")
+		run(t, func() { fCheck = "switch,mapliteral"; fCheckEnforceOnly = true }, "test/check/swtch/directive/enforce")
+		run(t, func() { fCheck = "switch"; fDefaultEx = true }, "test/check/swtch/def")
+		run(t, func() { fCheck = "switch"; fRequireDefaultCase = true }, "test/check/swtch/defrequire")
+		run(t, func() { fCheck = "switch" }, "test/check/swtch/defrequire/directive1")
+		run(t, func() { fCheck = "switch,mapliteral"; fCheckGenerated = true }, "test/check/swtch/generated")
+		run(t, func() {
+			// TODO: add pattern test case where switch expression type is an alias type.
+			fCheck = "switch,mapliteral"
+			fExcludeType = repeatFlag[*regexp.Regexp]{vals: []*regexp.Regexp{
+				regexp.MustCompile("t1"),
+				regexp.MustCompile("^test/check/swtch/pattern\\.P3$"), // no effect: not package-level declaration
+				regexp.MustCompile("^test/check/swtch/typ\\.M1$"),
+			}}
+			fExcludeConst = repeatFlag[*regexp.Regexp]{vals: []*regexp.Regexp{
+				regexp.MustCompile("^test/check/swtch/pattern\\.x2+$"),
+				regexp.MustCompile("^test/check/swtch/pattern\\.Y0$"), // no effect: not package-level declaration
+				regexp.MustCompile("^test/check/swtch/typnew\\.Z3$"),
+			}}
+		}, "test/check/swtch/pattern")
+		run(t, func() {
+			fCheck = "switch,mapliteral"
+			fIncludeType = repeatFlag[*regexp.Regexp]{vals: []*regexp.Regexp{
+				regexp.MustCompile("t1"),
+				regexp.MustCompile("^test/check/swtch/pattern\\.P3$"), // no effect: not package-level declaration
+				regexp.MustCompile("^test/check/swtch/typ\\.M1$"),
+			}}
+			fExcludeConst = repeatFlag[*regexp.Regexp]{vals: []*regexp.Regexp{
+				// Note: Exclusion of constants is by
+				// name, not by value.
+				// Therefore, though V0 == VV0 by value, the value
+				// corresponding to VV0 is still required
+				// in the switch statement cases.
+				regexp.MustCompile("typ\\.V0$"),
+				regexp.MustCompile("typ\\.V4$"),
+			}}
 
-	}, "test/check/swtch/pattern/includetype")
-	run(t, func() { fCheck = "switch" }, "test/check/swtch/unsupported")
-	run(t, func() { fCheck = "mapliteral"; fCheckEnforceOnly = true }, "test/check/mapliteral/commentassoc")
-	run(t, func() { fCheck = "switch" }, "test/packagedoc/...")
-	run(t, func() { fCheck = "switch" }, "test/readmeexample/...")
+		}, "test/check/swtch/pattern/includetype")
+		run(t, func() { fCheck = "switch" }, "test/check/swtch/unsupported")
+	})
 
-	if !testing.Short() {
-		run(t, func() { fCheck = "typeswitch" }, "test/check/typeswitch/gotypes")
-	}
+	t.Run("mapliteral", func(t *testing.T) {
+		run(t, func() { fCheck = "mapliteral"; fCheckEnforceOnly = true }, "test/check/mapliteral/commentassoc")
+	})
+
+	t.Run("doc", func(t *testing.T) {
+		if !testing.Short() {
+			run(t, func() { fCheck = "switch,typeswitch" }, "test/packagedoc/...")
+			run(t, func() { fCheck = "switch,typeswitch" }, "test/readmedoc/...")
+		}
+	})
+
+	t.Run("typeswitch", func(t *testing.T) {
+		run(t, func() { fCheck = "typeswitch" }, "test/check/typeswitch/general")
+		run(t, func() { fCheck = "typeswitch" }, "test/check/typeswitch/alias")
+		run(t, func() { fCheck = "typeswitch"; fRequireCaseNil = true }, "test/check/typeswitch/casenil")
+		run(t, func() { fCheck = "typeswitch"; fDefaultEx = true }, "test/check/typeswitch/def")
+		run(t, func() {
+			fCheck = "typeswitch"
+			fExcludeType = repeatFlag[*regexp.Regexp]{vals: []*regexp.Regexp{
+				regexp.MustCompile("^test/check/typeswitch/pattern\\.i$"),
+				regexp.MustCompile("^test/check/typeswitch/pattern\\.j$"), // no effect: not package-level declaration
+			}}
+		}, "test/check/typeswitch/pattern")
+
+		if !testing.Short() {
+			run(t, func() { fCheck = "typeswitch" }, "test/check/typeswitch/gostd")
+		}
+	})
 }
 
 // This test does not check that the analysis produces expected
@@ -105,14 +130,14 @@ func TestRealPackages(t *testing.T) {
 		}
 	}
 
-	run(t, func() { fCheck = "switch,mapliteral" }, "net")
+	run(t, func() { fCheck = "switch,mapliteral,typeswitch" }, "net")
 
 	if !testing.Short() {
 		// Note: This could specify the name "std" instead of
 		// specifying individual package names, but in low memory
 		// environments where tests might run the analysis will
 		// commonly run out of memory for the former.
-		run(t, func() { fCheck = "switch,mapliteral" },
+		run(t, func() { fCheck = "switch,mapliteral,typeswitch" },
 			"fmt",
 			"go/...",
 			"html/template",
