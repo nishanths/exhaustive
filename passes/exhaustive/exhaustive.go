@@ -290,17 +290,6 @@ func matchAny(rs []*regexp.Regexp, s string) bool {
 	return false
 }
 
-func slicemap[S ~[]E, E, F any](s S, fn func(E) F) []F {
-	var ret []F
-	if s != nil {
-		ret = make([]F, len(s))
-		for i := range s {
-			ret[i] = fn(s[i])
-		}
-	}
-	return ret
-}
-
 func assert(x bool) {
 	if !x {
 		panic("assertion failed")

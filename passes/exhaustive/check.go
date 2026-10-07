@@ -4,8 +4,6 @@ import (
 	"cmp"
 	"fmt"
 	"go/ast"
-	"go/printer"
-	"go/token"
 	"go/types"
 	"maps"
 	"slices"
@@ -640,19 +638,4 @@ func nameString(currentPkg *types.Package, obj types.Object) string {
 	} else {
 		return obj.Name()
 	}
-}
-
-func formatNode(fset *token.FileSet, n ast.Node) string {
-	var buf strings.Builder
-	if err := printer.Fprint(&buf, fset, n); err != nil {
-		// this should not happen for a valid program?
-		// package x/tools/go/internal/astutil func Format
-		// ignores the error in a similar situation.
-		return "<?>"
-	}
-	return buf.String()
-}
-
-func formatExpr(pass *analysis.Pass, e ast.Expr) string {
-	return formatNode(pass.Fset, ast.Unparen(e))
 }
