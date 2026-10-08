@@ -18,11 +18,11 @@ func f1() {
 	}
 
 	//exhaustive:enforce
-	switch { // want "^enforce directive present and switch not checked: no switch expression$"
+	switch { // want "^enforce directive present and expression switch not checked: no switch expression$"
 	}
 
 	//exhaustive:enforce
-	switch int(0) { // want "^enforce directive present and switch not checked: switch expression type is not an enumerated type$"
+	switch int(0) { // want "^enforce directive present and expression switch not checked: switch expression type is not an enumerated type$"
 	}
 
 	//exhaustive:ignore

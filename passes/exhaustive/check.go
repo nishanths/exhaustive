@@ -31,7 +31,7 @@ func checkSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, comments []*ast.Commen
 
 	skip := func(reason string) {
 		if directives[dirEnforce] {
-			pass.Reportf(sw.Pos(), "enforce directive present and switch not checked: %s", reason)
+			pass.Reportf(sw.Pos(), "enforce directive present and expression switch not checked: %s", reason)
 		}
 	}
 
