@@ -91,10 +91,7 @@ func checkSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, comments []*ast.Commen
 	}
 }
 
-// hasTypeName determines whether t is a named type (in Go spec
-// terminology) and returns its *types.TypeName value if so.
-// Go spec: "Predeclared types, defined types, and type
-// parameters are called named types."
+// hasTypeName determines whether t is a type with a name.
 func hasTypeName(t types.Type) (*types.TypeName, bool) {
 	switch t := t.(type) {
 	case *types.Alias:
@@ -125,16 +122,15 @@ type typeSwitchState struct {
 	// Only those relationships relevant for type switch
 	// analysis are recorded in this map.
 	//
-	// Note: the structures of the map keys are
-	// {*types.TypeName, bool} pairs, instead of
-	// simply {*types.TypeName}, because the former structure
+	// Note: the structure of the map keys is
+	// a {*types.TypeName, bool} pair, instead of
+	// simply *types.TypeName, because the former structure
 	// computed once eliminates later repeated computations
-	// in usage sites.
+	// at usage sites.
 	identical map[tp][]tp
 }
 
-// tp represents a type T or type *T, where T is (in Go
-// spec terminology) a named type.
+// tp represents a type T or type *T, where T a type name.
 type tp struct {
 	*types.TypeName
 	pointer bool
@@ -205,9 +201,7 @@ func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*as
 			return
 		}
 		// Special case: Type switches of the error
-		// built-in interface are not checked. These
-		// diagnostics have a poor signal-to-noise ratio
-		// in the current analysis design.
+		// built-in interface are not checked.
 		if ok && tn == universeError {
 			return
 		}

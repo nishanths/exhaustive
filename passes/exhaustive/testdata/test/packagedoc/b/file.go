@@ -1,6 +1,4 @@
 package b
-type U int
-const (
-	X0 U = iota
-	X1
-)
+type B int
+const X0 B = 0
+const X1 B = 1

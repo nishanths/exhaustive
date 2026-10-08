@@ -4,7 +4,7 @@ expression switches, in which the switch expression type is
 an enumerated type, and type switches.
 
 The complete analysis is implemented in multiple passes; see the
-packages in the 'passes/\*' directories.
+packages under the 'passes' directory.
 Package enumerated finds declarations of enumerated types and
 enumerated constants.
 Package exhaustive scans the syntax tree of Go packages for eligible
@@ -25,7 +25,7 @@ The exhaustive command can be installed with 'go install'.
 
 The synopsis of the command is:
 
-	exhaustive [-B] [-casenil] [-d] [-defrequire] [-e] [-g] [-i][-p]
+	exhaustive [-B] [-casenil] [-d] [-defrequire] [-e] [-g] [-i] [-p]
 	           [-check string] [-constignore regexp] [-typeignore regexp]
 	           [-typeonly regexp] [packages]
 
@@ -40,7 +40,7 @@ enumerated analyzer and the exhaustive analyzer.
 
 # Examples
 
-Given this expression switch
+Given the expression switch
 
 ```
 package a
@@ -66,12 +66,16 @@ func f1(v vcs) {
 }
 ```
 
-the analysis produces the following diagnostics
+the analysis produces the following diagnostic
 
 	$ exhaustive
 	a.go:15:2: missing cases in expression: mercurial, darcs
 
-Given this type switch
+Though it is not so in the example above, in general the
+enumerated type declarations and the switch statement can be in
+different packages.
+
+Given the type switch
 
 ```
 package b
@@ -99,7 +103,7 @@ func f2(t types.Type) bool {
 }
 ```
 
-the diagnostics are
+the diagnostic (as of go1.27) is
 
 	$ exhaustive -check=typeswitch
 	b.go:6:2: missing cases in type switch: *types.Basic, *types.TypeParam

@@ -389,7 +389,7 @@ func f18() {
 	}
 }
 
-// type alias
+// alias type
 func f19() {
 	var a typ.A1
 

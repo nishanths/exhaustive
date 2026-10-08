@@ -53,7 +53,7 @@ type (
 	p4        r3[struct{}] // want p4:"^permittedtype$"
 	p5[E any] r3[E]        // not permitted: parameterized type
 
-	a1        = t3           // not permitted: type alias
+	a1        = t3           // not permitted: alias type
 	a2        = p1           // ditto
 	a3        = p5[int]      // ditto
 	a4        = p5[struct{}] // ditto

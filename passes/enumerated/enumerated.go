@@ -208,7 +208,7 @@ func permittedEnumeratedType(t types.Type) (*types.Named, bool) {
 	if !ok {
 		return nil, false
 	}
-	// The type definition must not not specify type parameters.
+	// The type definition must not specify type parameters.
 	if n.TypeParams() != nil {
 		return nil, false
 	}

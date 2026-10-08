@@ -12,37 +12,38 @@ func f1() {
 		X2
 	)
 
-	var t T
+	var v T
 
-	switch t {
+	switch v {
 	case X0:
 	case X1:
 	case X2:
 	}
 
-	switch t { // want "^missing cases in expression switch: X1$"
+	switch v { // want "^missing cases in expression switch: X2$"
 	case X0:
-	case X2:
+	case X1:
 	}
 }
 
 func f2() {
-	var t a.T
-	switch t {
+	var v a.A
+
+	switch v {
 	case a.X0: // or b.X0
 	case a.X1: // or b.X1
 	}
 
-	switch t {
+	switch v {
 	case b.X0:
 	case b.X1:
 	}
 
-	switch t { // want "^missing cases in expression switch: b.X1$"
+	switch v { // want "^missing cases in expression switch: b.X1$"
 	case a.X0:
 	}
 
-	switch t { // want "^missing cases in expression switch: b.X1$"
+	switch v { // want "^missing cases in expression switch: b.X1$"
 	case b.X0:
 	}
 }

@@ -40,9 +40,9 @@ var Analyzer = &analysis.Analyzer{
 func init() {
 	Analyzer.Flags.BoolVar(&fCheckEnforceOnly, "e", fCheckEnforceOnly, "check a switch only if it has '//exhaustive:enforce' comment")
 	Analyzer.Flags.BoolVar(&fDefaultEx, "d", fDefaultEx, "including a default case makes a switch exhaustive")
-	Analyzer.Flags.BoolVar(&fRequireDefaultCase, "defrequire", fRequireDefaultCase, "default case must always be present in expression switches")
-	Analyzer.Flags.BoolVar(&fRequireCaseNil, "casenil", fRequireCaseNil, "type switches must include a nil case")
-	Analyzer.Flags.StringVar(&fCheck, "check", fCheck, "specify elements in the syntax tree that the analysis should check")
+	Analyzer.Flags.BoolVar(&fRequireDefaultCase, "defrequire", fRequireDefaultCase, "always require a default case in checked expression switches")
+	Analyzer.Flags.BoolVar(&fRequireCaseNil, "casenil", fRequireCaseNil, "type switches must include a nil case to be exhaustive")
+	Analyzer.Flags.StringVar(&fCheck, "check", fCheck, "comma-separated list of syntax elements to check; available values: switch, mapliteral, typeswitch")
 	Analyzer.Flags.BoolVar(&fCheckGenerated, "g", fCheckGenerated, "additionally analyze generated files")
 	Analyzer.Flags.Var(&fExcludeType, "typeignore", "switches in which the type name is matched by `regexp` are not checked")
 	Analyzer.Flags.Var(&fIncludeType, "typeonly", "only switches in which the type name is matched by `regexp` are checked")

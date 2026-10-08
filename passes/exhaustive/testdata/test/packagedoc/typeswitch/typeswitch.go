@@ -22,16 +22,20 @@ func f3(t types.Type) bool {
 	}
 }
 
-type S struct{}
-func (*S) m()
-type A = S
+type I interface{ m() }
+
+type T struct{}
+func (*T) m() {}
+
+type A = T
 
 func f4() {
-	var x interface{ m() }
-	switch x.(type) {
-	case *A: // or *S
+	var v I
+
+	switch v.(type) {
+	case *A: // or *T
 	}
 
-	switch x.(type) { // want "^missing cases in type switch: \\*S or \\*A$"
+	switch v.(type) { // want "^missing cases in type switch: \\*T or \\*A$"
 	}
 }
