@@ -7,6 +7,10 @@ type u struct{}
 func (*u) m()
 
 type i interface{ m() }
+type h interface{ m() }
+
+type a1 = h
+type a2 = h
 
 func f1() {
 	type j interface{ m() }
@@ -24,6 +28,18 @@ func f1() {
 	}
 
 	switch z.(type) { // want "^type switch not exhaustive: missing cases: \\*t, \\*u$"
+	case t:
+	}
+
+	switch ((h)(nil)).(type) { // want "^type switch not exhaustive: missing cases: \\*t, \\*u$"
+	case t:
+	}
+
+	switch ((a1)(nil)).(type) { // want "^type switch not exhaustive: missing cases: \\*t, \\*u$"
+	case t:
+	}
+
+	switch ((a2)(nil)).(type) {
 	case t:
 	}
 }

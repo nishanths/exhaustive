@@ -19,6 +19,16 @@ const (
 	x3
 )
 
+type p4 int
+
+const (
+	u0 p4 = iota
+	u1
+)
+
+type a1 = p4
+type a2 = p4
+
 func f1() {
 	type P2 int
 	const (
@@ -56,6 +66,18 @@ func f1() {
 	case typnew.Z1:
 	case typnew.Z4:
 	}
+
+	switch p4(0) { // want "^expression switch not exhaustive: missing cases: u0$"
+	case u1:
+	}
+
+	switch a1(0) { // want "^expression switch not exhaustive: missing cases: u0$"
+	case u1:
+	}
+
+	switch a2(0) {
+	case u1:
+	}
 }
 
 func g1() {
@@ -65,5 +87,17 @@ func g1() {
 
 	_ = map[P1]bool{ // want "^map literal not exhaustive: missing keys: x0, x3$"
 		x1: true,
+	}
+
+	_ = map[p4]bool{ // want "^map literal not exhaustive: missing keys: u0$"
+		u1: true,
+	}
+
+	_ = map[a1]bool{ // want "^map literal not exhaustive: missing keys: u0$"
+		u1: true,
+	}
+
+	_ = map[a2]bool{
+		u1: true,
 	}
 }
