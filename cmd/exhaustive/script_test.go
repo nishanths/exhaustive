@@ -12,17 +12,27 @@ import (
 	"rsc.io/script/scripttest"
 )
 
-var exhaustiveCmd = flag.String("cmd", "exhaustive-scripttest", "path to executable to use in script tests")
+// Run one of these commands in the directory of this package to
+// create the executable at the default path expected by the
+// script tests.
+//
+//	go build -o exhaustive-scripttest
+//	go build -o exhaustive-scripttest.exe  (Windows)
+var cmdPath = flag.String("cmd", "exhaustive-scripttest", "path to executable to use in script tests")
 
 func TestScript(t *testing.T) {
 	ctx := t.Context()
 
-	exhaustiveAbs, err := filepath.Abs(*exhaustiveCmd)
+	cmdPathAbs, err := filepath.Abs(*cmdPath)
 	if err != nil {
 		t.Fatal(err)
 	}
+	if _, err := os.Stat(cmdPathAbs); err != nil {
+		t.Fatal(err)
+	}
+
 	cmds := scripttest.DefaultCmds()
-	cmds["exhaustive"] = script.Program(exhaustiveAbs, func(cmd *exec.Cmd) error { return cmd.Process.Signal(os.Interrupt) }, 100*time.Millisecond)
+	cmds["exhaustive"] = script.Program(cmdPathAbs, func(cmd *exec.Cmd) error { return cmd.Process.Signal(os.Interrupt) }, 100*time.Millisecond)
 
 	env := os.Environ()
 	engine := &script.Engine{
