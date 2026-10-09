@@ -198,6 +198,12 @@ func f7() {
 		_ = y
 	}
 
+	switch n := 1; y := x.(type) { // want "^missing cases in type switch: \\*t, \\*u$"
+	case t:
+		_ = y
+		_ = n
+	}
+
 	switch y := fi().(type) { // want "^missing cases in type switch: \\*t, \\*u$"
 	case t:
 		_ = y
