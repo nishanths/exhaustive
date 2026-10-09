@@ -87,7 +87,7 @@ func checkSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, comments []*ast.Commen
 		pass.Reportf(sw.Pos(), "missing default case")
 	}
 	if len(need) != 0 {
-		pass.Reportf(sw.Pos(), "expression switch not exhaustive: missing cases: %s", formatMissingNames(pass.Pkg, need))
+		pass.Reportf(sw.Pos(), "missing cases in expression switch: %s", formatMissingNames(pass.Pkg, need))
 	}
 }
 
@@ -253,7 +253,7 @@ func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*as
 	}
 
 	if reportMissingNil || len(need) != 0 {
-		pass.Reportf(sw.Pos(), "type switch not exhaustive: missing cases: %s", formatMissingTypes(pass.Pkg, need, reportMissingNil))
+		pass.Reportf(sw.Pos(), "missing cases in type switch: %s", formatMissingTypes(pass.Pkg, need, reportMissingNil))
 	}
 }
 
@@ -640,7 +640,7 @@ func checkMapLiteral(pass *analysis.Pass, compLit *ast.CompositeLit, comments []
 		}
 	}
 	if len(need) != 0 {
-		pass.Reportf(compLit.Pos(), "map literal not exhaustive: missing keys: %s", formatMissingNames(pass.Pkg, need))
+		pass.Reportf(compLit.Pos(), "missing keys in map literal: %s", formatMissingNames(pass.Pkg, need))
 	}
 }
 
