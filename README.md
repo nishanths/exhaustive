@@ -11,7 +11,15 @@ Package exhaustive scans the syntax tree of Go packages for eligible
 switch statements and checks that the switch statements are
 exhaustive.
 
-Documentation:
+# Documentation
+
+The analysis is documented in Go package comments.
+To read the documentation, see the Go files named doc.go under
+the 'passes' directory, or run 'go doc \<path\>'. For example:
+
+	go doc github.com/nishanths/exhaustive/passes/exhaustive
+
+The documentation is also available on pkg.go.dev.
 
 <https://pkg.go.dev/github.com/nishanths/exhaustive/passes/enumerated>
 
@@ -29,8 +37,8 @@ The synopsis of the command is:
 	           [-check string] [-constignore regexp] [-typeignore regexp]
 	           [-typeonly regexp] [packages]
 
-The flags are documented in the package comments. See links to
-documentation above.
+The flags are documented in Go package comments. See the
+"Documentation" section in this README file for more details.
 
 The packages in this module can be imported and used from external
 analysis driver programs. See <https://golang.org/x/tools/go/analysis>
@@ -69,7 +77,7 @@ func f1(v vcs) {
 the analysis produces the following diagnostic
 
 	$ exhaustive
-	a.go:15:2: missing cases in expression: mercurial, darcs
+	a.go:15:2: missing cases in expression switch: mercurial, darcs
 
 Though it is not so in the example above, in general the
 enumerated type declarations and the switch statement can be in

@@ -59,7 +59,7 @@ the interface in the type assertion is the empty interface or the
 predeclared type error are not checked.
 
 A type switch is exhaustive if every type T or *T that implements
-the interface in the type assertion is included in the case
+the interface in the type assertion is present in the case
 clauses, where T is a non-interface type with a top-level
 declaration in either the current package or its (recursively)
 imported dependencies. If the type switch statement and the type
@@ -94,8 +94,8 @@ The diagnostic (as of go1.27) is
 
 	missing cases in type switch: *types.Basic, *types.TypeParam
 
-It is not necessary to include a case clause for nil (i.e. "case
-nil: ...") in a type switch for it to be exhaustive, but this
+It is not necessary to include a 'nil' case (i.e. "case
+nil: ...") for a type switch to be exhaustive, but this
 behavior can be controlled via the flags. A similar note about
 the default case applies to type switches, as described in the
 section on expression switches.
@@ -177,7 +177,8 @@ specify:
 	-check "switch,typeswitch"
 
 The -casenil flag applies to type switches; it specifies whether
-type switches must include a 'nil' case to be exhaustive.
+type switches must include a 'nil' case (i.e. "case nil: ...") to
+be exhaustive.
 
 The -d flag changes the behavior of the analysis such that
 including a default case makes a switch statement exhaustive
