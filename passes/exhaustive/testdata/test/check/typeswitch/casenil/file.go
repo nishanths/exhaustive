@@ -9,16 +9,16 @@ func (*u) m()
 func f1() {
 	var x interface{ m() }
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: nil$"
+	switch x.(type) { // want "^missing cases in type switch: nil$"
 	case t:
 	case *t:
 	case *u:
 	}
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: nil, t, \\*t, \\*u$"
+	switch x.(type) { // want "^missing cases in type switch: nil, t, \\*t, \\*u$"
 	}
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: nil, \\*t, \\*u$"
+	switch x.(type) { // want "^missing cases in type switch: nil, \\*t, \\*u$"
 	case t:
 	}
 }
@@ -33,11 +33,11 @@ func f2() {
 	case nil:
 	}
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: t, \\*t, \\*u$"
+	switch x.(type) { // want "^missing cases in type switch: t, \\*t, \\*u$"
 	case nil:
 	}
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: \\*t, \\*u$"
+	switch x.(type) { // want "^missing cases in type switch: \\*t, \\*u$"
 	case t:
 	case nil:
 	}

@@ -3,7 +3,7 @@ package b
 import "go/types"
 
 func f2(t types.Type) bool {
-	switch t.(type) { // want "^type switch not exhaustive: missing cases: \\*types.Basic, \\*types.TypeParam$"
+	switch t.(type) { // want "^missing cases in type switch: \\*types.Basic, \\*types.TypeParam$"
 	case *types.Array,
 		*types.Chan,
 		*types.Interface,

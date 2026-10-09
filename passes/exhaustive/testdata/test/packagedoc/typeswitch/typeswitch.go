@@ -3,7 +3,7 @@ package foo
 import "go/types"
 
 func f3(t types.Type) bool {
-	switch t.(type) { // want "^type switch not exhaustive: missing cases: \\*types.Basic, \\*types.TypeParam$"
+	switch t.(type) { // want "^missing cases in type switch: \\*types.Basic, \\*types.TypeParam$"
 	case *types.Array,
 		*types.Chan,
 		*types.Interface,
@@ -32,6 +32,6 @@ func f4() {
 	case *A: // or *S
 	}
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: \\*S or \\*A$"
+	switch x.(type) { // want "^missing cases in type switch: \\*S or \\*A$"
 	}
 }

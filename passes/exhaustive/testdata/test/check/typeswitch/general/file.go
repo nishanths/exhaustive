@@ -26,32 +26,32 @@ func f1() {
 	case *u:
 	}
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: t, \\*t, \\*u$"
+	switch x.(type) { // want "^missing cases in type switch: t, \\*t, \\*u$"
 	}
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: \\*t, \\*u$"
+	switch x.(type) { // want "^missing cases in type switch: \\*t, \\*u$"
 	case t:
 	}
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: t, \\*u$"
+	switch x.(type) { // want "^missing cases in type switch: t, \\*u$"
 	case *t:
 	}
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: t, \\*t$"
+	switch x.(type) { // want "^missing cases in type switch: t, \\*t$"
 	case *u:
 	}
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: t$"
+	switch x.(type) { // want "^missing cases in type switch: t$"
 	case *t:
 	case *u:
 	}
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: \\*t$"
+	switch x.(type) { // want "^missing cases in type switch: \\*t$"
 	case t:
 	case *u:
 	}
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: \\*u$"
+	switch x.(type) { // want "^missing cases in type switch: \\*u$"
 	case t:
 	case *t:
 	}
@@ -69,10 +69,10 @@ func f2() {
 	case *u:
 	}
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: t, \\*t, \\*u$"
+	switch x.(type) { // want "^missing cases in type switch: t, \\*t, \\*u$"
 	}
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: \\*t, \\*u$"
+	switch x.(type) { // want "^missing cases in type switch: \\*t, \\*u$"
 	case t:
 	}
 }
@@ -88,10 +88,10 @@ func f3() {
 		o()
 	}
 
-	switch y.(type) { // want "^type switch not exhaustive: missing cases: \\*t, \\*u$"
+	switch y.(type) { // want "^missing cases in type switch: \\*t, \\*u$"
 	}
 
-	switch z.(type) { // want "^type switch not exhaustive: missing cases: \\*t$"
+	switch z.(type) { // want "^missing cases in type switch: \\*t$"
 	}
 }
 
@@ -114,18 +114,18 @@ func f4() {
 	case dpkg.A:
 	}
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: \\*v or \\*av, dpkg.T, \\*dpkg.T or dpkg.A$"
+	switch x.(type) { // want "^missing cases in type switch: \\*v or \\*av, dpkg.T, \\*dpkg.T or dpkg.A$"
 	}
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: \\*v or \\*av, \\*dpkg.T or dpkg.A$"
+	switch x.(type) { // want "^missing cases in type switch: \\*v or \\*av, \\*dpkg.T or dpkg.A$"
 	case dpkg.T:
 	}
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: \\*v or \\*av, dpkg.T$"
+	switch x.(type) { // want "^missing cases in type switch: \\*v or \\*av, dpkg.T$"
 	case dpkg.A:
 	}
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: \\*dpkg.T or dpkg.A$"
+	switch x.(type) { // want "^missing cases in type switch: \\*dpkg.T or dpkg.A$"
 	case *v:
 	case dpkg.T:
 	}
@@ -146,7 +146,7 @@ func f5[P any]() {
 
 	var x i
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: t, \\*u$"
+	switch x.(type) { // want "^missing cases in type switch: t, \\*u$"
 	case P:
 	case error:
 	case any:
@@ -167,14 +167,14 @@ func f6() {
 	var x um
 	var y sub.UM
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: \\*k$"
+	switch x.(type) { // want "^missing cases in type switch: \\*k$"
 	}
 
 	switch x.(type) {
 	case *k:
 	}
 
-	switch y.(type) { // want "^type switch not exhaustive: missing cases: \\*sub.K$"
+	switch y.(type) { // want "^missing cases in type switch: \\*sub.K$"
 	}
 
 	switch y.(type) {
@@ -189,27 +189,27 @@ func f7() {
 	var x interface{ m() }
 	fi := func() i { return i(nil) }
 
-	switch fi().(type) { // want "^type switch not exhaustive: missing cases: \\*t, \\*u$"
+	switch fi().(type) { // want "^missing cases in type switch: \\*t, \\*u$"
 	case t:
 	}
 
-	switch y := x.(type) { // want "^type switch not exhaustive: missing cases: \\*t, \\*u$"
-	case t:
-		_ = y
-	}
-
-	switch y := fi().(type) { // want "^type switch not exhaustive: missing cases: \\*t, \\*u$"
+	switch y := x.(type) { // want "^missing cases in type switch: \\*t, \\*u$"
 	case t:
 		_ = y
 	}
 
-	switch y := (interface{ m() })((fi())).(type) { // want "^type switch not exhaustive: missing cases: \\*t, \\*u$"
+	switch y := fi().(type) { // want "^missing cases in type switch: \\*t, \\*u$"
+	case t:
+		_ = y
+	}
+
+	switch y := (interface{ m() })((fi())).(type) { // want "^missing cases in type switch: \\*t, \\*u$"
 	case t:
 		_ = y
 	}
 
 	s := struct{ o i }{}
-	switch s.o.(i).(type) { // want "^type switch not exhaustive: missing cases: \\*t, \\*u$"
+	switch s.o.(i).(type) { // want "^missing cases in type switch: \\*t, \\*u$"
 	case t:
 	}
 }
@@ -250,8 +250,8 @@ func e2() {
 	}
 	switch err2.(type) {
 	}
-	switch err3.(type) { // want "^type switch not exhaustive: missing cases: .+, strconv.Error, \\*strconv.Error, .+$"
+	switch err3.(type) { // want "^missing cases in type switch: .+, strconv.Error, \\*strconv.Error, .+$"
 	}
-	switch err4.(type) { // want "^type switch not exhaustive: missing cases: .+, strconv.Error, \\*strconv.Error, .+$"
+	switch err4.(type) { // want "^missing cases in type switch: .+, strconv.Error, \\*strconv.Error, .+$"
 	}
 }

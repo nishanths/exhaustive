@@ -36,7 +36,7 @@ func f1() {
 		Z1
 	)
 
-	switch t1(0) { // want "^expression switch not exhaustive: missing cases: w0$"
+	switch t1(0) { // want "^missing cases in expression switch: w0$"
 	case w1:
 	}
 
@@ -48,7 +48,7 @@ func f1() {
 	case Z1:
 	}
 
-	switch typ.M1(0) { // want "^expression switch not exhaustive: missing cases: typ.VV0, typ.V2, typ.V3, typ.V5$"
+	switch typ.M1(0) { // want "^missing cases in expression switch: typ.VV0, typ.V2, typ.V3, typ.V5$"
 	case typ.V1:
 	}
 
@@ -65,13 +65,13 @@ func f1() {
 	case u1:
 	}
 
-	switch a2(0) { // want "^expression switch not exhaustive: missing cases: u0$"
+	switch a2(0) { // want "^missing cases in expression switch: u0$"
 	case u1:
 	}
 }
 
 func g1() {
-	_ = map[t1]bool{ // want "^map literal not exhaustive: missing keys: w0$"
+	_ = map[t1]bool{ // want "^missing keys in map literal: w0$"
 		w1: true,
 	}
 
@@ -87,7 +87,7 @@ func g1() {
 		u1: true,
 	}
 
-	_ = map[a2]bool{ // want "^map literal not exhaustive: missing keys: u0$"
+	_ = map[a2]bool{ // want "^missing keys in map literal: u0$"
 		u1: true,
 	}
 }

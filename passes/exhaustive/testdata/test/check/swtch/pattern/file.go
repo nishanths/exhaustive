@@ -46,15 +46,15 @@ func f1() {
 	case w1:
 	}
 
-	switch P1(0) { // want "^expression switch not exhaustive: missing cases: x0, x3$"
+	switch P1(0) { // want "^missing cases in expression switch: x0, x3$"
 	case x1:
 	}
 
-	switch P2(0) { // want "^expression switch not exhaustive: missing cases: Y0$"
+	switch P2(0) { // want "^missing cases in expression switch: Y0$"
 	case Y1:
 	}
 
-	switch P3(0) { // want "^expression switch not exhaustive: missing cases: Z0$"
+	switch P3(0) { // want "^missing cases in expression switch: Z0$"
 	case Z1:
 	}
 
@@ -62,16 +62,16 @@ func f1() {
 	case typ.V1:
 	}
 
-	switch typnew.S1(0) { // want "^expression switch not exhaustive: missing cases: typnew.Z0, typnew.Z2$"
+	switch typnew.S1(0) { // want "^missing cases in expression switch: typnew.Z0, typnew.Z2$"
 	case typnew.Z1:
 	case typnew.Z4:
 	}
 
-	switch p4(0) { // want "^expression switch not exhaustive: missing cases: u0$"
+	switch p4(0) { // want "^missing cases in expression switch: u0$"
 	case u1:
 	}
 
-	switch a1(0) { // want "^expression switch not exhaustive: missing cases: u0$"
+	switch a1(0) { // want "^missing cases in expression switch: u0$"
 	case u1:
 	}
 
@@ -85,15 +85,15 @@ func g1() {
 		w1: true,
 	}
 
-	_ = map[P1]bool{ // want "^map literal not exhaustive: missing keys: x0, x3$"
+	_ = map[P1]bool{ // want "^missing keys in map literal: x0, x3$"
 		x1: true,
 	}
 
-	_ = map[p4]bool{ // want "^map literal not exhaustive: missing keys: u0$"
+	_ = map[p4]bool{ // want "^missing keys in map literal: u0$"
 		u1: true,
 	}
 
-	_ = map[a1]bool{ // want "^map literal not exhaustive: missing keys: u0$"
+	_ = map[a1]bool{ // want "^missing keys in map literal: u0$"
 		u1: true,
 	}
 

@@ -20,7 +20,7 @@ func f1() {
 	case X2:
 	}
 
-	switch t { // want "^expression switch not exhaustive: missing cases: X1$"
+	switch t { // want "^missing cases in expression switch: X1$"
 	case X0:
 	case X2:
 	}
@@ -38,11 +38,11 @@ func f2() {
 	case b.X1:
 	}
 
-	switch t { // want "^expression switch not exhaustive: missing cases: b.X1$"
+	switch t { // want "^missing cases in expression switch: b.X1$"
 	case a.X0:
 	}
 
-	switch t { // want "^expression switch not exhaustive: missing cases: b.X1$"
+	switch t { // want "^missing cases in expression switch: b.X1$"
 	case b.X0:
 	}
 }

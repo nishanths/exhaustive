@@ -31,38 +31,38 @@ func f4() {
 	case cc:
 	}
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: t or a, \\*u or \\*c or cc$"
+	switch x.(type) { // want "^missing cases in type switch: t or a, \\*u or \\*c or cc$"
 	case *t:
 	}
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: t or a, \\*u or \\*c or cc$"
+	switch x.(type) { // want "^missing cases in type switch: t or a, \\*u or \\*c or cc$"
 	case *a:
 	}
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: \\*t or \\*a or aa or aa2$"
+	switch x.(type) { // want "^missing cases in type switch: \\*t or \\*a or aa or aa2$"
 	case a:
 	case *u:
 	}
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: t or a, \\*t or \\*a or aa or aa2, \\*u or \\*c or cc$"
+	switch x.(type) { // want "^missing cases in type switch: t or a, \\*t or \\*a or aa or aa2, \\*u or \\*c or cc$"
 	}
 }
 
 func f5() {
 	var x interface{ N() }
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: sub.V, \\*sub.V or sub.VV$"
+	switch x.(type) { // want "^missing cases in type switch: sub.V, \\*sub.V or sub.VV$"
 	}
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: \\*sub.V or sub.VV$"
+	switch x.(type) { // want "^missing cases in type switch: \\*sub.V or sub.VV$"
 	case sub.V:
 	}
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: sub.V$"
+	switch x.(type) { // want "^missing cases in type switch: sub.V$"
 	case *sub.V:
 	}
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: sub.V$"
+	switch x.(type) { // want "^missing cases in type switch: sub.V$"
 	case sub.VV:
 	}
 

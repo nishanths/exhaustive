@@ -34,7 +34,7 @@ func f1() bool {
 func f2() bool {
 	var t types.Type
 
-	switch t.(type) { // want "^type switch not exhaustive: missing cases: \\*types.Basic, \\*types.Pointer$"
+	switch t.(type) { // want "^missing cases in type switch: \\*types.Basic, \\*types.Pointer$"
 	case *types.Array,
 		*types.Chan,
 		*types.Interface,
@@ -66,10 +66,10 @@ func f3() {
 	case *net.UnixAddr:
 	}
 
-	switch addr.(type) { // want "^type switch not exhaustive: missing cases: \\*net.IPAddr, \\*net.IPNet, \\*net.TCPAddr, \\*net.UDPAddr, \\*net.UnixAddr$"
+	switch addr.(type) { // want "^missing cases in type switch: \\*net.IPAddr, \\*net.IPNet, \\*net.TCPAddr, \\*net.UDPAddr, \\*net.UnixAddr$"
 	}
 
-	switch addr.(type) { // want "^type switch not exhaustive: missing cases: \\*net.IPNet$"
+	switch addr.(type) { // want "^missing cases in type switch: \\*net.IPNet$"
 	case *net.IPAddr:
 	case *net.TCPAddr:
 	case *net.UDPAddr:

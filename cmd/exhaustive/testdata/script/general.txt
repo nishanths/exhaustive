@@ -9,32 +9,32 @@ stderr -count=1 ^$
 
 ! exhaustive example.com/foo
 stderr -count=2 ^.
-stderr -count=1 ${/}'example.com'${/}'foo'${/}'foo.go:16:2: expression switch not exhaustive: missing cases: a\.AX0, a\.AX2$'
-stderr -count=1 ${/}'example.com'${/}'foo'${/}'foo.go:26:2: expression switch not exhaustive: missing cases: VT1$'
+stderr -count=1 ${/}'example.com'${/}'foo'${/}'foo.go:16:2: missing cases in expression switch: a\.AX0, a\.AX2$'
+stderr -count=1 ${/}'example.com'${/}'foo'${/}'foo.go:26:2: missing cases in expression switch: VT1$'
 
 ! exhaustive example.com/bar
 stderr -count=1 ^.
-stderr -count=1 ${/}'example.com'${/}'bar'${/}'bar.go:11:2: expression switch not exhaustive: missing cases: d\.DX0'
+stderr -count=1 ${/}'example.com'${/}'bar'${/}'bar.go:11:2: missing cases in expression switch: d\.DX0'
 
 ! exhaustive -check=typeswitch example.com/foo
 stderr -count=1 ^.
-stderr -count=1 ${/}'example.com'${/}'foo'${/}'foo.go:38:2: type switch not exhaustive: missing cases: \*t, d\.DT1, \*d\.DT1'
+stderr -count=1 ${/}'example.com'${/}'foo'${/}'foo.go:38:2: missing cases in type switch: \*t, d\.DT1, \*d\.DT1'
 
 # multiple package arguments
 
 ! exhaustive example.com/quux example.com/bar
 stderr -count=1 ^.
-stderr -count=1 ${/}'example.com'${/}'bar'${/}'bar.go:11:2: expression switch not exhaustive: missing cases: d\.DX0'
+stderr -count=1 ${/}'example.com'${/}'bar'${/}'bar.go:11:2: missing cases in expression switch: d\.DX0'
 
 # flags
 
 ! exhaustive -p example.com/foo
 stderr -count=1 ^.
-stderr -count=1 ${/}'example.com'${/}'foo'${/}'foo.go:16:2: expression switch not exhaustive: missing cases: a\.AX0, a\.AX2$'
+stderr -count=1 ${/}'example.com'${/}'foo'${/}'foo.go:16:2: missing cases in expression switch: a\.AX0, a\.AX2$'
 
 ! exhaustive -typeignore='^example.com/a\.A1$' example.com/foo
 stderr -count=1 ^.
-stderr -count=1 ${/}'example.com'${/}'foo'${/}'foo.go:26:2: expression switch not exhaustive: missing cases: VT1$'
+stderr -count=1 ${/}'example.com'${/}'foo'${/}'foo.go:26:2: missing cases in expression switch: VT1$'
 
 exhaustive -p -typeignore='^example.com/a\.A1$' example.com/foo
 stdout -count=1 ^$

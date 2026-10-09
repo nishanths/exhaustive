@@ -22,14 +22,14 @@ func f1() {
 	default:
 	}
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: t, \\*t, \\*u$"
+	switch x.(type) { // want "^missing cases in type switch: t, \\*t, \\*u$"
 	}
 
 	switch x.(type) {
 	default:
 	}
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: \\*t, \\*u$"
+	switch x.(type) { // want "^missing cases in type switch: \\*t, \\*u$"
 	case t:
 	}
 

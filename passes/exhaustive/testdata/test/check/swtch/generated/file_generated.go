@@ -12,14 +12,14 @@ const (
 func f1() {
 	var t t1
 
-	switch t { // want "^expression switch not exhaustive: missing cases: x0$"
+	switch t { // want "^missing cases in expression switch: x0$"
 	case x1:
 	}
 
-	switch t { // want "^expression switch not exhaustive: missing cases: x0, x1$"
+	switch t { // want "^missing cases in expression switch: x0, x1$"
 	}
 
-	_ = map[t1]bool{ // want "^map literal not exhaustive: missing keys: x0$"
+	_ = map[t1]bool{ // want "^missing keys in map literal: x0$"
 		x1: true,
 	}
 }

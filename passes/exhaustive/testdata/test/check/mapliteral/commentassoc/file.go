@@ -17,14 +17,14 @@ func f1() {
 
 	//exhaustive:enforce
 	var (
-		_ = map[t1]bool{x0: true} // want "^map literal not exhaustive: missing keys: x1$"
-		_ = map[t1]bool{x1: true} // want "^map literal not exhaustive: missing keys: x0$"
+		_ = map[t1]bool{x0: true} // want "^missing keys in map literal: x1$"
+		_ = map[t1]bool{x1: true} // want "^missing keys in map literal: x0$"
 	)
 
 	var _ = map[t1]bool{x0: true}
 
 	//exhaustive:enforce
-	var _ = map[t1]bool{x0: true} // want "^map literal not exhaustive: missing keys: x1$"
+	var _ = map[t1]bool{x0: true} // want "^missing keys in map literal: x1$"
 
 	/* ValueSpec */
 
@@ -34,7 +34,7 @@ func f1() {
 	)
 	var (
 		//exhaustive:enforce
-		_ = map[t1]bool{x0: true} // want "^map literal not exhaustive: missing keys: x1$"
+		_ = map[t1]bool{x0: true} // want "^missing keys in map literal: x1$"
 		_ = map[t1]bool{x1: true}
 	)
 
@@ -43,14 +43,14 @@ func f1() {
 	_ = map[t1]bool{x0: true}
 
 	//exhaustive:enforce
-	_ = map[t1]bool{x0: true} // want "^map literal not exhaustive: missing keys: x1$"
+	_ = map[t1]bool{x0: true} // want "^missing keys in map literal: x1$"
 
 	/* AssignStmt, with DEFINE operator */
 
 	tmp1 := map[t1]bool{x0: true}
 
 	//exhaustive:enforce
-	tmp2 := map[t1]bool{x0: true} // want "^map literal not exhaustive: missing keys: x1$"
+	tmp2 := map[t1]bool{x0: true} // want "^missing keys in map literal: x1$"
 	_ = tmp1
 	_ = tmp2
 
@@ -59,13 +59,13 @@ func f1() {
 	f := func(...any) any { return struct{}{} }
 
 	//exhaustive:enforce
-	_ = map[t1]bool{x0: true}[x0] // want "^map literal not exhaustive: missing keys: x1$"
+	_ = map[t1]bool{x0: true}[x0] // want "^missing keys in map literal: x1$"
 
 	//exhaustive:enforce
-	_ = &map[t1]bool{x0: true} // want "^map literal not exhaustive: missing keys: x1$"
+	_ = &map[t1]bool{x0: true} // want "^missing keys in map literal: x1$"
 
 	//exhaustive:enforce
-	_ = f(nil, []int{0}, map[t1]bool{x0: true}, nil) // want "^map literal not exhaustive: missing keys: x1$"
+	_ = f(nil, []int{0}, map[t1]bool{x0: true}, nil) // want "^missing keys in map literal: x1$"
 
 	/* CallExpr, not supported */
 

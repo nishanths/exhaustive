@@ -12,7 +12,7 @@ const (
 )
 
 func f1(v vcs) {
-	switch v { // want "^expression switch not exhaustive: missing cases: mercurial, darcs$"
+	switch v { // want "^missing cases in expression switch: mercurial, darcs$"
 	case bazaar:
 	case fossil:
 	case git:

@@ -19,7 +19,7 @@ func f1() {
 	var y i
 	var z j
 
-	switch x.(type) { // want "^type switch not exhaustive: missing cases: \\*t, \\*u$"
+	switch x.(type) { // want "^missing cases in type switch: \\*t, \\*u$"
 	case t:
 	}
 
@@ -27,15 +27,15 @@ func f1() {
 	case t:
 	}
 
-	switch z.(type) { // want "^type switch not exhaustive: missing cases: \\*t, \\*u$"
+	switch z.(type) { // want "^missing cases in type switch: \\*t, \\*u$"
 	case t:
 	}
 
-	switch ((h)(nil)).(type) { // want "^type switch not exhaustive: missing cases: \\*t, \\*u$"
+	switch ((h)(nil)).(type) { // want "^missing cases in type switch: \\*t, \\*u$"
 	case t:
 	}
 
-	switch ((a1)(nil)).(type) { // want "^type switch not exhaustive: missing cases: \\*t, \\*u$"
+	switch ((a1)(nil)).(type) { // want "^missing cases in type switch: \\*t, \\*u$"
 	case t:
 	}
 
