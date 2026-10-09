@@ -69,7 +69,7 @@ func f1(v vcs) {
 the analysis produces the following diagnostics
 
 	$ exhaustive
-	a.go:15:2: expression switch not exhaustive: missing cases: mercurial, darcs
+	a.go:15:2: missing cases in expression: mercurial, darcs
 
 Given this type switch
 
@@ -102,4 +102,4 @@ func f2(t types.Type) bool {
 the diagnostics are
 
 	$ exhaustive -check=typeswitch
-	b.go:6:2: type switch not exhaustive: missing cases: *types.Basic, *types.TypeParam
+	b.go:6:2: missing cases in type switch: *types.Basic, *types.TypeParam

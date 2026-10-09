@@ -46,7 +46,7 @@ the following expression switch is not exhaustive.
 
 The diagnostic is
 
-	expression switch not exhaustive: missing cases: X1
+	missing cases in expression switch: X1
 
 Note that including a default case does not make a switch
 exhaustive. See flag -d to control this behavior.
@@ -93,7 +93,7 @@ The following type switch is not exhaustive.
 
 The diagnostic is (as of go1.27)
 
-	type switch not exhaustive: missing cases: *types.Basic, *types.TypeParam
+	missing cases in type switch: *types.Basic, *types.TypeParam
 
 It is not necessary to include a case clause for nil (i.e. "case
 nil: ...") for a type switch to be exhaustive; this behavior can
