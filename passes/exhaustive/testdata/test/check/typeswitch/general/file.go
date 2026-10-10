@@ -73,6 +73,15 @@ func f1() {
 	case *u:
 	case *w:
 	}
+
+	var z interface{ o() }
+
+	switch z.(type) { // want "^missing cases in type switch: \\*t$"
+	}
+
+	switch z.(type) {
+	case *t:
+	}
 }
 
 func f2() {
@@ -96,6 +105,8 @@ func f2() {
 }
 
 func f3() {
+	// more fundamental test cases
+
 	var y interface {
 		m()
 		n()
@@ -129,6 +140,8 @@ func (*v) O() {}
 type av = v
 
 func f4() {
+	// interface with exported method
+
 	var x interface{ O() }
 
 	switch x.(type) { // want "^missing cases in type switch: \\*v or \\*av, dpkg.T, \\*dpkg.T or dpkg.A$"
@@ -196,6 +209,8 @@ type k struct{}
 func (*k) unexportedMethod()
 
 func f6() {
+	// interfaces with unexported methods
+
 	var x um
 	var y sub.UM
 
@@ -253,8 +268,8 @@ func f7() {
 }
 
 func f8() {
-	// l is a block-local alias for a top-level type.
-	// the block-local alias is present in a case clause.
+	// type l is a local alias for a type declared at top level.
+	// the local alias type is included in a case clause.
 
 	type l = *u
 
@@ -272,6 +287,25 @@ func f8() {
 	switch x.(type) { // want "^missing cases in type switch: \\*t$"
 	case t:
 	case l:
+	}
+}
+
+func f9() {
+	// interface with embedded interface
+
+	type i interface{ m() }
+	type e interface {
+		i
+		n()
+	}
+	var y e
+
+	switch y.(type) { // want "^missing cases in type switch: \\*t, \\*u$"
+	}
+
+	switch y.(type) {
+	case *t:
+	case *u:
 	}
 }
 

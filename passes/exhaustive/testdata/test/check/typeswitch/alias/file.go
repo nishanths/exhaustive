@@ -19,6 +19,9 @@ type cc = *u
 func f4() {
 	var x interface{ m() }
 
+	switch x.(type) { // want "^missing cases in type switch: t or a, \\*t or \\*a or aa or aa2, \\*u or \\*c or cc$"
+	}
+
 	switch x.(type) {
 	case a:
 	case aa:
@@ -42,9 +45,6 @@ func f4() {
 	switch x.(type) { // want "^missing cases in type switch: \\*t or \\*a or aa or aa2$"
 	case a:
 	case *u:
-	}
-
-	switch x.(type) { // want "^missing cases in type switch: t or a, \\*t or \\*a or aa or aa2, \\*u or \\*c or cc$"
 	}
 }
 

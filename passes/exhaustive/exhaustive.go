@@ -175,6 +175,7 @@ func run(pass *analysis.Pass) (any, error) {
 			return false
 		}
 		comments := ast.NewCommentMap(pass.Fset, file, file.Comments)
+
 		c.Inspect(nodes, func(c inspector.Cursor) (descend bool) {
 			switch n := c.Node().(type) {
 			case *ast.SwitchStmt:

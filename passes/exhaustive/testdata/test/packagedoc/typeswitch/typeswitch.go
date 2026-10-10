@@ -23,10 +23,8 @@ func f3(t types.Type) bool {
 }
 
 type I interface{ m() }
-
 type T struct{}
 func (*T) m() {}
-
 type A = T
 
 func f4() {
