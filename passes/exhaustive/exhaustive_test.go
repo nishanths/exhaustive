@@ -66,6 +66,10 @@ func TestAnalyzer(t *testing.T) {
 
 		}, "test/check/swtch/pattern/includetype")
 		run(t, func() { fCheck = "switch" }, "test/check/swtch/unsupported")
+
+		if !testing.Short() {
+			run(t, func() { fCheck = "switch" }, "test/check/swtch/gostd")
+		}
 	})
 
 	t.Run("mapliteral", func(t *testing.T) {
