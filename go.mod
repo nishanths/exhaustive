@@ -3,7 +3,7 @@ module github.com/nishanths/exhaustive
 go 1.26.0
 
 require (
-	golang.org/x/tools v0.50.0
+	golang.org/x/tools v0.51.0
 	rsc.io/script v0.0.2
 )
 
