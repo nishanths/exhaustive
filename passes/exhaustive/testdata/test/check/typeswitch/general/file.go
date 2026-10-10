@@ -8,25 +8,31 @@ type t struct{}
 
 func (t) m()
 func (*t) n()
-func (t) o()
+func (*t) o()
 
 type u struct{}
 
 func (*u) m()
 func (u) n()
 
+type w struct{}
+
+func (*w) n()
+
+type none struct{}
+
 func f1() {
 	// fundamentals
 
 	var x interface{ m() }
 
+	switch x.(type) { // want "^missing cases in type switch: t, \\*t, \\*u$"
+	}
+
 	switch x.(type) {
 	case t:
 	case *t:
 	case *u:
-	}
-
-	switch x.(type) { // want "^missing cases in type switch: t, \\*t, \\*u$"
 	}
 
 	switch x.(type) { // want "^missing cases in type switch: \\*t, \\*u$"
@@ -55,6 +61,18 @@ func f1() {
 	case t:
 	case *t:
 	}
+
+	var y interface{ n() }
+
+	switch y.(type) { // want "^missing cases in type switch: \\*t, u, \\*u, \\*w$"
+	}
+
+	switch y.(type) {
+	case *t:
+	case u:
+	case *u:
+	case *w:
+	}
 }
 
 func f2() {
@@ -63,13 +81,13 @@ func f2() {
 	type i interface{ m() }
 	var x i
 
+	switch x.(type) { // want "^missing cases in type switch: t, \\*t, \\*u$"
+	}
+
 	switch x.(type) {
 	case t:
 	case *t:
 	case *u:
-	}
-
-	switch x.(type) { // want "^missing cases in type switch: t, \\*t, \\*u$"
 	}
 
 	switch x.(type) { // want "^missing cases in type switch: \\*t, \\*u$"
@@ -91,16 +109,30 @@ func f3() {
 	switch y.(type) { // want "^missing cases in type switch: \\*t, \\*u$"
 	}
 
+	switch y.(type) {
+	case *t:
+	case *u:
+	}
+
 	switch z.(type) { // want "^missing cases in type switch: \\*t$"
+	}
+
+	switch z.(type) {
+	case *t:
 	}
 }
 
 type v struct{}
+
 func (*v) O() {}
+
 type av = v
 
 func f4() {
 	var x interface{ O() }
+
+	switch x.(type) { // want "^missing cases in type switch: \\*v or \\*av, dpkg.T, \\*dpkg.T or dpkg.A$"
+	}
 
 	switch x.(type) {
 	case *v:
@@ -112,9 +144,6 @@ func f4() {
 	case *av:
 	case dpkg.T:
 	case dpkg.A:
-	}
-
-	switch x.(type) { // want "^missing cases in type switch: \\*v or \\*av, dpkg.T, \\*dpkg.T or dpkg.A$"
 	}
 
 	switch x.(type) { // want "^missing cases in type switch: \\*v or \\*av, \\*dpkg.T or dpkg.A$"
@@ -159,8 +188,11 @@ func f5[P any]() {
 }
 
 type um interface{ unexportedMethod() }
+
 var _ um = (*k)(nil) // sanity check that the test case is valid
+
 type k struct{}
+
 func (*k) unexportedMethod()
 
 func f6() {
@@ -223,9 +255,13 @@ func f7() {
 func f8() {
 	// l is a block-local alias for a top-level type.
 	// the block-local alias is present in a case clause.
+
 	type l = *u
 
 	var x interface{ m() }
+
+	switch x.(type) { // want "^missing cases in type switch: t, \\*t, \\*u$"
+	}
 
 	switch x.(type) {
 	case t:
