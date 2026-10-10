@@ -2,14 +2,21 @@
 // reference purposes.
 package invalidcode
 
+import "test/invalidcode/sub"
+
 func f1() {
 	var e error
+	var x interface{}
+
 	switch e.(type) {
 	case int: // invalid: impossible type switch case: int
 	}
 
 	var n int
 	switch n.(type) { // invalid: n (variable of type int) is not an interface
+	}
+
+	switch (&x).(type) { // invalid: (&x) (value of type *interface{}) is not an interface
 	}
 }
 
