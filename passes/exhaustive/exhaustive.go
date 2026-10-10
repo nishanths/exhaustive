@@ -285,9 +285,3 @@ func matchAny(rs []*regexp.Regexp, s string) bool {
 	}
 	return false
 }
-
-func assert(x bool) {
-	if !x {
-		panic("assertion failed")
-	}
-}

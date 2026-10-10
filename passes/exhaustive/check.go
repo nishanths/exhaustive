@@ -388,14 +388,15 @@ func knownEnumeratedType(enums enumerated.Result, t types.Type) (*types.Named, [
 			// 	type B A
 			//
 			// The guarantee that (*types.Named).Underlying() will
-			// not be a *types.Named value is critical for
+			// not be a *types.Named value is essential for
 			// correctness of the current function. The goal
 			// of the function is to determine whether a
 			// type (say, B) represented by the argument t is
 			// an enumerated type. The function must not consider
 			// whether a different named type (i.e., A) is an enumerated type.
-			_, isNamed := concrete.Underlying().(*types.Named)
-			assert(!isNamed)
+			if _, ok := concrete.Underlying().(*types.Named); ok {
+				return nil, nil, false
+			}
 			t = concrete.Underlying()
 		default:
 			// The possible types, as of go1.27, are handled
