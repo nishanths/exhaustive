@@ -220,6 +220,25 @@ func f7() {
 	}
 }
 
+func f8() {
+	// l is a block-local alias for a top-level type.
+	// the block-local alias is present in a case clause.
+	type l = *u
+
+	var x interface{ m() }
+
+	switch x.(type) {
+	case t:
+	case *t:
+	case l:
+	}
+
+	switch x.(type) { // want "^missing cases in type switch: \\*t$"
+	case t:
+	case l:
+	}
+}
+
 func e1() {
 	// the empty interface
 
