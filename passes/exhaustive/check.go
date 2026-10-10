@@ -176,11 +176,10 @@ func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*as
 		//
 		// This branch is impossible as of go1.27. But
 		// be future-proof for correctness. In particular
-		// the IsMethodSet requirement (i.e. basic
-		// interface) is essential for correctness
-		// because the logic below only evaluates types
-		// that are valid method receiver types.
-		skip("expression in type assertion is not basic interface")
+		// the IsMethodSet requirement is essential for
+		// correctness because the logic below only
+		// evaluates types that are valid method receiver types.
+		skip("unsupported expression in type assertion")
 		return
 	}
 
@@ -262,7 +261,7 @@ func computeImplements(ch *typeSwitchState, r *finder.Result, swInterface *types
 
 	// Note: None of the non-interface predeclared types have
 	// methods as of go1.27 and thus they cannot implement a
-	// non-empty basic interface. If this does not hold true
+	// non-empty interface. If this does not hold true
 	// in future Go versions, then those predeclared types
 	// must be evaluated for the following "implements" checks.
 	// A similar note applies in func computeTypeRelations.
