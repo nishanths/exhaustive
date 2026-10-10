@@ -178,7 +178,7 @@ func run(pass *analysis.Pass) (any, error) {
 		c.Inspect(nodes, func(c inspector.Cursor) (descend bool) {
 			switch n := c.Node().(type) {
 			case *ast.SwitchStmt:
-				checkSwitch(pass, n, comments[n], opts)
+				checkExpressionSwitch(pass, n, comments[n], opts)
 			case *ast.CompositeLit:
 				checkMapLiteral(pass, n, compositeLitComments(pass, comments, c), opts)
 			case *ast.TypeSwitchStmt:

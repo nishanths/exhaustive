@@ -16,7 +16,7 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
-func checkSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, comments []*ast.CommentGroup, opts *options) {
+func checkExpressionSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, comments []*ast.CommentGroup, opts *options) {
 	directives, err := parseDirectives(comments)
 	if err != nil {
 		pass.Reportf(sw.Pos(), "error parsing comment directives: %s", err)
@@ -121,16 +121,11 @@ type typeSwitchState struct {
 	// See func computeTypeRelations for details.
 	// Only those relationships relevant for type switch
 	// analysis are recorded in this map.
-	//
-	// Note: the structure of the map keys is
-	// a {*types.TypeName, bool} pair, instead of
-	// simply *types.TypeName, because the former structure
-	// computed once eliminates later repeated computations
-	// at usage sites.
 	identical map[tp][]tp
 }
 
-// tp represents a type T or type *T, where T a type name.
+// tp represents a type T or type *T,
+// where T is a type name.
 type tp struct {
 	*types.TypeName
 	pointer bool
@@ -447,7 +442,7 @@ func needTypes(currentPkg *types.Package, ch *typeSwitchState, swInterface *type
 	return ret
 }
 
-// Format constant names for an expression switch diagnostic.
+// formats constant names for an expression switch diagnostic.
 func formatMissingNames(currentPkg *types.Package, missing map[string][]*types.Const) string {
 	// Note that the constants are grouped by value in the input.
 	// The logic below does the following: The constants in
@@ -457,7 +452,6 @@ func formatMissingNames(currentPkg *types.Package, missing map[string][]*types.C
 	groups := make([][]*types.Const, len(missing))
 	i := 0
 	for _, cs := range missing {
-		assert(len(cs) != 0)   // internal error: unexpectedly zero constants for value
 		cs := slices.Clone(cs) // do not modify input
 		slices.SortFunc(cs, func(a, b *types.Const) int { return cmp.Compare(a.Pos(), b.Pos()) })
 		groups[i] = cs
@@ -481,13 +475,8 @@ func formatMissingNames(currentPkg *types.Package, missing map[string][]*types.C
 	return buf.String()
 }
 
-// Format type names for a type switch diagnostic.
+// formats type names for a type switch diagnostic.
 func formatMissingTypes(currentPkg *types.Package, missing map[tp][]tp, missingNil bool) string {
-	type group struct {
-		t     tp
-		names []tp
-	}
-
 	cmpfn := func(a, b tp) int {
 		switch {
 		case !a.IsAlias() && b.IsAlias():
@@ -526,6 +515,10 @@ func formatMissingTypes(currentPkg *types.Package, missing map[tp][]tp, missingN
 		return nameString(currentPkg, t)
 	}
 
+	type group struct {
+		t     tp
+		names []tp
+	}
 	groups := make([]group, len(missing))
 	i := 0
 	for t, names := range missing {
