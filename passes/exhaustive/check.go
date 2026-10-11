@@ -16,16 +16,13 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
-func checkExpressionSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, comments []*ast.CommentGroup, opts *options) {
-	directives, err := parseDirectives(comments)
+func checkExprSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, comments []*ast.CommentGroup, opts *options) {
+	directives, proceed, err := proceedCommentDirectives(comments, opts)
 	if err != nil {
-		pass.Reportf(sw.Pos(), "error parsing comment directives: %s", err)
+		pass.Reportf(sw.Pos(), "%s", err)
 		return
 	}
-	if opts.checkEnforceOnly && !directives[dirEnforce] {
-		return
-	}
-	if directives[dirIgnore] {
+	if !proceed {
 		return
 	}
 
@@ -117,7 +114,10 @@ type typeSwitchState struct {
 
 	// The '[]tp' value is the set of types
 	// that are identical to the type in the key.
-	// The type name in the key is always from a defined type.
+	// One of the elements of the '[]tp' value will be
+	// the type in the key itself.
+	//
+	// The type name in the key is always that of a defined type.
 	// See func computeTypeRelations for details.
 	// Only those relationships relevant for type switch
 	// analysis are recorded in this map.
@@ -139,15 +139,12 @@ func (t tp) String() string {
 }
 
 func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*ast.CommentGroup, ch *typeSwitchState, opts *options) {
-	directives, err := parseDirectives(comments)
+	directives, proceed, err := proceedCommentDirectives(comments, opts)
 	if err != nil {
-		pass.Reportf(sw.Pos(), "error parsing comment directives: %s", err)
+		pass.Reportf(sw.Pos(), "%s", err)
 		return
 	}
-	if opts.checkEnforceOnly && !directives[dirEnforce] {
-		return
-	}
-	if directives[dirIgnore] {
+	if !proceed {
 		return
 	}
 
@@ -416,7 +413,7 @@ func knownEnumeratedType(enums enumerated.Result, t types.Type) (*types.Named, [
 // Note that it is possible for the same constant value to have
 // multiple names, i.e. multiple *types.Const.
 func needValues(currentPkg *types.Package, cs []*types.Const, opts *options) map[string][]*types.Const {
-	ret := make(map[string][]*types.Const)
+	ret := make(map[string][]*types.Const, len(cs)) // usually one name per value
 	for _, c := range cs {
 		if c.Pkg() != currentPkg && !c.Exported() {
 			continue
@@ -553,6 +550,20 @@ func formatMissingTypes(currentPkg *types.Package, missing map[tp][]tp, missingN
 	return buf.String()
 }
 
+func proceedCommentDirectives(comments []*ast.CommentGroup, opts *options) (map[directive]bool, bool, error) {
+	directives, err := parseDirectives(comments)
+	if err != nil {
+		return nil, false, fmt.Errorf("error parsing comment directives: %s", err)
+	}
+	if opts.checkEnforceOnly && !directives[dirEnforce] {
+		return directives, false, nil
+	}
+	if directives[dirIgnore] {
+		return directives, false, nil
+	}
+	return directives, true, nil
+}
+
 func proceedInclExclPatterns(obj types.Object, opts *options) bool {
 	if len(opts.includeTypePatterns) != 0 {
 		if isPkgLevel(obj) && matchAny(opts.includeTypePatterns, fullname(obj)) {
@@ -575,21 +586,18 @@ func proceedInclExclPatterns(obj types.Object, opts *options) bool {
 	return true // default is to include
 }
 
-func checkMapLiteral(pass *analysis.Pass, compLit *ast.CompositeLit, comments []*ast.CommentGroup, opts *options) {
+func checkMapLit(pass *analysis.Pass, compLit *ast.CompositeLit, comments []*ast.CommentGroup, opts *options) {
 	mapType, ok := unpointer(pass.TypesInfo.Types[compLit].Type.Underlying()).(*types.Map)
 	if !ok {
 		return
 	}
 
-	directives, err := parseDirectives(comments)
+	directives, proceed, err := proceedCommentDirectives(comments, opts)
 	if err != nil {
-		pass.Reportf(compLit.Pos(), "error parsing comment directives: %s", err)
+		pass.Reportf(compLit.Pos(), "%s", err)
 		return
 	}
-	if opts.checkEnforceOnly && !directives[dirEnforce] {
-		return
-	}
-	if directives[dirIgnore] {
+	if !proceed {
 		return
 	}
 
@@ -653,7 +661,7 @@ func compositeLitComments(pass *analysis.Pass, comments ast.CommentMap, c inspec
 		}
 	}
 loop:
-	for c := range c.Enclosing() {
+	for c := range c.Enclosing((*ast.AssignStmt)(nil), (*ast.ValueSpec)(nil), (*ast.GenDecl)(nil)) {
 		switch n := c.Node().(type) {
 		case *ast.AssignStmt:
 			add(comments[n]...)

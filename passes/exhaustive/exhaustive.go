@@ -25,8 +25,8 @@ var Analyzer = &analysis.Analyzer{
 	// may not all be actually necessary. The set of actually necessary
 	// analyzers depends on the value of the -check flag and may be a
 	// subset of the analyzers specified here.
-	// Analysis driver programs that want improved performance
-	// may want to edit this field during program initialization
+	// Analysis driver programs that want to be efficient
+	// should edit this field during program initialization
 	// before analyzers are run.
 	//
 	// TODO: consider adding API to facilitate the above.
@@ -174,14 +174,15 @@ func run(pass *analysis.Pass) (any, error) {
 		if !opts.checkGenerated && ast.IsGenerated(file) {
 			return false
 		}
+
 		comments := ast.NewCommentMap(pass.Fset, file, file.Comments)
 
 		c.Inspect(nodes, func(c inspector.Cursor) (descend bool) {
 			switch n := c.Node().(type) {
 			case *ast.SwitchStmt:
-				checkExpressionSwitch(pass, n, comments[n], opts)
+				checkExprSwitch(pass, n, comments[n], opts)
 			case *ast.CompositeLit:
-				checkMapLiteral(pass, n, compositeLitComments(pass, comments, c), opts)
+				checkMapLit(pass, n, compositeLitComments(pass, comments, c), opts)
 			case *ast.TypeSwitchStmt:
 				checkTypeSwitch(pass, n, comments[n], typeSwitchCh, opts)
 			default:
@@ -267,10 +268,8 @@ func isPkgLevel(obj types.Object) bool {
 	return obj.Pkg() != nil && obj.Pkg().Scope().Lookup(obj.Name()) == obj
 }
 
+// callers must ensure that obj is a package-level object.
 func fullname(obj types.Object) string {
-	if !isPkgLevel(obj) {
-		panic("not a package-level object")
-	}
 	var b strings.Builder
 	b.WriteString(obj.Pkg().Path())
 	b.WriteString(".")
