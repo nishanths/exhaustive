@@ -27,9 +27,7 @@ type T struct{}
 func (*T) m() {}
 type A = T
 
-func f4() {
-	var v I
-
+func f4(v I) {
 	switch v.(type) {
 	case *A: // or *T
 	}

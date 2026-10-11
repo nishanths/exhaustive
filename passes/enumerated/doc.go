@@ -12,15 +12,15 @@ cannot directly be an enumerated type.
 
 These examples show allowed and disallowed enumerated types:
 
-	type T1 int         // T1: allowed
-	type T2 int32       // T2: allowed
-	type T3 rune        // T3: allowed
-	type T4 string      // T4: allowed
-	type T5 T1          // T5: allowed
-	type T6 T5          // T6: allowed
+	type T0 int         // T0: allowed
+	type T1 int32       // T1: allowed
+	type T2 rune        // T2: allowed
+	type T3 string      // T3: allowed
+	type T4 T0          // T4: allowed
+	type T5 T4          // T5: allowed
 
-	type Q1 []int       // Q1: disallowed: underlying type []int is not a numeric or string type
-	type S1[E any] int  // S1: disallowed: parameterized
+	type Q0 []int       // Q0: disallowed: underlying type []int is not a numeric or string type
+	type S0[E any] int  // S0: disallowed: parameterized
 	int32               // int32: disallowed: predeclared type
 	rune                // rune: disallowed: predeclared type
 
@@ -35,13 +35,13 @@ disregarded by the analysis.
 The possible values of an enumerated type are the combined set of
 values of each enumerated constant of the type.
 
-In the following example, the type T1 is an enumerated type. The
+In the following example, the type T0 is an enumerated type. The
 constants X0, X1, and X2 are enumerated constants of the type.
 
-	type T1 int
+	type T0 int
 
 	const (
-		X0 T1 = iota
+		X0 T0 = iota
 		X1
 		X2
 	)
@@ -70,7 +70,7 @@ declared using bitwise operators (& | ^ &^ << >>) in their
 values.
 
 The -p flag directs the analysis to only consider types and
-constants that have top-level declarations.
+constants that are declared at top level.
 
 [block]: https://golang.org/ref/spec#Blocks
 [ConstDecl]: https://golang.org/ref/spec#Constant_declarations

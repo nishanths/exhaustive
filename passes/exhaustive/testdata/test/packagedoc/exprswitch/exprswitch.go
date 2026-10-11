@@ -3,17 +3,15 @@ package foo
 import "test/packagedoc/a"
 import "test/packagedoc/b"
 
-func f1() {
-	type T int
+type T int
 
-	const (
-		X0 T = iota
-		X1
-		X2
-	)
+const (
+	X0 T = iota
+	X1
+	X2
+)
 
-	var v T
-
+func f1(v T) {
 	switch v {
 	case X0:
 	case X1:
@@ -26,12 +24,10 @@ func f1() {
 	}
 }
 
-func f2() {
-	var v a.A
-
+func f2(v a.A) {
 	switch v {
-	case a.X0: // or b.X0
-	case a.X1: // or b.X1
+	case a.X0:
+	case a.X1:
 	}
 
 	switch v {

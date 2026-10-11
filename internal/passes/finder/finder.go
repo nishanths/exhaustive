@@ -18,9 +18,9 @@ var Analyzer = &analysis.Analyzer{
 }
 
 type Result struct {
-	// TypeDecls is the set of type name symbols seen in top-level type
-	// declarations. The following forms of type declarations are
-	// considered: type definition, alias declaration.
+	// TypeDecls is the set of type names of types
+	// declared at top level. The following forms of type declarations
+	// are considered: type definition, alias declaration.
 	// The Type() of the key is either a *types.Alias or *types.Named.
 	TypeDecls map[*types.TypeName]struct{}
 }

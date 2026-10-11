@@ -1,7 +1,7 @@
 The exhaustive static analysis checks that
-switch statements in Go source code are exhaustive. It can check
-expression switches, in which the switch expression type is
-an enumerated type, and type switches.
+switch statements in Go source code are exhaustive. The analysis
+can check expression switches, in which the switch expression
+type is an enumerated type, and type switches.
 
 The complete analysis is implemented in multiple passes; see the
 packages under the 'passes' directory.
@@ -13,9 +13,9 @@ exhaustive.
 
 # Documentation
 
-The analysis is documented in Go package comments.
-To read the documentation, see the Go files named doc.go under
-the 'passes' directory, or run 'go doc \<path\>'. For example:
+The analysis is documented in Go package comments. See the Go
+files named doc.go under the 'passes' directory. The documentation
+can be read using the 'go doc' command. For example:
 
 	go doc github.com/nishanths/exhaustive/passes/exhaustive
 
@@ -27,7 +27,9 @@ The documentation is also available on pkg.go.dev.
 
 # Usage
 
-The exhaustive command can be installed with 'go install'.
+The exhaustive command runs the static analysis on the specified
+packages of Go source code. The command can be installed using
+'go install'.
 
 	go install github.com/nishanths/exhaustive/cmd/exhaustive@latest
 
@@ -69,6 +71,7 @@ func f1(v vcs) {
 	case bazaar:
 	case fossil:
 	case git:
+	case mercurial:
 	case subversion:
 	}
 }
@@ -77,7 +80,8 @@ func f1(v vcs) {
 the analysis produces the following diagnostic
 
 	$ exhaustive
-	a.go:15:2: missing cases in expression switch: mercurial, darcs
+	a.go:15:2: missing cases in expression switch: darcs
+	$
 
 Though it is not so in the example above, in general the
 enumerated type declarations and the switch statement can be in
@@ -115,3 +119,4 @@ the diagnostic (as of go1.27) is
 
 	$ exhaustive -check=typeswitch
 	b.go:6:2: missing cases in type switch: *types.Basic, *types.TypeParam
+	$
