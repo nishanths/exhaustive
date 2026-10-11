@@ -1,7 +1,8 @@
 .DS_Store
 /cover*.out
 /coverprofiles
-/tools
+*.prof
+/_tools
 
 # binary
 /exhaustive
