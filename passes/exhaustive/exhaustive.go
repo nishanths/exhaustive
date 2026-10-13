@@ -175,21 +175,25 @@ func run(pass *analysis.Pass) (any, error) {
 			return false
 		}
 
-		comments := ast.NewCommentMap(pass.Fset, file, file.Comments)
+		var cmap ast.CommentMap
 
 		c.Inspect(nodes, func(c inspector.Cursor) (descend bool) {
+			if cmap == nil {
+				cmap = ast.NewCommentMap(pass.Fset, file, file.Comments)
+			}
 			switch n := c.Node().(type) {
 			case *ast.SwitchStmt:
-				checkExprSwitch(pass, n, comments[n], opts)
+				checkExprSwitch(pass, n, cmap[n], opts)
 			case *ast.CompositeLit:
-				checkMapLit(pass, n, compositeLitComments(pass, comments, c), opts)
+				checkMapLit(pass, n, compositeLitComments(pass, cmap, c), opts)
 			case *ast.TypeSwitchStmt:
-				checkTypeSwitch(pass, n, comments[n], typeSwitchCh, opts)
+				checkTypeSwitch(pass, n, cmap[n], typeSwitchCh, opts)
 			default:
 				panic(fmt.Sprintf("internal error: unexpected node of type %T", n))
 			}
 			return true
 		})
+
 		return true
 	})
 
