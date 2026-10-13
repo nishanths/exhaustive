@@ -1,5 +1,5 @@
-// Package invalid contains examples of invalid Go code for
-// reference purposes.
+// Package invalid contains examples of valid and invalid Go code
+// for reference purposes.
 package invalidcode
 
 import "test/invalidcode/sub"
