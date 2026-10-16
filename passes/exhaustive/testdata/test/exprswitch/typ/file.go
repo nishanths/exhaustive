@@ -1,6 +1,6 @@
 package typ
 
-import "test/check/swtch/typnew"
+import "test/exprswitch/typnew"
 
 // alias for type in different package
 type A1 = typnew.S1

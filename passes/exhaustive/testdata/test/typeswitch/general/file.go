@@ -1,8 +1,8 @@
 package general
 
 import "errors"
-import "test/check/typeswitch/general/sub"
-import "test/check/typeswitch/dpkg"
+import "test/typeswitch/general/sub"
+import "test/typeswitch/dpkg"
 
 type t struct{}
 

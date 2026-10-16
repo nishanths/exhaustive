@@ -1,7 +1,7 @@
 package general
 
-import "test/check/swtch/typ"
-import "test/check/swtch/typnew"
+import "test/exprswitch/typ"
+import "test/exprswitch/typnew"
 
 type T1 int
 
