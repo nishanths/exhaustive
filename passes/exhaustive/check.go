@@ -171,9 +171,9 @@ func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*as
 		// type assertions, x must be of interface type,
 		// but not a type parameter".
 		//
-		// This branch is impossible as of go1.27. But
-		// be future-proof for correctness. In particular
-		// the IsMethodSet requirement is essential for
+		// This branch is impossible as of go1.27,
+		// but be future-proof for correctness.
+		// The IsMethodSet requirement is essential for
 		// correctness because the logic below only
 		// evaluates types that are valid method receiver types.
 		skip("unsupported expression in type assertion")
@@ -219,12 +219,33 @@ func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*as
 			if t == nil {
 				continue
 			}
+
 			if t == types.Typ[types.UntypedNil] {
 				reportMissingNil = false
 			}
-			// Note: It is not necessary to consider *types.TypeParam here.
-			// Type parameters have underlying type interface, and as such
-			// cannot contribute to removing entries from the need map.
+
+			// Go spec: "If T is an interface type, x.(T) asserts that
+			// the dynamic type of x implements the interface T."
+			//
+			// Note: It is possible in the language for a type to
+			// implement an interface T. It is impossible for a type
+			// to implement *T where T is an interface. Thus it is
+			// sufficient to only consider interface types (but not,
+			// for example, pointers to interface types).
+			//
+			// The following code as written correctly handles
+			// traditional interface types and type parameters.
+			// It is not necessary to handle e.g. []P, where P is a
+			// type parameter, because these are not of underlying
+			// type interface and it is impossible for a type to
+			// implement them.
+			if caseInterface, ok := t.Underlying().(*types.Interface); ok {
+				computeImplements(ch, r, caseInterface)
+				for t := range ch.impl[caseInterface] {
+					delete(need, t)
+				}
+			}
+
 			switch t := types.Unalias(t).(type) {
 			case *types.Named:
 				n := t

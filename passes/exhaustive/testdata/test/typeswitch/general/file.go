@@ -173,15 +173,11 @@ func f4() {
 	}
 }
 
-func f5[P any]() {
+func f5[P interface{ p() }]() {
 	// various extra case clauses that do not contribute towards
 	// making the type switch exhaustive.
 
 	type e interface{ e() }
-	type j interface {
-		m()
-		n()
-	}
 	type i interface {
 		m()
 	}
@@ -191,10 +187,8 @@ func f5[P any]() {
 	switch x.(type) { // want "^missing cases in type switch: t, \\*u$"
 	case P:
 	case error:
-	case any:
 	case *t:
 	case e:
-	case j:
 	case interface{ e() }:
 	case nil:
 	}

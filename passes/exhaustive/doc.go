@@ -67,7 +67,7 @@ clauses, where T is a non-interface type declared at top level
 in the current package or its (recursively) imported dependencies.
 If the type switch statement and the type declaration are in
 different packages, then it is only necessary to include the type
-in the case clauses if its name is exported.
+in the case clauses if the type name is exported.
 
 The following type switch is not exhaustive.
 
@@ -97,11 +97,15 @@ The diagnostic (as of go1.27) is
 
 	missing cases in type switch: *types.Basic, *types.TypeParam
 
+If an interface type or a type parameter whose type constraint is
+an interface type is specified as a type in a case clause, it is
+equivalent to specifying each type T or *T that implements that
+interface.
+
 Normally, it is not necessary to include a 'nil' case (i.e. "case
 nil: ...") for a type switch to be exhaustive, but this behavior
 can be adjusted via the flags. The same note about the default
 case, as described in the section on expression switches, also
-applies to type switches.
 
 # Flags
 

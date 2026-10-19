@@ -1,6 +1,6 @@
 package alias
 
-import "test/typeswitch/alias/sub"
+import "test/typeswitch/general/alias/sub"
 
 type t struct{}
 
