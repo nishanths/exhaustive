@@ -104,8 +104,9 @@ interface.
 
 Normally, it is not necessary to include a 'nil' case (i.e. "case
 nil: ...") for a type switch to be exhaustive, but this behavior
-can be adjusted via the flags. The same note about the default
+can be adjusted via the flags. The behavior regarding the default
 case, as described in the section on expression switches, also
+applies to type switches.
 
 # Flags
 
@@ -118,9 +119,7 @@ The flags are described below.
 The -check flag specifies the kinds of elements in the syntax
 tree that the analysis should check are exhaustive. The argument
 is a comma-separated list of one or more of the following names.
-The default argument is "switch". For instance, to check both
-expression switches and type switches, specify:
--check "switch,typeswitch".
+The default argument is "switch".
 
 	name          description
 
@@ -216,12 +215,13 @@ expected.
 
 # Examples
 
-For more basic examples see the code snippets in the earlier sections.
+For more basic examples see the code snippets in the earlier
+sections.
 
-The following example illustrates the effect of flag -d. Normally,
-the expression switch below would not be exhaustive despite the
-inclusion of a default case (missing case for X2). But with flag -d
-specified, the expression switch is considered exhaustive.
+The following example illustrates the effect of flag -d.
+Normally, the expression switch below is not exhaustive (missing
+case for X2) despite the inclusion of a default case. If flag -d
+is specified, the expression switch is considered exhaustive.
 
 	type T int
 
@@ -239,12 +239,13 @@ specified, the expression switch is considered exhaustive.
 		}
 	}
 
-The following examples illustrate handling of aliases. In the
-expression switch below, the enumerated type is effectively b.B,
-which is the type denoted by the alias type a.A of the switch
-expression. The switch is exhaustive because each value of the
-enumerated type b.B (i.e., 0 and 1, corresponding to b.X0 and
-b.X1, respectively) is included in the case clauses.
+The following examples illustrate handling of aliases.
+
+In the expression switch below, the enumerated type is
+effectively b.B, which is the type denoted by the alias type a.A
+of the switch expression. The switch is exhaustive because each
+value of the enumerated type b.B (i.e., 0 and 1, corresponding to
+b.X0 and b.X1, respectively) is included in the case clauses.
 
 	package a
 	import "b"
@@ -269,16 +270,16 @@ b.X1, respectively) is included in the case clauses.
 In a type switch, an alias type may be specified in the case
 clauses. The type switch below is exhaustive.
 
-	type I interface{ m() }
+	type i interface{ m() }
 
-	type T struct{}
-	func (*T) m() {}
+	type t struct{}
+	func (*t) m() {}
 
-	type A = T
+	type a = t
 
-	func f(v I) {
+	func f(v i) {
 		switch v.(type) {
-		case *A: // *A is identical to *T
+		case *a: // *a is identical to *t
 		}
 	}
 

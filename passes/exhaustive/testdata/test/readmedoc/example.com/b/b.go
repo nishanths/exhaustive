@@ -2,7 +2,7 @@ package b
 
 import "go/types"
 
-func f2(t types.Type) bool {
+func f(t types.Type) bool {
 	switch t.(type) { // want "^missing cases in type switch: \\*types.Basic, \\*types.TypeParam$"
 	case *types.Array,
 		*types.Chan,

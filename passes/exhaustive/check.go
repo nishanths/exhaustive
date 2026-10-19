@@ -233,7 +233,7 @@ func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*as
 			// sufficient to only consider interface types (but not,
 			// for example, pointers to interface types).
 			//
-			// The following code as written correctly handles
+			// The following code correctly handles
 			// traditional interface types and type parameters.
 			// It is not necessary to handle e.g. []P, where P is a
 			// type parameter, because these are not of underlying

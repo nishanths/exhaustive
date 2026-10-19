@@ -89,7 +89,6 @@ func f1() {
 	}
 }
 
-// originally copied from func f5 in testdata package typeswitch/general.
 func f2[P n, Q o, R mn, S any]() {
 	var x mn
 

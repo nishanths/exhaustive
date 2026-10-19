@@ -66,7 +66,7 @@ const (
 	darcs
 )
 
-func f1(v vcs) {
+func f(v vcs) {
 	switch v {
 	case bazaar:
 	case fossil:
@@ -94,7 +94,7 @@ package b
 
 import "go/types"
 
-func f2(t types.Type) bool {
+func f(t types.Type) bool {
 	switch t.(type) {
 	case *types.Array,
 		*types.Chan,

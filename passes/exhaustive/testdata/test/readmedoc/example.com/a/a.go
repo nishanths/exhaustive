@@ -11,7 +11,7 @@ const (
 	darcs
 )
 
-func f1(v vcs) {
+func f(v vcs) {
 	switch v { // want "^missing cases in expression switch: darcs$"
 	case bazaar:
 	case fossil:
