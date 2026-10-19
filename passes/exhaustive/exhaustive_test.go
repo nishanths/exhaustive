@@ -26,7 +26,8 @@ func TestAnalyzer(t *testing.T) {
 		// include test cases for both expression switch
 		// statements and map literals.
 		//
-		run(t, func() { fCheck = "switch,mapliteral" }, "test/exprswitch/general", "test/exprswitch/directive")
+		run(t, func() { fCheck = "switch,mapliteral" }, "test/exprswitch/general")
+		run(t, func() { fCheck = "switch,mapliteral" }, "test/exprswitch/directive")
 		run(t, func() { fCheck = "switch,mapliteral"; fCheckEnforceOnly = true }, "test/exprswitch/directive/enforce")
 		run(t, func() { fCheck = "switch"; fDefaultEx = true }, "test/exprswitch/def")
 		run(t, func() { fCheck = "switch"; fRequireDefaultCase = true }, "test/exprswitch/defrequire")

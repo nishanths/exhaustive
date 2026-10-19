@@ -184,21 +184,20 @@ The analysis supports the following comment directives.
 	//exhaustive:enforce
 
 A comment directive has effect if placed in the source code on an
-element that is configured to be checked (see flag -check). The
-analysis does not check an element if it has an 'ignore'
-directive. The 'enforce' directive forces the check of an element
+element that has been configured to be checked (see flag -check).
+An element with an 'ignore' comment directive will not be
+checked. An 'enforce' directive forces the check of an element
 that may otherwise not be checked due to configuration elsewhere.
 
-For switch statements the comment must be associated with the
-switch statement node as defined by func NewCommentMap in package
-go/ast. The comment has effect only for the switch statement that
-it is associated with, and not for any descendant switch
-statements. For map literals the analysis considers the line
-comments, doc comments, and associated comments of the nearest
-ancestor *ast.AssignStmt node or *ast.ValueSpec and *ast.GenDecl
-nodes. See the source code for exact details.
+The comment directive must be present in a comment group before
+the target switch statement. There must be no nodes or empty
+lines between the comment group and the switch statement. For a
+map literal, the comment directive must be present in the
+comments of the nearest ancestor *ast.AssignStmt node,
+*ast.ValueSpec node, or *ast.GenDecl node. See the source code
+for exact details.
 
-In general, the following comment placements should work as
+The following comment directive placements should work as
 expected.
 
 	//exhaustive:ignore

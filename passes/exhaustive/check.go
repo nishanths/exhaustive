@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"go/ast"
 	"go/types"
-	"maps"
 	"slices"
 	"strings"
 
@@ -13,7 +12,6 @@ import (
 	"github.com/nishanths/exhaustive/passes/enumerated"
 
 	"golang.org/x/tools/go/analysis"
-	"golang.org/x/tools/go/ast/inspector"
 )
 
 func checkExprSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, comments []*ast.CommentGroup, opts *options) {
@@ -669,37 +667,6 @@ func unpointer(t types.Type) types.Type {
 			return t
 		}
 	}
-}
-
-func compositeLitComments(pass *analysis.Pass, comments ast.CommentMap, c inspector.Cursor) []*ast.CommentGroup {
-	ret := make(map[*ast.CommentGroup]struct{})
-	add := func(gs ...*ast.CommentGroup) {
-		for _, g := range gs {
-			if _, ok := ret[g]; ok {
-				continue
-			}
-			ret[g] = struct{}{}
-		}
-	}
-loop:
-	for c := range c.Enclosing((*ast.AssignStmt)(nil), (*ast.ValueSpec)(nil), (*ast.GenDecl)(nil)) {
-		switch n := c.Node().(type) {
-		case *ast.AssignStmt:
-			add(comments[n]...)
-			break loop
-		case *ast.ValueSpec:
-			add(n.Doc)
-			add(n.Comment)
-			add(comments[n]...)
-			// note: do not break the loop here; also need to
-			// see the parent *ast.GenDecl.
-		case *ast.GenDecl:
-			add(n.Doc)
-			add(comments[n]...)
-			break loop
-		}
-	}
-	return slices.Collect(maps.Keys(ret)) // current callers do not care about the order
 }
 
 func nameString(currentPkg *types.Package, obj types.Object) string {
