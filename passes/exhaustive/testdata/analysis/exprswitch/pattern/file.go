@@ -1,0 +1,103 @@
+package pattern
+
+import "test/analysis/exprswitch/typ"
+import "test/analysis/exprswitch/typnew"
+
+type t1 int
+
+const (
+	w0 t1 = iota
+	w1
+)
+
+type P1 int
+
+const (
+	x0 P1 = iota
+	x1
+	x2
+	x3
+)
+
+type p4 int
+
+const (
+	u0 p4 = iota
+	u1
+)
+
+type a1 = p4
+type a2 = p4
+
+func f1() {
+	type P2 int
+	const (
+		Y0 P2 = iota
+		Y1
+	)
+
+	type P3 int
+	const (
+		Z0 P3 = iota
+		Z1
+	)
+
+	switch t1(0) {
+	case w1:
+	}
+
+	switch P1(0) { // want "^missing cases in expression switch: x0, x3$"
+	case x1:
+	}
+
+	switch P2(0) { // want "^missing cases in expression switch: Y0$"
+	case Y1:
+	}
+
+	switch P3(0) { // want "^missing cases in expression switch: Z0$"
+	case Z1:
+	}
+
+	switch typ.M1(0) {
+	case typ.V1:
+	}
+
+	switch typnew.S1(0) { // want "^missing cases in expression switch: typnew.Z0, typnew.Z2$"
+	case typnew.Z1:
+	case typnew.Z4:
+	}
+
+	switch p4(0) { // want "^missing cases in expression switch: u0$"
+	case u1:
+	}
+
+	switch a1(0) { // want "^missing cases in expression switch: u0$"
+	case u1:
+	}
+
+	switch a2(0) {
+	case u1:
+	}
+}
+
+func g1() {
+	_ = map[t1]bool{
+		w1: true,
+	}
+
+	_ = map[P1]bool{ // want "^missing keys in map literal: x0, x3$"
+		x1: true,
+	}
+
+	_ = map[p4]bool{ // want "^missing keys in map literal: u0$"
+		u1: true,
+	}
+
+	_ = map[a1]bool{ // want "^missing keys in map literal: u0$"
+		u1: true,
+	}
+
+	_ = map[a2]bool{
+		u1: true,
+	}
+}

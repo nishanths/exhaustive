@@ -23,28 +23,28 @@ func TestAnalyzer(t *testing.T) {
 		t.Helper()
 		resetFlags()
 		setup()
-		return analysistest.Run(t, filepath.Join(testdata, "test"), Analyzer, patterns...)
+		return analysistest.Run(t, filepath.Join(testdata, "analysis"), Analyzer, patterns...)
 	}
 
-	run(t, func() {}, "test/enum/typ")
-	run(t, func() {}, "test/enum/scope", "test/enum/scope/sub")
-	run(t, func() { fIota = true }, "test/enum/iotavalue")
-	run(t, func() { fNoBitwise = true }, "test/enum/nobitwise")
-	run(t, func() { fIota = true; fNoBitwise = true }, "test/enum/iotavalue_nobitwise")
-	run(t, func() { fPkgLevel = true }, "test/enum/pkglevel")
-	run(t, func() {}, "test/depchain/...")
-	run(t, func() {}, "test/packagedoc/...")
+	run(t, func() {}, "test/analysis/enum/typ")
+	run(t, func() {}, "test/analysis/enum/scope", "test/analysis/enum/scope/sub")
+	run(t, func() { fIota = true }, "test/analysis/enum/iotavalue")
+	run(t, func() { fNoBitwise = true }, "test/analysis/enum/nobitwise")
+	run(t, func() { fIota = true; fNoBitwise = true }, "test/analysis/enum/iotavalue_nobitwise")
+	run(t, func() { fPkgLevel = true }, "test/analysis/enum/pkglevel")
+	run(t, func() {}, "test/analysis/depchain/...")
+	run(t, func() {}, "test/analysis/packagedoc/...")
 }
 
 func TestResult(t *testing.T) {
 	wantresult := map[string][]string{
-		"test/depchain/d.D1": {"const test/depchain/d.DX0 test/depchain/d.D1", "const test/depchain/d.DX1 test/depchain/d.D1"},
-		"test/depchain/d.D2": {"const test/depchain/d.DZ0 test/depchain/d.D2", "const test/depchain/d.DZ1 test/depchain/d.D2", "const test/depchain/d.DZ2 test/depchain/d.D2"},
-		"test/depchain/c.C2": {"const test/depchain/c.CY0 test/depchain/c.C2", "const test/depchain/c.CY1 test/depchain/c.C2"},
-		"test/depchain/b.B1": {"const test/depchain/b.BY0 test/depchain/b.B1", "const test/depchain/b.BY1 test/depchain/b.B1"},
-		"test/depchain/a.A1": {"const test/depchain/a.AX0 test/depchain/a.A1", "const test/depchain/a.AX1 test/depchain/a.A1", "const test/depchain/a.AX2 test/depchain/a.A1"},
+		"test/analysis/depchain/d.D1": {"const test/analysis/depchain/d.DX0 test/analysis/depchain/d.D1", "const test/analysis/depchain/d.DX1 test/analysis/depchain/d.D1"},
+		"test/analysis/depchain/d.D2": {"const test/analysis/depchain/d.DZ0 test/analysis/depchain/d.D2", "const test/analysis/depchain/d.DZ1 test/analysis/depchain/d.D2", "const test/analysis/depchain/d.DZ2 test/analysis/depchain/d.D2"},
+		"test/analysis/depchain/c.C2": {"const test/analysis/depchain/c.CY0 test/analysis/depchain/c.C2", "const test/analysis/depchain/c.CY1 test/analysis/depchain/c.C2"},
+		"test/analysis/depchain/b.B1": {"const test/analysis/depchain/b.BY0 test/analysis/depchain/b.B1", "const test/analysis/depchain/b.BY1 test/analysis/depchain/b.B1"},
+		"test/analysis/depchain/a.A1": {"const test/analysis/depchain/a.AX0 test/analysis/depchain/a.A1", "const test/analysis/depchain/a.AX1 test/analysis/depchain/a.A1", "const test/analysis/depchain/a.AX2 test/analysis/depchain/a.A1"},
 	}
-	r := analysistest.Run(t, filepath.Join(analysistest.TestData(), "test"), Analyzer, "test/depchain/a")
+	r := analysistest.Run(t, filepath.Join(analysistest.TestData(), "analysis"), Analyzer, "test/analysis/depchain/a")
 	if len(r) != 1 {
 		t.Errorf("len(r): got: %d, want: 1", len(r))
 	} else if got := transform(r[0].Action.Result.(Result)); !reflect.DeepEqual(got, wantresult) {
