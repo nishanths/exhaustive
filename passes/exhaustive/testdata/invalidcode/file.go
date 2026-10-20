@@ -1,8 +1,8 @@
-// Package invalid contains examples of valid and invalid Go code
-// for reference purposes.
+// Package invalidcode contains examples of valid and invalid Go
+// code for reference purposes.
 package invalidcode
 
-import "test/invalidcode/sub"
+import "example/invalidcode/sub"
 
 func f1() {
 	var e error

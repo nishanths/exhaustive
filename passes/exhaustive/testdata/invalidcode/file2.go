@@ -1,6 +1,6 @@
 package invalidcode
 
-import "test/invalidcode/sub"
+import "example/invalidcode/sub"
 
 type a = sub.S
 type b = *sub.S
