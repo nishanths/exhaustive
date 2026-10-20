@@ -39,8 +39,10 @@ func f1() {
 	}
 
 	switch x.(type) {
-	case interface{ m() }:
-	case *t: // want "^unreachable type switch case \\*t \\(matched by earlier case interface\\{ m\\(\\) \\}\\)$"
+	case interface {
+		m()
+	}:
+	case *t: // want "^unreachable type switch case \\*t \\(matched by earlier case interface\\{m\\(\\)\\}\\)$"
 	}
 
 	switch x.(type) {
