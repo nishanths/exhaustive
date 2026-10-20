@@ -4,6 +4,8 @@ import (
 	"cmp"
 	"fmt"
 	"go/ast"
+	"go/printer"
+	"go/token"
 	"go/types"
 	"slices"
 	"strings"
@@ -67,6 +69,7 @@ func checkExprSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, comments []*ast.Co
 				clear(need)
 				break
 			}
+			continue
 		}
 		for _, expr := range cc.List {
 			tv, ok := pass.TypesInfo.Types[expr]
@@ -203,7 +206,13 @@ func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*as
 
 	reportMissingNil := opts.requireCaseNil
 
+	// These maps are used for checking unreachable cases.
+	earlier := make(map[*types.Interface]ast.Expr) // interfaces in earlier case clauses (first appearance only)
+	clause := make(map[*types.Interface]ast.Expr)  // interfaces in current case clause (first appearance only)
+
 	for _, cc := range sw.Body.List {
+		clear(clause)
+
 		cc := cc.(*ast.CaseClause)
 		if cc.List == nil {
 			if opts.defaultCaseExhaustive {
@@ -211,14 +220,16 @@ func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*as
 				clear(need)
 				break
 			}
+			continue
 		}
-		for _, expr := range cc.List {
-			t := pass.TypesInfo.TypeOf(expr)
-			if t == nil {
+
+		for _, caseExpr := range cc.List {
+			caseType := pass.TypesInfo.TypeOf(caseExpr)
+			if caseType == nil {
 				continue
 			}
 
-			if t == types.Typ[types.UntypedNil] {
+			if caseType == types.Typ[types.UntypedNil] {
 				reportMissingNil = false
 			}
 
@@ -237,14 +248,17 @@ func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*as
 			// type parameter, because these are not of underlying
 			// type interface and it is impossible for a type to
 			// implement them.
-			if caseInterface, ok := t.Underlying().(*types.Interface); ok {
-				computeImplements(ch, r, caseInterface)
-				for t := range ch.impl[caseInterface] {
+			if i, ok := caseType.Underlying().(*types.Interface); ok {
+				computeImplements(ch, r, i)
+				for t := range ch.impl[i] {
 					delete(need, t)
+				}
+				if _, ok := clause[i]; !ok {
+					clause[i] = caseExpr
 				}
 			}
 
-			switch t := types.Unalias(t).(type) {
+			switch t := types.Unalias(caseType).(type) {
 			case *types.Named:
 				n := t
 				delete(need, tp{n.Obj(), false})
@@ -252,6 +266,20 @@ func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*as
 				if n, ok := types.Unalias(t.Elem()).(*types.Named); ok {
 					delete(need, tp{n.Obj(), true})
 				}
+			}
+
+			if opts.checkImpossible {
+				for k, v := range earlier {
+					if types.Implements(caseType, k) {
+						pass.Reportf(caseExpr.Pos(), "unreachable type switch case %s (matched by earlier case %s)", formatExpr(pass, caseExpr), formatExpr(pass, v))
+					}
+				}
+			}
+		}
+
+		for k, v := range clause {
+			if _, ok := earlier[k]; !ok {
+				earlier[k] = v
 			}
 		}
 	}
@@ -261,18 +289,18 @@ func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*as
 	}
 }
 
-func computeImplements(ch *typeSwitchState, r *finder.Result, swInterface *types.Interface) {
-	if _, ok := ch.impl[swInterface]; ok {
+func computeImplements(ch *typeSwitchState, r *finder.Result, intf *types.Interface) {
+	if _, ok := ch.impl[intf]; ok {
 		return
 	}
 
 	if ch.impl == nil {
 		ch.impl = make(map[*types.Interface]map[tp]struct{})
 	}
-	ch.impl[swInterface] = make(map[tp]struct{})
+	ch.impl[intf] = make(map[tp]struct{})
 
 	add := func(d tp) {
-		ch.impl[swInterface][d] = struct{}{}
+		ch.impl[intf][d] = struct{}{}
 	}
 
 	// Note: None of the non-interface predeclared types have
@@ -310,15 +338,15 @@ func computeImplements(ch *typeSwitchState, r *finder.Result, swInterface *types
 			// of the analysis, which should not consider interfaces
 			// as a possible implementing type in this context.
 			if !underlyingIs[*types.Interface](n) {
-				if types.Implements(types.NewPointer(n), swInterface) {
+				if types.Implements(types.NewPointer(n), intf) {
 					add(tp{n.Obj(), true})
 				}
-				if types.Implements(n, swInterface) {
+				if types.Implements(n, intf) {
 					add(tp{n.Obj(), false})
 				}
 			}
 		case *types.Pointer: // pointer to a defined type
-			if n, ok := types.Unalias(t.Elem()).(*types.Named); ok && !underlyingIs[*types.Interface](n) && types.Implements(types.NewPointer(n), swInterface) {
+			if n, ok := types.Unalias(t.Elem()).(*types.Named); ok && !underlyingIs[*types.Interface](n) && types.Implements(types.NewPointer(n), intf) {
 				add(tp{n.Obj(), true})
 			}
 		}
@@ -675,4 +703,19 @@ func nameString(currentPkg *types.Package, obj types.Object) string {
 	} else {
 		return obj.Name()
 	}
+}
+
+func formatNode(fset *token.FileSet, n ast.Node) string {
+	var buf strings.Builder
+	if err := printer.Fprint(&buf, fset, n); err != nil {
+		// This should not happen for a valid program?
+		// Package x/tools/go/internal/astutil func Format
+		// ignores the error in a similar situation.
+		return "<?>"
+	}
+	return buf.String()
+}
+
+func formatExpr(pass *analysis.Pass, e ast.Expr) string {
+	return formatNode(pass.Fset, e)
 }

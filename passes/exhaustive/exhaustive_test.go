@@ -79,7 +79,7 @@ func TestAnalyzer(t *testing.T) {
 
 	t.Run("doc", func(t *testing.T) {
 		if !testing.Short() {
-			run(t, func() { fCheck = "switch,typeswitch" }, "test/analysis/packagedoc/...")
+			run(t, func() { fCheck = "switch,typeswitch"; fCheckImpossible = true }, "test/analysis/packagedoc/...")
 			run(t, func() { fCheck = "switch,typeswitch" }, "test/analysis/readmedoc/...")
 		}
 	})
@@ -100,6 +100,7 @@ func TestAnalyzer(t *testing.T) {
 				regexp.MustCompile("^test/analysis/typeswitch/pattern\\.a2$"),
 			}}
 		}, "test/analysis/typeswitch/pattern")
+		run(t, func() { fCheck = "typeswitch"; fCheckImpossible = true }, "test/analysis/typeswitch/impossible")
 
 		if !testing.Short() {
 			run(t, func() { fCheck = "typeswitch" }, "test/analysis/typeswitch/gostd")

@@ -112,7 +112,7 @@ applies to type switches.
 
 The exhaustive analyzer supports the following flags.
 
-	[-casenil] [-d] [-defrequire] [-e] [-g] [-check string] [-constignore regexp] [-typeignore regexp] [-typeonly regexp]
+	[-casenil] [-d] [-defrequire] [-e] [-g] [-impossible] [-check string] [-constignore regexp] [-typeignore regexp] [-typeonly regexp]
 
 The flags are described below.
 
@@ -140,6 +140,9 @@ that have an '//exhaustive:enforce' comment directive. The -g
 flag enables checking of switch statements in generated files.
 The -defrequire flag requires that each checked expression switch
 includes a default case even if it is exhaustive.
+
+The -impossible flag checks for impossible or unreachable cases
+in type switches. See the "Examples" section.
 
 The -constignore, -typeignore, and -typeonly flags accept a
 regular expression pattern in Go package regexp syntax. These
@@ -214,13 +217,42 @@ expected.
 
 # Examples
 
-For more basic examples see the code snippets in the earlier
-sections.
+See the code snippets in the earlier sections for basic examples.
+
+The following example shows the functionality of the -impossible
+flag.
+
+	// flags: -check=typeswitch -impossible
+
+	type node interface{ node() }
+	type stmt interface{ node; stmt() }
+
+	type loop struct{}
+	func (*loop) node() {}
+	func (*loop) stmt() {}
+
+	type literal struct{}
+	func (*literal) node() {}
+
+	func f(v node) {
+		switch v.(type) {
+		case stmt:
+		case *loop:
+		case *literal:
+		}
+	}
+
+The diagnostic is:
+
+	unreachable type switch case *loop (matched by earlier case stmt)
 
 The following example illustrates the effect of flag -d.
 Normally, the expression switch below is not exhaustive (missing
-case for X2) despite the inclusion of a default case. If flag -d
-is specified, the expression switch is considered exhaustive.
+case for X2) despite a default case being present. If flag -d is
+specified, the expression switch is considered exhaustive due
+to the default case being present.
+
+	// flags: -check=switch -d
 
 	type T int
 
@@ -239,12 +271,13 @@ is specified, the expression switch is considered exhaustive.
 	}
 
 The following examples illustrate handling of aliases.
-
 In the expression switch below, the enumerated type is
 effectively b.B, which is the type denoted by the alias type a.A
 of the switch expression. The switch is exhaustive because each
 value of the enumerated type b.B (i.e., 0 and 1, corresponding to
 b.X0 and b.X1, respectively) is included in the case clauses.
+
+	// flags: -check=switch
 
 	package a
 	import "b"
@@ -269,11 +302,11 @@ b.X0 and b.X1, respectively) is included in the case clauses.
 In a type switch, an alias type may be specified in the case
 clauses. The type switch below is exhaustive.
 
-	type i interface{ m() }
+	// flags: -check=typeswitch
 
+	type i interface{ m() }
 	type t struct{}
 	func (*t) m() {}
-
 	type a = t
 
 	func f(v i) {

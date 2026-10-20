@@ -2,7 +2,8 @@ exhaustive -h
 stdout ^$
 stderr -count=3 ^.
 stderr -count=1 '^usage: exhaustive \[-B\] \[-casenil\] \[-d\] .+'
-stderr -count=1 '\[-typeonly regexp\] \[packages\]$'
+stderr -count=1 '^[[:space:]]+\[-impossible\] .+'
+stderr -count=1 '.+ \[-typeonly regexp\] \[packages\]$'
 
 ! exhaustive -invalid
 stdout ^$

@@ -23,10 +23,8 @@ func f3(t types.Type) bool {
 }
 
 type i interface{ m() }
-
 type t struct{}
 func (*t) m() {}
-
 type a = t
 
 func f4(v i) {
@@ -35,5 +33,23 @@ func f4(v i) {
 	}
 
 	switch v.(type) { // want "^missing cases in type switch: \\*t or \\*a$"
+	}
+}
+
+type node interface{ node() }
+type stmt interface{ node; stmt() }
+
+type loop struct{}
+func (*loop) node() {}
+func (*loop) stmt() {}
+
+type literal struct{}
+func (*literal) node() {}
+
+func f5(v node) {
+	switch v.(type) {
+	case stmt:
+	case *loop: // want "^unreachable type switch case \\*loop \\(matched by earlier case stmt\\)$"
+	case *literal:
 	}
 }
