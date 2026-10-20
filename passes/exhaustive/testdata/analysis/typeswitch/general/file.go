@@ -2,7 +2,7 @@ package general
 
 import "errors"
 import "test/analysis/typeswitch/general/sub"
-import "test/analysis/typeswitch/dpkg"
+import "test/analysis/typeswitch/pkgd"
 
 type t struct{}
 
@@ -144,32 +144,32 @@ func f4() {
 
 	var x interface{ O() }
 
-	switch x.(type) { // want "^missing cases in type switch: \\*v or \\*av, dpkg.T, \\*dpkg.T or dpkg.A$"
+	switch x.(type) { // want "^missing cases in type switch: \\*v or \\*av, pkgd.T, \\*pkgd.T or pkgd.A$"
 	}
 
 	switch x.(type) {
 	case *v:
-	case dpkg.T:
-	case *dpkg.T:
+	case pkgd.T:
+	case *pkgd.T:
 	}
 
 	switch x.(type) {
 	case *av:
-	case dpkg.T:
-	case dpkg.A:
+	case pkgd.T:
+	case pkgd.A:
 	}
 
-	switch x.(type) { // want "^missing cases in type switch: \\*v or \\*av, \\*dpkg.T or dpkg.A$"
-	case dpkg.T:
+	switch x.(type) { // want "^missing cases in type switch: \\*v or \\*av, \\*pkgd.T or pkgd.A$"
+	case pkgd.T:
 	}
 
-	switch x.(type) { // want "^missing cases in type switch: \\*v or \\*av, dpkg.T$"
-	case dpkg.A:
+	switch x.(type) { // want "^missing cases in type switch: \\*v or \\*av, pkgd.T$"
+	case pkgd.A:
 	}
 
-	switch x.(type) { // want "^missing cases in type switch: \\*dpkg.T or dpkg.A$"
+	switch x.(type) { // want "^missing cases in type switch: \\*pkgd.T or pkgd.A$"
 	case *v:
-	case dpkg.T:
+	case pkgd.T:
 	}
 }
 

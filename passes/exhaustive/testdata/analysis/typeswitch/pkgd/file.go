@@ -1,4 +1,4 @@
-package dpkg
+package pkgd
 
 type T struct{}
 func (T) O() {}
