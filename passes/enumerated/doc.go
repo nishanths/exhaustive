@@ -55,8 +55,8 @@ of a given enumerated type to have the same value.
 
 # Flags
 
-The analyzer's flags can control the discovery of enumerated
-types and enumerated constants.
+The analysis flags can control the discovery of enumerated types
+and enumerated constants.
 
 The synopsis of the flags is:
 

@@ -22,17 +22,24 @@ func f3(t types.Type) bool {
 	}
 }
 
-type i interface{ m() }
-type t struct{}
-func (*t) m() {}
-type a = t
 
-func f4(v i) {
+type I interface{ m() }
+
+type T struct{}
+func (*T) m() {}
+
+type U struct{}
+func (*U) m() {}
+
+type A = T
+
+func f4(v I) {
 	switch v.(type) {
-	case *a: // or *t
+	case *A: // note that *A is identical to *T
+	case *U:
 	}
 
-	switch v.(type) { // want "^missing cases in type switch: \\*t or \\*a$"
+	switch v.(type) { // want "^missing cases in type switch: \\*T or \\*A, \\*U$"
 	}
 }
 

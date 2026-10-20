@@ -47,7 +47,10 @@ loop:
 	return ret
 }
 
-// The input comment groups must be lexical order.
+// nodeComments returns the comments for the node specified by c.
+// The node must be a ast.Decl, ast.Spec, or ast.Stmt node.
+// The node must be from a syntactically correct and full Go source file.
+// The input comment groups must be in lexical order.
 func nodeComments(c inspector.Cursor, fset *token.FileSet, groups []*ast.CommentGroup) []*ast.CommentGroup {
 	// The comment group must start after the line of the
 	// previous node.
