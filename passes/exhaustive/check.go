@@ -204,13 +204,7 @@ func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*as
 
 	reportMissingNil := opts.requireCaseNil
 
-	// These maps are used for checking unreachable cases.
-	earlier := make(map[*types.Interface]ast.Expr) // interfaces in earlier case clauses (first appearance only)
-	clause := make(map[*types.Interface]ast.Expr)  // interfaces in current case clause (first appearance only)
-
 	for _, cc := range sw.Body.List {
-		clear(clause)
-
 		cc := cc.(*ast.CaseClause)
 		if cc.List == nil {
 			if opts.defaultCaseExhaustive {
@@ -240,8 +234,8 @@ func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*as
 			// sufficient to only consider interface types (but not,
 			// for example, pointers to interface types).
 			//
-			// The following code correctly handles
-			// traditional interface types and type parameters.
+			// The following code correctly handles both traditional
+			// interfaces and general interfaces (from a type parameter).
 			// It is not necessary to handle e.g. []P, where P is a
 			// type parameter, because these are not of underlying
 			// type interface and it is impossible for a type to
@@ -250,9 +244,6 @@ func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*as
 				computeImplements(ch, r, i)
 				for t := range ch.impl[i] {
 					delete(need, t)
-				}
-				if _, ok := clause[i]; !ok {
-					clause[i] = caseExpr
 				}
 			}
 
@@ -265,25 +256,53 @@ func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*as
 					delete(need, tp{n.Obj(), true})
 				}
 			}
-
-			if opts.checkImpossible {
-				for k, v := range earlier {
-					if types.Implements(caseType, k) {
-						pass.Reportf(caseExpr.Pos(), "unreachable type switch case %s (matched by earlier case %s)", formatExpr(pass, caseExpr), formatExpr(pass, v))
-					}
-				}
-			}
-		}
-
-		for k, v := range clause {
-			if _, ok := earlier[k]; !ok {
-				earlier[k] = v
-			}
 		}
 	}
 
 	if reportMissingNil || len(need) != 0 {
 		pass.Reportf(sw.Pos(), "missing cases in type switch: %s", formatMissingTypes(pass.Pkg, need, reportMissingNil))
+	}
+
+	if opts.checkImpossible {
+		checkUnreachableCases(pass, sw)
+	}
+}
+
+func checkUnreachableCases(pass *analysis.Pass, sw *ast.TypeSwitchStmt) {
+	// Note: This function does not check for issues that are
+	// already reported by "go build".
+	// As such, the following categories of issues
+	// are not checked: identical types in type switch cases;
+	// impossible type in type switch case.
+
+	earlier := make(map[*types.Interface]ast.Expr) // interfaces in earlier case clauses
+	current := make(map[*types.Interface]ast.Expr) // interfaces in current case clause
+
+	for _, cc := range sw.Body.List {
+		clear(current)
+
+		for _, caseExpr := range cc.(*ast.CaseClause).List {
+			caseType := pass.TypesInfo.TypeOf(caseExpr)
+			if caseType == nil {
+				continue
+			}
+			if i, ok := caseType.Underlying().(*types.Interface); ok {
+				if _, ok := current[i]; !ok {
+					current[i] = caseExpr
+				}
+			}
+			for k, v := range earlier {
+				if types.Implements(caseType, k) {
+					pass.Reportf(caseExpr.Pos(), "unreachable type switch case %s (matched by earlier case %s)", formatExpr(caseExpr), formatExpr(v))
+				}
+			}
+		}
+
+		for k, v := range current {
+			if _, ok := earlier[k]; !ok {
+				earlier[k] = v
+			}
+		}
 	}
 }
 

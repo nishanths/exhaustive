@@ -21,7 +21,7 @@ func f1() {
 }
 
 func f2() {
-	type b int
+	type b struct{}
 	type a = b
 
 	var x any
