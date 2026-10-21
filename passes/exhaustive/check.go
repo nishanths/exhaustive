@@ -53,16 +53,11 @@ func checkExprSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, comments []*ast.Co
 		}
 	}
 
-	reportMissingDefault := opts.requireDefaultCase
-	if v, ok := directives[dirDefrequire]; ok {
-		reportMissingDefault = v
-	}
-
 	need := needValues(pass.Pkg, cs, opts)
+
 	for _, cc := range sw.Body.List {
 		cc := cc.(*ast.CaseClause)
 		if cc.List == nil {
-			reportMissingDefault = false
 			if opts.defaultCaseExhaustive {
 				clear(need)
 				break
@@ -79,11 +74,31 @@ func checkExprSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, comments []*ast.Co
 			}
 		}
 	}
-	if reportMissingDefault {
-		pass.Reportf(sw.Pos(), "missing default case")
-	}
+
 	if len(need) != 0 {
 		pass.Reportf(sw.Pos(), "missing cases in expression switch: %s", formatMissingNames(pass.Pkg, need))
+	}
+
+
+	requireDefault := opts.requireDefaultCase
+	if v, ok := directives[dirDefrequire]; ok {
+		requireDefault = v
+	}
+	if requireDefault {
+		checkDefaultCase(pass, sw)
+	}
+}
+
+func checkDefaultCase(pass *analysis.Pass, sw *ast.SwitchStmt) {
+	foundDefault := false
+	for _, cc := range sw.Body.List {
+		if cc.(*ast.CaseClause).List == nil {
+			foundDefault = true
+			break
+		}
+	}
+	if !foundDefault {
+		pass.Reportf(sw.Pos(), "missing default case")
 	}
 }
 
