@@ -9,12 +9,10 @@ type mn interface {
 type e interface{ e() }
 
 type t struct{}
-
 func (t) m()
 func (t) n()
 
 type u struct{}
-
 func (*u) m()
 
 func f1() {
@@ -113,11 +111,71 @@ func f1() {
 	}
 }
 
-func f2[P m]() {
-	var x m
+// See Go spec section "Satisfying a type constraint".
 
-	switch x.(type) {
+type o interface{ o() }
+
+type t1 struct{}
+func (t1) o()
+
+type t2 struct{ f []byte }
+func (t2) o()
+
+func f2[P any](v o) {
+	switch v.(type) {
 	case P:
-	case *t: // want "^unreachable type switch case \\*t \\(matched by earlier case P\\)$"
+	case t1: // want "^unreachable type switch case t1 \\(matched by earlier case P\\)$"
+	case t2: // want "^unreachable type switch case t2 \\(matched by earlier case P\\)$"
+	case o: // want "^unreachable type switch case o \\(matched by earlier case P\\)$"
+	case n: // want "^unreachable type switch case n \\(matched by earlier case P\\)$"
+	}
+}
+
+func f3[P o](v o) {
+	switch v.(type) {
+	case P:
+	case t1: // want "^unreachable type switch case t1 \\(matched by earlier case P\\)$"
+	case t2: // want "^unreachable type switch case t2 \\(matched by earlier case P\\)$"
+	case o: // want "^unreachable type switch case o \\(matched by earlier case P\\)$"
+	case n:
+	}
+}
+
+func f4[P comparable](v o) {
+	switch v.(type) {
+	case P:
+	case t1: // want "^unreachable type switch case t1 \\(matched by earlier case P\\)$"
+	case t2:
+	case o: // want "^unreachable type switch case o \\(matched by earlier case P\\)$"
+	case n: // want "^unreachable type switch case n \\(matched by earlier case P\\)$"
+	}
+
+	switch v.(type) {
+	case P:
+	case o: // want "^unreachable type switch case o \\(matched by earlier case P\\)$"
+	case n: // want "^unreachable type switch case n \\(matched by earlier case P\\)$"
+	case t1: // want "^unreachable type switch case t1 \\(matched by earlier case P\\)$" "^unreachable type switch case t1 \\(matched by earlier case o\\)$"
+	case t2: // want "^unreachable type switch case t2 \\(matched by earlier case o\\)$"
+	}
+}
+
+func f5[P interface {
+	comparable
+	o()
+}](v o) {
+	switch v.(type) {
+	case P:
+	case t1: // want "^unreachable type switch case t1 \\(matched by earlier case P\\)$"
+	case t2:
+	case o: // want "^unreachable type switch case o \\(matched by earlier case P\\)$"
+	case n:
+	}
+
+	switch v.(type) {
+	case P:
+	case o: // want "^unreachable type switch case o \\(matched by earlier case P\\)$"
+	case n:
+	case t1: // want "^unreachable type switch case t1 \\(matched by earlier case P\\)$" "^unreachable type switch case t1 \\(matched by earlier case o\\)$"
+	case t2: // want "^unreachable type switch case t2 \\(matched by earlier case o\\)$"
 	}
 }

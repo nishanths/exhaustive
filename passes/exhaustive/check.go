@@ -79,7 +79,6 @@ func checkExprSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, comments []*ast.Co
 		pass.Reportf(sw.Pos(), "missing cases in expression switch: %s", formatMissingNames(pass.Pkg, need))
 	}
 
-
 	requireDefault := opts.requireDefaultCase
 	if v, ok := directives[dirDefrequire]; ok {
 		requireDefault = v
@@ -282,34 +281,46 @@ func checkUnreachableCases(pass *analysis.Pass, sw *ast.TypeSwitchStmt) {
 	// are not checked: identical types in type switch cases;
 	// impossible type in type switch case.
 
-	earlier := make(map[*types.Interface]ast.Expr) // interfaces in earlier case clauses
-	current := make(map[*types.Interface]ast.Expr) // interfaces in current case clause
+	type intfcase struct {
+		underlying *types.Interface
+		constraint bool
+		expr       ast.Expr
+	}
+	var earlier []intfcase // interfaces in earlier case clauses
+	var current []intfcase // interfaces in current case clause
 
 	for _, cc := range sw.Body.List {
-		clear(current)
+		current = current[:0]
 
 		for _, caseExpr := range cc.(*ast.CaseClause).List {
 			caseType := pass.TypesInfo.TypeOf(caseExpr)
 			if caseType == nil {
 				continue
 			}
-			if i, ok := caseType.Underlying().(*types.Interface); ok {
-				if _, ok := current[i]; !ok {
-					current[i] = caseExpr
+
+			switch t := types.Unalias(caseType).(type) {
+			case *types.TypeParam:
+				current = append(current, intfcase{t.Underlying().(*types.Interface), true, caseExpr})
+			default:
+				if v, ok := t.Underlying().(*types.Interface); ok {
+					current = append(current, intfcase{v, false, caseExpr})
 				}
 			}
-			for k, v := range earlier {
-				if types.Implements(caseType, k) {
-					pass.Reportf(caseExpr.Pos(), "unreachable type switch case %s (matched by earlier case %s)", formatExpr(caseExpr), formatExpr(v))
+
+			for _, i := range earlier {
+				var res bool
+				if i.constraint {
+					res = types.Satisfies(caseType, i.underlying)
+				} else {
+					res = types.Implements(caseType, i.underlying)
+				}
+				if res {
+					pass.Reportf(caseExpr.Pos(), "unreachable type switch case %s (matched by earlier case %s)", formatExpr(caseExpr), formatExpr(i.expr))
 				}
 			}
 		}
 
-		for k, v := range current {
-			if _, ok := earlier[k]; !ok {
-				earlier[k] = v
-			}
-		}
+		earlier = append(earlier, current...)
 	}
 }
 
