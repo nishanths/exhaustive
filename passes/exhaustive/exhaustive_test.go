@@ -89,7 +89,8 @@ func TestAnalyzer(t *testing.T) {
 			"test/analysis/typeswitch/general",
 			"test/analysis/typeswitch/general/embedded",
 			"test/analysis/typeswitch/general/alias",
-			"test/analysis/typeswitch/general/caseinterface")
+			"test/analysis/typeswitch/general/caseinterface",
+			"test/analysis/typeswitch/general/generic")
 		run(t, func() { fCheck = "typeswitch"; fRequireCaseNil = true }, "test/analysis/typeswitch/casenil")
 		run(t, func() { fCheck = "typeswitch"; fDefaultEx = true }, "test/analysis/typeswitch/def")
 		run(t, func() {

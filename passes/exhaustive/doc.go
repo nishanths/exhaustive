@@ -108,6 +108,10 @@ is an interface type) is specified as a type in a case clause, it
 is equivalent to specifying each type T or *T that implements
 that interface.
 
+Generic types that have methods and implement an interface are
+not supported by this analysis. These types will not be reported
+in diagnostics.
+
 It is not necessary to include a 'nil' case (i.e. "case nil: ")
 for a type switch to be exhaustive, but this behavior can be
 adjusted via the flags. The behavior regarding the default case,

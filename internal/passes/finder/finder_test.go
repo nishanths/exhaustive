@@ -11,8 +11,8 @@ func TestAnalyzer(t *testing.T) {
 	testdata := analysistest.TestData()
 	run := func(t *testing.T, patterns ...string) []*analysistest.Result {
 		t.Helper()
-		return analysistest.Run(t, filepath.Join(testdata, "test"), Analyzer, patterns...)
+		return analysistest.Run(t, filepath.Join(testdata, "analysis"), Analyzer, patterns...)
 	}
-	run(t, "test/general")
-	run(t, "test/general/sub")
+	run(t, "test/analysis/general")
+	run(t, "test/analysis/general/sub")
 }

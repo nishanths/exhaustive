@@ -122,14 +122,13 @@ var universeError = types.Universe.Lookup("error")
 type typeSwitchState struct {
 	// The 'map[tp]struct{}' value is the set of types T
 	// or *T that implement the interface in the key,
-	// where the type name T is that of a non-interface
-	// defined type.
+	// where T is a non-interface defined type.
 	impl map[*types.Interface]map[tp]struct{}
 
 	// The '[]tp' value is the set of types
 	// that are identical to the type in the key.
-	// One of the elements of the '[]tp' value will be
-	// the type in the key itself.
+	// One of the type names in '[]tp' will be the
+	// type name of the defined type in the key itself.
 	//
 	// The type name in the key is always that of a defined type.
 	// See func computeTypeRelations for details.
@@ -143,13 +142,6 @@ type typeSwitchState struct {
 type tp struct {
 	*types.TypeName
 	pointer bool
-}
-
-func (t tp) String() string {
-	// Lower noise in debug prints.
-	// A *types.TypeName value formats to a long string;
-	// use its Type() alone.
-	return fmt.Sprintf("{%v %v}", t.TypeName.Type(), t.pointer)
 }
 
 func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*ast.CommentGroup, ch *typeSwitchState, opts *options) {
@@ -369,7 +361,7 @@ func computeImplements(ch *typeSwitchState, r *finder.Result, intf *types.Interf
 			// Rather, the interface check is specific to the logic
 			// of the analysis, which should not consider interfaces
 			// as a possible implementing type in this context.
-			if !underlyingIs[*types.Interface](n) {
+			if !underlyingIs[*types.Interface](n) && n.Origin().TypeParams() == nil {
 				if types.Implements(types.NewPointer(n), intf) {
 					add(tp{n.Obj(), true})
 				}
@@ -378,8 +370,12 @@ func computeImplements(ch *typeSwitchState, r *finder.Result, intf *types.Interf
 				}
 			}
 		case *types.Pointer: // pointer to a defined type
-			if n, ok := types.Unalias(t.Elem()).(*types.Named); ok && !underlyingIs[*types.Interface](n) && types.Implements(types.NewPointer(n), intf) {
-				add(tp{n.Obj(), true})
+			if n, ok := types.Unalias(t.Elem()).(*types.Named); ok {
+				if !underlyingIs[*types.Interface](n) && n.Origin().TypeParams() == nil {
+					if types.Implements(types.NewPointer(n), intf) {
+						add(tp{n.Obj(), true})
+					}
+				}
 			}
 		}
 	}
@@ -401,17 +397,23 @@ func computeTypeRelations(ch *typeSwitchState, r *finder.Result) {
 			switch tt := types.Unalias(t).(type) {
 			case *types.Named:
 				n := tt
-				add(tp{n.Obj(), false}, tp{tn, false})
-				add(tp{n.Obj(), true}, tp{tn, true})
+				if n.Origin().TypeParams() == nil {
+					add(tp{n.Obj(), false}, tp{tn, false})
+					add(tp{n.Obj(), true}, tp{tn, true})
+				}
 			case *types.Pointer:
 				if n, ok := types.Unalias(tt.Elem()).(*types.Named); ok {
-					add(tp{n.Obj(), true}, tp{tn, false})
+					if n.Origin().TypeParams() == nil {
+						add(tp{n.Obj(), true}, tp{tn, false})
+					}
 				}
 			}
 		case *types.Named:
 			n := t
-			add(tp{n.Obj(), false}, tp{tn, false})
-			add(tp{n.Obj(), true}, tp{tn, true})
+			if n.Origin().TypeParams() == nil {
+				add(tp{n.Obj(), false}, tp{tn, false})
+				add(tp{n.Obj(), true}, tp{tn, true})
+			}
 		default:
 			panic(fmt.Sprintf("internal error: unexpected type %T", t))
 		}
