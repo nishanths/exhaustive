@@ -47,7 +47,7 @@ func init() {
 	Analyzer.Flags.Var(&fExcludeType, "typeignore", "switches in which the type name is matched by `regexp` are not checked")
 	Analyzer.Flags.Var(&fIncludeType, "typeonly", "only switches in which the type name is matched by `regexp` are checked")
 	Analyzer.Flags.Var(&fExcludeConst, "constignore", "constant names matched by `regexp` do not have to be included in the case clauses of an expression switch")
-	Analyzer.Flags.BoolVar(&fCheckImpossible, "impossible", fCheckImpossible, "check for unreachable cases in type switches")
+	Analyzer.Flags.BoolVar(&fCheckImpossible, "impossible", fCheckImpossible, "check for impossible or unreachable cases in type switches")
 }
 
 var (

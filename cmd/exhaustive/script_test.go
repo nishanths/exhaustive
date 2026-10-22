@@ -12,16 +12,13 @@ import (
 	"rsc.io/script/scripttest"
 )
 
-// Note: To create the executable at the default path expected by
-// the script tests, run one of these commands in the directory
-// of this package.
-//
-//	go build -o exhaustive-scripttest
-//	go build -o exhaustive-scripttest.exe  (Windows)
-//
-
 var cmdPath = flag.String("cmd", "exhaustive-scripttest", "path to executable to use in script tests")
 
+// Note: The executable expected by TestScript can be created by
+// running one of the following commands in the package directory.
+//
+//	go build -o exhaustive-scripttest
+//	go build -o exhaustive-scripttest.exe  # Windows
 func TestScript(t *testing.T) {
 	ctx := t.Context()
 

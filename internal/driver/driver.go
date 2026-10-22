@@ -19,24 +19,35 @@ const (
 	contextLines = -1
 )
 
-func ParseFlags(progname string, as ...*analysis.Analyzer) {
+func ParseFlags(progname string, as ...*analysis.Analyzer) *flag.FlagSet {
+	fs := flag.NewFlagSet(progname, flag.ContinueOnError)
+
 	for _, a := range as {
 		a.Flags.VisitAll(func(f *flag.Flag) {
-			if flag.Lookup(f.Name) != nil {
+			if fs.Lookup(f.Name) != nil {
 				log.Fatalf("internal error: conflicting flag -%s", f.Name)
 			}
-			flag.Var(f.Value, f.Name, f.Usage)
+			fs.Var(f.Value, f.Name, f.Usage)
 		})
 	}
-	flag.Usage = func() {
-		var sets []flag.FlagSet
-		for _, a := range as {
-			sets = append(sets, a.Flags)
-		}
-		s := synopsis(progname, len("usage: "), false, sets)
-		fmt.Fprintf(os.Stderr, "usage: %s\n", s)
+
+	fs.Usage = func() {
+		printFlagUsage(progname, fs)
 	}
-	flag.Parse()
+
+	err := fs.Parse(os.Args[1:])
+	if err == flag.ErrHelp {
+		// Note: The usage message would have already been printed by
+		// package flag.
+		os.Exit(0)
+	}
+	if err != nil {
+		// Note: The usage message would have already been printed by
+		// package flag.
+		os.Exit(2)
+	}
+
+	return fs
 }
 
 func Run(args []string, loadMode packages.LoadMode, as ...*analysis.Analyzer) (exitStatus int) {
@@ -102,14 +113,12 @@ func Run(args []string, loadMode packages.LoadMode, as ...*analysis.Analyzer) (e
 	return
 }
 
-func synopsis(progname string, prefixlen int, includeHelpInvoc bool, sets []flag.FlagSet) string {
-	// Sort flags by name, boolean flags first.
+func flagSynopsis(progname string, prefixlen int, includeHelpInvoc bool, fs *flag.FlagSet) string {
+	// sort flags by name, boolean flags first.
 	var flags []*flag.Flag
-	for _, fs := range sets {
-		fs.VisitAll(func(f *flag.Flag) {
-			flags = append(flags, f)
-		})
-	}
+	fs.VisitAll(func(f *flag.Flag) {
+		flags = append(flags, f)
+	})
 	slices.SortStableFunc(flags, func(a, b *flag.Flag) int {
 		type boolflag interface{ IsBoolFlag() bool }
 		_, aa := a.Value.(boolflag)
@@ -127,7 +136,7 @@ func synopsis(progname string, prefixlen int, includeHelpInvoc bool, sets []flag
 	const maxwidth = 80
 	argindent := 8
 	if includeHelpInvoc {
-		// Multiple invocations need to be printed. The
+		// multiple invocations need to be printed. the
 		// lines must align with program name.
 		argindent = prefixlen + len(progname) + 1
 	}
@@ -161,7 +170,7 @@ func synopsis(progname string, prefixlen int, includeHelpInvoc bool, sets []flag
 		width = argindent + len(arg)
 	}
 
-	// Regular invocation.
+	// regular invocation.
 	newinvoc(true)
 	for i, f := range flags {
 		if v, _ := flag.UnquoteUsage(f); len(v) != 0 {
@@ -172,11 +181,16 @@ func synopsis(progname string, prefixlen int, includeHelpInvoc bool, sets []flag
 	}
 	printarg(lastarg, false)
 
-	// Help invocation.
+	// help invocation.
 	if includeHelpInvoc {
 		newinvoc(false)
 		printarg("-h | -help", false)
 	}
 
 	return b.String()
+}
+
+func printFlagUsage(progname string, fs *flag.FlagSet) {
+	s := flagSynopsis(progname, len("usage: "), false, fs)
+	fmt.Fprintf(os.Stderr, "usage: %s\n", s)
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"log"
 	"os"
 	"slices"
@@ -22,36 +21,36 @@ func main() {
 	log.SetFlags(0)
 	log.SetPrefix(progname + ": ")
 
-	driver.ParseFlags(progname, enumerated.Analyzer, exhaustive.Analyzer)
-	editRequires(exhaustive.Analyzer.Flags.Lookup("check").Value.String())
-	os.Exit(driver.Run(flag.Args(), packages.LoadAllSyntax, exhaustive.Analyzer))
+	fs := driver.ParseFlags(progname, enumerated.Analyzer, exhaustive.Analyzer)
+	check := exhaustive.Analyzer.Flags.Lookup("check").Value.String()
+	editRequires(check)
+	os.Exit(driver.Run(fs.Args(), packages.LoadAllSyntax, exhaustive.Analyzer))
 }
 
 func editRequires(check string) {
 	// see comment on the exhaustive.Analyzer.Requires field
 	// for details.
-	need := map[string]bool{
-		"enumerated": false,
-		"finder":     false,
+	remove := map[*analysis.Analyzer]bool{
+		enumerated.Analyzer: true,
+		finder.Analyzer:     true,
 	}
 
 	for _, v := range strings.Split(check, ",") {
 		switch v {
 		case "switch", "mapliteral":
-			need["enumerated"] = true
+			remove[enumerated.Analyzer] = false
 		case "typeswitch":
-			need["finder"] = true
+			remove[finder.Analyzer] = false
 		}
 	}
 
 	exhaustive.Analyzer.Requires = slices.DeleteFunc(exhaustive.Analyzer.Requires, func(a *analysis.Analyzer) bool {
-		switch {
-		case a == enumerated.Analyzer && !need["enumerated"]:
-			return true
-		case a == finder.Analyzer && !need["finder"]:
-			return true
-		default:
+		v, ok := remove[a]
+		if !ok {
+			// unknown/unhandled analyzer.
+			// return false (i.e. do not remove).
 			return false
 		}
+		return v
 	})
 }
