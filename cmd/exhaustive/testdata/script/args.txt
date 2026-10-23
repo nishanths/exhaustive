@@ -17,15 +17,15 @@ stderr -count=1 '^usage: exhaustive \[-B\] \[-casenil\] \[-d\] .+'
 cd $WORK/example.com
 ! exhaustive -check='' example.com/foo
 stderr -count=1 ^.
-stderr -count=1 '^exhaustive: invalid value for flag -check: empty string$'
+stderr -count=1 '^exhaustive: invalid value for -check: empty string$'
 
 ! exhaustive -check='switch,xyz' example.com/foo
 stderr -count=1 ^.
-stderr -count=1 '^exhaustive: invalid value for flag -check: unknown element "xyz"$'
+stderr -count=1 '^exhaustive: invalid value for -check: unknown element "xyz"$'
 
 ! exhaustive -check='switch, typeswitch' example.com/foo
 stderr -count=1 ^.
-stderr -count=1 '^exhaustive: invalid value for flag -check: unknown element " typeswitch"$'
+stderr -count=1 '^exhaustive: invalid value for -check: unknown element " typeswitch"$'
 
 -- example.com/go.mod --
 module example.com

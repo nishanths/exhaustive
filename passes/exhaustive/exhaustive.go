@@ -19,22 +19,53 @@ import (
 
 // Analyzer implements the exhaustive analysis.
 //
-// The analyzers specified in the Requires field may not all be
-// actually required. The set of analyzers that are actually required
-// depends on the runtime value of the -check flag, and it may be
-// a subset of the analyzers specified here. Programs that want
-// to be efficient should edit this field during program
-// initialization before the analysis begins.
-// TODO: consider adding API to facilitate this.
+// The set of analyzers specified in the Requires field may not
+// all be actually required.
+// The set of analyzers that are actually required depends on the
+// runtime value of the -check flag.
+// Programs that want to be efficient should edit the Requires
+// field before the analysis begins. See func [Requires].
 var Analyzer = &analysis.Analyzer{
 	Name: "exhaustive",
 	Doc:  "check that expression switches and type switches are exhaustive",
 	Run:  run,
 	Requires: []*analysis.Analyzer{
-		inspect.Analyzer,
-		enumerated.Analyzer, // necessary if -check argument specifies 'switch' or 'mapliteral'
-		finder.Analyzer,     // necessary if -check argument specifies 'typeswitch'
+		inspect.Analyzer,    // always required
+		enumerated.Analyzer, // required if -check argument specifies either 'switch' or 'mapliteral'
+		finder.Analyzer,     // required if -check argument specifies 'typeswitch'
 	},
+}
+
+// Requires returns the set of analyzers required by [Analyzer]
+// for a given value of the -check flag.
+// The result is a subset of Analyzer.Requires.
+func Requires(check string) ([]*analysis.Analyzer, error) {
+	require := map[*analysis.Analyzer]bool{
+		inspect.Analyzer:    true,
+		enumerated.Analyzer: false,
+		finder.Analyzer:     false,
+	}
+
+	elems, err := parseSyntaxElements(check)
+	if err != nil {
+		return nil, fmt.Errorf("invalid value for -check: %s", err)
+	}
+	for _, elem := range elems {
+		switch elem {
+		case exprswitch, mapliteral:
+			require[enumerated.Analyzer] = true
+		case typeswitch:
+			require[finder.Analyzer] = true
+		}
+	}
+
+	var res []*analysis.Analyzer // order should not matter
+	for k, v := range require {
+		if v {
+			res = append(res, k)
+		}
+	}
+	return res, nil
 }
 
 func init() {
@@ -144,7 +175,7 @@ type options struct {
 func run(pass *analysis.Pass) (any, error) {
 	elems, err := parseSyntaxElements(fCheck)
 	if err != nil {
-		return nil, fmt.Errorf("invalid value for flag -check: %s", err)
+		return nil, fmt.Errorf("invalid value for -check: %s", err)
 	}
 
 	opts := &options{
@@ -160,8 +191,8 @@ func run(pass *analysis.Pass) (any, error) {
 	}
 
 	var nodes []ast.Node
-	for _, v := range elems {
-		switch v {
+	for _, elem := range elems {
+		switch elem {
 		case exprswitch:
 			nodes = append(nodes, (*ast.SwitchStmt)(nil))
 		case mapliteral:
