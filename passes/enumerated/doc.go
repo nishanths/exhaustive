@@ -2,7 +2,7 @@
 Package enumerated defines a static analysis that finds
 declarations of enumerated types and enumerated constants.
 
-# Enumerated Types and Enumerated Constants
+# Enumerated types
 
 A [defined type] is allowed to be an enumerated type if it
 satisfies the following conditions. The underlying type of the
@@ -24,16 +24,16 @@ These examples show allowed and disallowed enumerated types:
 	int32               // int32: disallowed: predeclared type
 	rune                // rune: disallowed: predeclared type
 
+Each enumerated type must have at least one enumerated constant
+of the type, otherwise the type is disregarded by the analysis.
+
+# Enumerated constants
+
 Declared constants whose type is an allowed enumerated type
 form enumerated constants of the type. An enumerated type and
 the constants of the type must be declared in the same [block] to
 be considered by the analysis. Constants with blank identifier
-names are ignored. Each enumerated type must have at least one
-enumerated constant of the type, otherwise the type is
-disregarded by the analysis.
-
-The possible values of an enumerated type are the combined set of
-values of each enumerated constant of the type.
+names are ignored.
 
 In the following example, the type T0 is an enumerated type. The
 constants X0, X1, and X2 are enumerated constants of the type.
@@ -52,6 +52,16 @@ value of an enumerated constant can be any value allowed by the
 language (e.g. iota, constant literals, other constant
 identifiers). The analysis permits multiple enumerated constants
 of a given enumerated type to have the same value.
+
+# Value sets
+
+The "value set" of an enumerated type E consists of the values of
+each enumerated constant of the type E. The type of each value in
+the set will be E.
+
+For example, the value set of the enumerated type T0 in the above
+code snippet consists of the values 0, 1, and 2, corresponding to
+the constants X0, X1, and X2. The values have type T0.
 
 # Flags
 

@@ -1,10 +1,12 @@
 package exhaustive
 
 import (
+	"bytes"
 	"cmp"
 	"fmt"
 	"go/ast"
 	"go/types"
+	"maps"
 	"slices"
 	"strings"
 
@@ -37,8 +39,8 @@ func checkExprSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, comments []*ast.Co
 		return
 	}
 
-	enums := pass.ResultOf[enumerated.Analyzer].(enumerated.Result)
-	_, cs, ok := knownEnumeratedType(enums, pass.TypesInfo.TypeOf(sw.Tag))
+	r := pass.ResultOf[enumerated.Analyzer].(enumerated.Result)
+	_, cs, ok := isEnumeratedType(r, pass.TypesInfo.TypeOf(sw.Tag))
 	if !ok {
 		skip("switch expression type is not an enumerated type")
 		return
@@ -76,16 +78,19 @@ func checkExprSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, comments []*ast.Co
 	}
 
 	if len(need) != 0 {
-		pass.Reportf(sw.Pos(), "missing cases in expression switch: %s", formatMissingNames(pass.Pkg, need))
+		pass.Reportf(sw.Pos(), "missing cases in expression switch: %s", formatMissingConstants(pass.Pkg, need))
 	}
 
-	requireDefault := opts.requireDefaultCase
-	if v, ok := directives[dirDefrequire]; ok {
-		requireDefault = v
-	}
-	if requireDefault {
+	if shouldCheckDefaultCase(directives, opts) {
 		checkDefaultCase(pass, sw)
 	}
+}
+
+func shouldCheckDefaultCase(directives map[directive]bool, opts *options) bool {
+	if v, ok := directives[dirDefrequire]; ok {
+		return v
+	}
+	return opts.requireDefaultCase
 }
 
 func checkDefaultCase(pass *analysis.Pass, sw *ast.SwitchStmt) {
@@ -101,47 +106,38 @@ func checkDefaultCase(pass *analysis.Pass, sw *ast.SwitchStmt) {
 	}
 }
 
-// hasTypeName determines whether t is a type with a name.
-func hasTypeName(t types.Type) (*types.TypeName, bool) {
-	switch t := t.(type) {
-	case *types.Alias:
-		return t.Obj(), true
-	case *types.Named: // also represents predeclared type error
-		return t.Obj(), true
-	case *types.TypeParam:
-		return t.Obj(), true
-	default:
-		return nil, false
-	}
-}
-
-var universeError = types.Universe.Lookup("error")
-
 // shared checker state for all type switches in a particular package.
 type typeSwitchState struct {
-	// The 'map[tp]struct{}' value is the set of types T
-	// or *T that implement the interface in the key,
-	// where T is a non-interface defined type.
-	impl map[*types.Interface]map[tp]struct{}
+	impl map[*types.Interface]map[implementer]struct{}
 
-	// The '[]tp' value is the set of types
-	// that are identical to the type in the key.
-	// One of the type names in '[]tp' will be the
-	// type name of the defined type in the key itself.
-	//
-	// The type name in the key is always that of a defined type.
-	// See func computeTypeRelations for details.
-	// Only those relationships relevant for type switch
-	// analysis are recorded in this map.
+	// Only those relationships relevant to type switch
+	// analysis are recorded in this map. See func
+	// computeTypeRelations for details.
+	// At least one of the type names in the value slice will
+	// be the type name in the key.
 	identical map[tp][]tp
 }
 
-// tp represents a type T or type *T,
-// where T is a type name.
 type tp struct {
-	*types.TypeName
-	pointer bool
+	typename *types.TypeName // type name T
+	pointer  bool            // whether T or *T
 }
+
+// An implementer represents a non-interface type that can
+// implement an interface.
+type implementer struct {
+	named   *types.Named // non-interface defined type T; currently non-generic only.
+	pointer bool         // whether T or *T
+}
+
+func (t *implementer) Type() types.Type {
+	if t.pointer {
+		return types.NewPointer(t.named)
+	}
+	return t.named
+}
+
+var universeError = types.Universe.Lookup("error")
 
 func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*ast.CommentGroup, ch *typeSwitchState, opts *options) {
 	directives, proceed, err := proceedCommentDirectives(comments, opts)
@@ -172,16 +168,18 @@ func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*as
 
 	swInterface, ok := pass.TypesInfo.TypeOf(swExpr).Underlying().(*types.Interface)
 	if !ok || !swInterface.IsMethodSet() {
-		// Go spec section on Type switches: "As with
-		// type assertions, x must be of interface type,
-		// but not a type parameter".
+		// Go spec as of go1.27: "Interfaces that are not basic may
+		// only be used as type constraints, or as elements of
+		// other interfaces used as constraints. They cannot be
+		// the types of values or variables, or components of
+		// other, non-interface types."
 		//
-		// This branch is impossible as of go1.27,
-		// but be future-proof for correctness.
-		// The IsMethodSet requirement is essential for
-		// correctness because the logic below only
-		// evaluates types that are valid method receiver types.
-		skip("unsupported expression in type assertion")
+		// and Go spec on Type switches: "As with type
+		// assertions, x must be of interface type, but
+		// not a type parameter".
+		//
+		// Thus this branch is impossible as of go1.27.
+		skip("unsupported expression in type switch guard")
 		return
 	}
 
@@ -191,8 +189,8 @@ func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*as
 			return
 		}
 		// Special case: Type switches of the empty
-		// interface are not checked. Note that all types
-		// implement the empty interface.
+		// interface are not checked. Note that all
+		// types implement the empty interface.
 		if swInterface.Empty() {
 			return
 		}
@@ -206,7 +204,7 @@ func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*as
 	r := pass.ResultOf[finder.Analyzer].(*finder.Result)
 	computeImplements(ch, r, swInterface)
 	computeTypeRelations(ch, r)
-	need := needTypes(pass.Pkg, ch, swInterface, opts)
+	need := needTypes(pass.Pkg, swInterface, ch)
 
 	reportMissingNil := opts.requireCaseNil
 
@@ -231,124 +229,285 @@ func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*as
 				reportMissingNil = false
 			}
 
-			// Go spec: "If T is an interface type, x.(T) asserts that
-			// the dynamic type of x implements the interface T."
-			//
-			// Note: It is possible in the language for a type to
-			// implement an interface T. It is impossible for a type
-			// to implement *T where T is an interface. Thus it is
-			// sufficient to only consider interface types (but not,
-			// for example, pointers to interface types).
-			//
-			// The following code correctly handles both traditional
-			// interfaces and general interfaces (from a type parameter).
-			// It is not necessary to handle e.g. []P, where P is a
-			// type parameter, because these are not of underlying
-			// type interface and it is impossible for a type to
-			// implement them.
-			if i, ok := caseType.Underlying().(*types.Interface); ok {
-				computeImplements(ch, r, i)
-				for t := range ch.impl[i] {
-					delete(need, t)
+			if caseIntf, typeParam, ok := interfaceTypeOf(caseType); ok {
+				if !typeParam {
+					// Remove the types in the 'need' map that
+					// implement the case interface type.
+					for k := range need {
+						if types.Implements(k.Type(), caseIntf) {
+							delete(need, k)
+						}
+					}
 				}
+				continue
 			}
 
 			switch t := types.Unalias(caseType).(type) {
 			case *types.Named:
 				n := t
-				delete(need, tp{n.Obj(), false})
+				if n.TypeParams() == nil {
+					delete(need, implementer{n.Origin(), false})
+				}
 			case *types.Pointer:
 				if n, ok := types.Unalias(t.Elem()).(*types.Named); ok {
-					delete(need, tp{n.Obj(), true})
+					if n.TypeParams() == nil {
+						delete(need, implementer{n.Origin(), true})
+					}
 				}
 			}
 		}
 	}
 
 	if reportMissingNil || len(need) != 0 {
-		pass.Reportf(sw.Pos(), "missing cases in type switch: %s", formatMissingTypes(pass.Pkg, need, reportMissingNil))
+		m := make(map[implementer][]tp, len(need))
+		for t := range need {
+			for _, tt := range ch.identical[tp{t.named.Obj(), t.pointer}] {
+				if !canAccessObject(pass.Pkg, tt.typename) {
+					continue
+				}
+				m[t] = append(m[t], tt)
+			}
+		}
+		pass.Reportf(sw.Pos(), "missing cases in type switch: %s", formatMissingTypes(pass.Pkg, m, reportMissingNil))
 	}
 
 	if opts.checkImpossible {
-		checkUnreachableCases(pass, sw)
+		checkImpossibleCode(pass, sw)
 	}
 }
 
-func checkUnreachableCases(pass *analysis.Pass, sw *ast.TypeSwitchStmt) {
-	// Note: This function does not check for issues that are
-	// already reported by "go build".
-	// As such, the following categories of issues
-	// are not checked: identical types in type switch cases;
+func checkImpossibleCode(pass *analysis.Pass, sw *ast.TypeSwitchStmt) {
+	// This function does not check for issues that are
+	// already reported as errors by "go build". As such, the
+	// following categories of issues are not checked:
+	// identical types in type switch cases;
 	// impossible type in type switch case.
 
+	// Go spec: "A type parameter or a generic type may be
+	// used as a type in a case. If upon instantiation that
+	// type turns out to duplicate another entry in the
+	// switch, the first matching case is chosen."
+	// Go spec: "The 'fallthrough' statement is not permitted
+	// in a type switch."
+
 	type intfcase struct {
-		underlying *types.Interface
-		constraint bool
-		expr       ast.Expr
+		intf      *types.Interface
+		typeParam bool
+		expr      ast.Expr
 	}
-	var earlier []intfcase // interfaces in earlier case clauses
-	var current []intfcase // interfaces in current case clause
+
+	// If the interface type C is a type constraint for a type parameter,
+	// the actual type of C depends upon the type argument
+	// used upon instantiation.
+	// In this scenario, a true return value from types.Implements(T, C),
+	// where T is the type in the current case, is insufficient to
+	// say that the current case is always ineffective (it
+	// may only be ineffective for certain instantiations).
+	//
+	// For instance, given this code
+	//
+	//	type t1 struct{}
+	//	func (t1) o() {}
+	//	type t2 struct{}
+	//	func (t2) o() {}
+	//
+	//	func f[P interface{o()}]() {
+	//	     var x interface{o()} = t2{}
+	//	     switch x.(type) {
+	//	     case P:
+	//	     case t2:
+	//	     case interface{o()}:
+	//	     }
+	//	}
+	//
+	//	func main() {
+	//		f[t1]()
+	//	}
+	//
+	// note that for the "f[t1]()" call the type
+	// switch cases "case t2" and "case interface{o()}" are not
+	// rendered ineffective by the earlier "case P".
+	ineffectualOrder := func(e intfcase, currentCaseType types.Type) bool {
+		if e.typeParam {
+			// This scenario is not currently supported. But a more
+			// rigorous analysis could report ineffective cases in
+			// this scenario.
+			//
+			// For instance, given a type constraint interface C for
+			// a type parameter P specified as the type in an
+			// earlier case, if the type set of C consists only of
+			// the current case type T, then the case for T is
+			// ineffective (note that the type parameter P can only
+			// be instantiated with type argument T).
+			return false
+		}
+		// Note: if the type in a case is generic, it
+		// will always be an instantiated generic type
+		// in a valid Go program.
+		return types.Implements(currentCaseType, e.intf)
+	}
+
+	var earlierIntfs []intfcase // interface types in earlier cases
+	var currentIntfs []intfcase // interface types in current case
 
 	for _, cc := range sw.Body.List {
-		current = current[:0]
-
+		currentIntfs = currentIntfs[:0]
 		for _, caseExpr := range cc.(*ast.CaseClause).List {
 			caseType := pass.TypesInfo.TypeOf(caseExpr)
 			if caseType == nil {
 				continue
 			}
-
-			switch t := types.Unalias(caseType).(type) {
-			case *types.TypeParam:
-				current = append(current, intfcase{t.Underlying().(*types.Interface), true, caseExpr})
-			default:
-				if v, ok := t.Underlying().(*types.Interface); ok {
-					current = append(current, intfcase{v, false, caseExpr})
-				}
+			i, typeParam, ok := interfaceTypeOf(caseType)
+			if ok {
+				currentIntfs = append(currentIntfs, intfcase{i, typeParam, caseExpr})
 			}
-
-			for _, i := range earlier {
-				var res bool
-				if i.constraint {
-					res = types.Satisfies(caseType, i.underlying)
-				} else {
-					res = types.Implements(caseType, i.underlying)
-				}
-				if res {
-					pass.Reportf(caseExpr.Pos(), "unreachable type switch case %s (matched by earlier case %s)", formatExpr(caseExpr), formatExpr(i.expr))
+			for _, e := range earlierIntfs {
+				if ineffectualOrder(e, caseType) {
+					const message = "ineffectual type %[1]s due to case order: dynamic type that would be matched by type %[1]s is matched in earlier case by type %[2]s"
+					pass.Reportf(caseExpr.Pos(), message, formatExpr(caseExpr), formatExpr(e.expr))
 				}
 			}
 		}
-
-		earlier = append(earlier, current...)
+		earlierIntfs = append(earlierIntfs, currentIntfs...)
 	}
 }
 
+func underlyingIs[T types.Type](t types.Type) bool {
+	_, ok := t.Underlying().(T)
+	return ok
+}
+
+// hasTypeName determines whether t is a type with a name.
+func hasTypeName(t types.Type) (*types.TypeName, bool) {
+	switch t := t.(type) {
+	case *types.Alias:
+		return t.Obj(), true
+	case *types.Named: // Note: also represents predeclared type error
+		return t.Obj(), true
+	case *types.TypeParam:
+		return t.Obj(), true
+	default:
+		return nil, false
+	}
+}
+
+func interfaceTypeOf(t types.Type) (_ *types.Interface, typeParam bool, ok bool) {
+	t = types.Unalias(t)
+	switch t := t.(type) {
+	case *types.TypeParam:
+		return t.Constraint().Underlying().(*types.Interface), true, true
+	default:
+		if v, ok := t.Underlying().(*types.Interface); ok {
+			return v, false, true
+		}
+		return nil, false, false
+	}
+}
+
+// Returns the defined type, if any, denoted by the alias type a.
+// At most maxpointer pointer types may be present in the alias
+// chain until a defined type is reached.
+func aliasDenotesDefinedType(a *types.Alias, maxpointer int) (success bool, defined *types.Named, pointers int) {
+	var t types.Type = a
+	npointer := 0
+	for {
+		switch s := t.(type) {
+		case *types.Alias:
+			t = s.Rhs()
+		case *types.Pointer:
+			npointer += 1
+			if npointer > maxpointer {
+				return false, nil, 0
+			}
+			t = s.Elem()
+		case *types.Named:
+			return true, s, npointer
+		default:
+			return false, nil, 0
+		}
+	}
+}
+
+// computeImplements computes the set of non-interface defined
+// types (in the set of predeclared types and r.TypeDecls)
+// that implement the given interface type.
+//
+// If the defined type is a generic type, note that the
+// "implements" relationship can have meaning only for an
+// instantiated generic type.
+// computeImplements currently does not support generic types.
+//
+// The interface type must be the type of either a type assertion
+// expression or a type switch guard expression. As of
+// go1.27, this means that the interface type must not be a
+// general interface, i.e., an interface that cannot be
+// used outside a type constraint.
+// In other words, the above requirement implies that the
+// interface type must be fully described by its method set.
+//
+// Additionally, the interface must not be the empty interface.
+//
+// [general interface]: https://go.dev/ref/spec#General_interfaces
 func computeImplements(ch *typeSwitchState, r *finder.Result, intf *types.Interface) {
 	if _, ok := ch.impl[intf]; ok {
 		return
 	}
 
-	if ch.impl == nil {
-		ch.impl = make(map[*types.Interface]map[tp]struct{})
+	if !intf.IsMethodSet() {
+		panic("interface not fully described by method set")
 	}
-	ch.impl[intf] = make(map[tp]struct{})
 
-	add := func(d tp) {
+	if intf.Empty() {
+		panic("empty interface")
+	}
+
+	if ch.impl == nil {
+		ch.impl = make(map[*types.Interface]map[implementer]struct{})
+	}
+	ch.impl[intf] = make(map[implementer]struct{})
+
+	add := func(d implementer) {
 		ch.impl[intf][d] = struct{}{}
 	}
 
-	// Note: None of the non-interface predeclared types have
-	// methods as of go1.27 and thus they cannot implement a
-	// non-empty interface. If this does not hold true
-	// in future Go versions, then those predeclared types
-	// must be evaluated for the following "implements" checks.
-	// A similar note applies in func computeTypeRelations.
+	maybeAdd := func(n *types.Named, pointer bool) {
+		if underlyingIs[*types.Interface](n) {
+			return
+		}
+		if n.TypeParams() != nil {
+			return // generic types are not supported
+		}
+		var n2 types.Type
+		if pointer {
+			n2 = types.NewPointer(n)
+		} else {
+			n2 = n
+		}
+		// Note: types.Implements is documented to have
+		// unspecified behavior if its V argument (the
+		// first argument) is an uninstantiated generic type.
+		if !types.Implements(n2, intf) {
+			return
+		}
+		add(implementer{n, pointer})
+	}
+
+	// Go spec, as of go1.27, section 'Method declarations':
+	// "[The receiver's] type must be a defined type T or a
+	// pointer to a defined type T" and "T is called the
+	// receiver base type. A receiver base type cannot be a
+	// pointer or interface type".
 	//
-	// Note: Go spec as of go1.27: "[The receiver's] type
-	// must be a defined type T or a pointer to a defined
-	// type T" and "T is called the receiver base type. A
-	// receiver base type cannot be a pointer or interface type".
+	// (continued) "If the receiver base type is a generic
+	// type, the receiver specification must declare
+	// corresponding type parameters for the method to use.
+	// ... one for each type parameter of the receiver base type."
+	//
+	// (continued) "If the receiver type is denoted by (a
+	// pointer to) an alias, the alias must not be generic
+	// and it must not denote an instantiated generic type,
+	// neither directly nor indirectly via another alias, and
+	// irrespective of pointer indirections."
 	//
 	// Examples
 	//
@@ -359,34 +518,29 @@ func computeImplements(ch *typeSwitchState, r *finder.Result, intf *types.Interf
 	//   type A = *S  // A: valid receiver type
 	//   type B = *A  // B: invalid receiver type (B is a 2x-pointer to a defined type)
 	//
-	// Note: See also: Go spec section 'Method sets'.
+	// See also: Go spec section 'Method sets'.
+
+	// Given the above descriptions from the Go spec and
+	// given the current restrictions for the input interface
+	// argument (method set only, non-empty) to this
+	// function, it is sufficient to evaluate types that are
+	// valid method receiver types.
+	//
+	// Thus the following code considers type T or type *T,
+	// where T is a defined type.
+	//
+	// None of the non-interface predeclared types, as of
+	// go1.27, have methods associated with them. Therefore
+	// it is not necessary to evaluate the predeclared types.
 	for tn := range r.TypeDecls {
 		switch t := types.Unalias(tn.Type()).(type) {
 		case *types.Named: // defined type
 			n := t
-			// The following check for an interface type is not due
-			// to the "receiver based type cannot be a pointer or
-			// interface type" requirement in the Go spec. (That
-			// requirement will be handled internally
-			// anyway by func types.Implements.)
-			// Rather, the interface check is specific to the logic
-			// of the analysis, which should not consider interfaces
-			// as a possible implementing type in this context.
-			if !underlyingIs[*types.Interface](n) && n.Origin().TypeParams() == nil {
-				if types.Implements(types.NewPointer(n), intf) {
-					add(tp{n.Obj(), true})
-				}
-				if types.Implements(n, intf) {
-					add(tp{n.Obj(), false})
-				}
-			}
+			maybeAdd(n, true)
+			maybeAdd(n, false)
 		case *types.Pointer: // pointer to a defined type
 			if n, ok := types.Unalias(t.Elem()).(*types.Named); ok {
-				if !underlyingIs[*types.Interface](n) && n.Origin().TypeParams() == nil {
-					if types.Implements(types.NewPointer(n), intf) {
-						add(tp{n.Obj(), true})
-					}
-				}
+				maybeAdd(n, true)
 			}
 		}
 	}
@@ -396,53 +550,54 @@ func computeTypeRelations(ch *typeSwitchState, r *finder.Result) {
 	if ch.identical != nil {
 		return
 	}
-
 	ch.identical = make(map[tp][]tp, len(r.TypeDecls))
-	add := func(root, t2 tp) {
-		ch.identical[root] = append(ch.identical[root], t2)
+
+	add := func(t0 tp, t1 tp) {
+		ch.identical[t0] = append(ch.identical[t0], t1)
 	}
 
 	for tn := range r.TypeDecls {
 		switch t := tn.Type().(type) {
 		case *types.Alias:
-			switch tt := types.Unalias(t).(type) {
-			case *types.Named:
-				n := tt
-				if n.Origin().TypeParams() == nil {
-					add(tp{n.Obj(), false}, tp{tn, false})
-					add(tp{n.Obj(), true}, tp{tn, true})
-				}
-			case *types.Pointer:
-				if n, ok := types.Unalias(tt.Elem()).(*types.Named); ok {
-					if n.Origin().TypeParams() == nil {
-						add(tp{n.Obj(), true}, tp{tn, false})
-					}
-				}
+			success, defined, pointers := aliasDenotesDefinedType(t, 1)
+			if !success {
+				continue
+			}
+			if underlyingIs[*types.Interface](defined) {
+				continue
+			}
+			if defined.TypeParams() != nil {
+				continue
+			}
+			if pointers == 0 {
+				add(tp{defined.Obj(), false}, tp{tn, false})
+				add(tp{defined.Obj(), true}, tp{tn, true})
+			} else { // pointers == 1
+				add(tp{defined.Obj(), true}, tp{tn, false})
 			}
 		case *types.Named:
 			n := t
-			if n.Origin().TypeParams() == nil {
-				add(tp{n.Obj(), false}, tp{tn, false})
-				add(tp{n.Obj(), true}, tp{tn, true})
+			if underlyingIs[*types.Interface](n) {
+				continue
 			}
+			if n.TypeParams() != nil {
+				continue
+			}
+			add(tp{n.Obj(), false}, tp{tn, false})
+			add(tp{n.Obj(), true}, tp{tn, true})
 		default:
 			panic(fmt.Sprintf("internal error: unexpected type %T", t))
 		}
 	}
 }
 
-func underlyingIs[T types.Type](n *types.Named) bool {
-	_, ok := n.Underlying().(T)
-	return ok
-}
-
-// knownEnumeratedType reports whether the given type (which
+// isEnumeratedType reports whether the given type (which
 // typically is the type for an arbitrary expression) is an
 // enumerated type. It returns the enumerated type and the
 // enumerated constants of that type.
-func knownEnumeratedType(enums enumerated.Result, t types.Type) (*types.Named, []*types.Const, bool) {
+func isEnumeratedType(enums enumerated.Result, t types.Type) (*types.Named, []*types.Const, bool) {
 	for {
-		switch concrete := t.(type) {
+		switch s := t.(type) {
 		case *types.Array,
 			*types.Basic,
 			*types.Chan,
@@ -457,20 +612,20 @@ func knownEnumeratedType(enums enumerated.Result, t types.Type) (*types.Named, [
 			*types.Union:
 			return nil, nil, false
 		case *types.Alias:
-			t = concrete.Rhs()
+			t = s.Rhs()
 		case *types.Named:
-			v, ok := enums[concrete]
+			v, ok := enums[s]
 			if ok {
-				return concrete, v, true
+				return s, v, true
 			}
 			// Package go/types documentation for (*types.Named).Underlying:
 			// "Underlying types are never Named, TypeParam,
 			// or Alias types."
 			//
 			// If this were not the case, then for the
-			// following declarations, for the named
+			// following declarations, for the defined
 			// type B, the value of "B".Underlying()
-			// could be the named type A, not int.
+			// could be the defined type A, not int.
 			//
 			// 	type A int
 			// 	type B A
@@ -478,14 +633,15 @@ func knownEnumeratedType(enums enumerated.Result, t types.Type) (*types.Named, [
 			// The guarantee that (*types.Named).Underlying() will
 			// not be a *types.Named value is essential for
 			// correctness of the current function. The goal
-			// of the function is to determine whether a
+			// of the function is to determine whether the
 			// type (say, B) represented by the argument t is
 			// an enumerated type. The function must not consider
-			// whether a different named type (i.e., A) is an enumerated type.
-			if _, ok := concrete.Underlying().(*types.Named); ok {
-				return nil, nil, false
+			// whether a different defined type (i.e., A) is
+			// an enumerated type.
+			if _, ok := s.Underlying().(*types.Named); ok {
+				panic("(*types.Named).Underlying() unexpectedly a *types.Named type")
 			}
-			t = concrete.Underlying()
+			t = s.Underlying()
 		default:
 			// The possible types, as of go1.27, are handled
 			// in the cases above and the default case should
@@ -496,18 +652,19 @@ func knownEnumeratedType(enums enumerated.Result, t types.Type) (*types.Named, [
 	}
 }
 
-// The result from needValues is the set of constant values that
-// must be satisfied to be exhaustive. The result is prepared in
-// the context of the current package and the given options.
+// The result is the set of constant values that must be
+// satisfied for an expression switch to be exhaustive.
+// The result is prepared additionally in the context of the
+// current package and the given options.
 //
-// The keys of the returned map are the set of constant values in
+// The keys of the returned map are constant values in
 // (go/constant.Value).ExactString representation.
 // Note that it is possible for the same constant value to have
 // multiple names, i.e. multiple *types.Const.
-func needValues(currentPkg *types.Package, cs []*types.Const, opts *options) map[string][]*types.Const {
+func needValues(currpkg *types.Package, cs []*types.Const, opts *options) map[string][]*types.Const {
 	ret := make(map[string][]*types.Const, len(cs)) // usually one name per value
 	for _, c := range cs {
-		if c.Pkg() != currentPkg && !c.Exported() {
+		if !canAccessObject(currpkg, c) {
 			continue
 		}
 		if isPkgLevel(c) && matchAny(opts.excludeConstPatterns, fullname(c)) {
@@ -518,33 +675,36 @@ func needValues(currentPkg *types.Package, cs []*types.Const, opts *options) map
 	return ret
 }
 
-func needTypes(currentPkg *types.Package, ch *typeSwitchState, swInterface *types.Interface, opts *options) map[tp][]tp {
-	ret := make(map[tp][]tp, len(ch.impl[swInterface]))
+// The result is the set of types that must be satisfied for a
+// type switch to be exhaustive. The result corresponds to the
+// term "knowable type set" in the package comment.
+func needTypes(currpkg *types.Package, swInterface *types.Interface, ch *typeSwitchState) map[implementer]struct{} {
+	ret := make(map[implementer]struct{})
 	for t := range ch.impl[swInterface] {
-		for _, name := range ch.identical[t] {
-			if name.Pkg() != currentPkg && !name.Exported() {
+		for _, tt := range ch.identical[tp{t.named.Obj(), t.pointer}] {
+			if !canAccessObject(currpkg, tt.typename) {
 				continue
 			}
-			ret[t] = append(ret[t], name)
+			ret[t] = struct{}{}
+			break
 		}
 	}
 	return ret
 }
 
-// formats constant names for an expression switch diagnostic.
-func formatMissingNames(currentPkg *types.Package, missing map[string][]*types.Const) string {
-	// Note that the constants are grouped by value in the input.
+// formats constant names for a "missing cases" diagnostic for an
+// expression switch.
+func formatMissingConstants(currpkg *types.Package, missing map[string][]*types.Const) string {
+	// Note that the constants in the input are grouped by value.
 	// The logic below does the following: The constants in
 	// each group are sorted by AST position. The groups
 	// themselves are then sorted by AST position (of the
 	// first constant in the group).
-	groups := make([][]*types.Const, len(missing))
-	i := 0
+	groups := make([][]*types.Const, 0, len(missing))
 	for _, cs := range missing {
-		cs := slices.Clone(cs) // do not modify input
+		cs := slices.Clone(cs) // do not modify input during sort
 		slices.SortFunc(cs, func(a, b *types.Const) int { return cmp.Compare(a.Pos(), b.Pos()) })
-		groups[i] = cs
-		i++
+		groups = append(groups, cs)
 	}
 	slices.SortFunc(groups, func(a, b []*types.Const) int { return cmp.Compare(a[0].Pos(), b[0].Pos()) })
 
@@ -552,7 +712,7 @@ func formatMissingNames(currentPkg *types.Package, missing map[string][]*types.C
 	var buf strings.Builder
 	for i, g := range groups {
 		for i, c := range g {
-			buf.WriteString(nameString(currentPkg, c))
+			buf.WriteString(formatObject(currpkg, c))
 			if i != len(g)-1 {
 				buf.WriteString("|")
 			}
@@ -564,59 +724,106 @@ func formatMissingNames(currentPkg *types.Package, missing map[string][]*types.C
 	return buf.String()
 }
 
-// formats type names for a type switch diagnostic.
-func formatMissingTypes(currentPkg *types.Package, missing map[tp][]tp, missingNil bool) string {
-	cmpfn := func(a, b tp) int {
-		switch {
-		case !a.IsAlias() && b.IsAlias():
-			return -1
-		case a.IsAlias() && !b.IsAlias():
-			return 1
+// formats type names for a "missing cases" diagnostic for a type switch.
+func formatMissingTypes(currpkg *types.Package, missing map[implementer][]tp, missingNil bool) string {
+	makeGroups := func(missing map[implementer][]tp) [][]tp {
+		cmp0 := func(a, b *types.TypeName) int {
+			// aliases should be sorted after defined types.
+			switch {
+			case !a.IsAlias() && b.IsAlias():
+				return -1
+			case a.IsAlias() && !b.IsAlias():
+				return 1
+			}
+			// predeclared types should be sorted first,
+			// then types in the current package,
+			// then types in external packages ordered by package path.
+			switch {
+			case a.Pkg() == nil && b.Pkg() != nil:
+				return -1
+			case a.Pkg() != nil && b.Pkg() == nil:
+				return 1
+			case a.Pkg() == currpkg && b.Pkg() != currpkg:
+				return -1
+			case a.Pkg() != currpkg && b.Pkg() == currpkg:
+				return 1
+			case a.Pkg() != b.Pkg():
+				return cmp.Compare(a.Pkg().Path(), b.Pkg().Path())
+			}
+			// types in the same package should be ordered by name.
+			if a.Name() != b.Name() {
+				return cmp.Compare(a.Name(), b.Name())
+			}
+			return 0
 		}
-		switch {
-		case a.Pkg() == nil && b.Pkg() != nil:
-			return -1
-		case a.Pkg() != nil && b.Pkg() == nil:
-			return 1
-		case a.Pkg() == currentPkg && b.Pkg() != currentPkg:
-			return -1
-		case a.Pkg() != currentPkg && b.Pkg() == currentPkg:
-			return 1
-		case a.Pkg() != b.Pkg():
-			return cmp.Compare(a.Pkg().Path(), b.Pkg().Path())
+		cmp1 := func(a, b tp) int {
+			if v := cmp0(a.typename, b.typename); v != 0 {
+				return v
+			}
+			// all else being the same (above),
+			// a non-pointer type should be sorted first.
+			switch {
+			case !a.pointer && b.pointer:
+				return -1
+			case a.pointer && !b.pointer:
+				return 1
+			}
+			return 0
 		}
-		if a.Name() != b.Name() {
-			return cmp.Compare(a.Name(), b.Name())
+		cmp2 := func(a, b implementer) int {
+			if v := cmp0(a.named.Obj(), b.named.Obj()); v != 0 {
+				return v
+			}
+			switch {
+			case !a.pointer && b.pointer:
+				return -1
+			case a.pointer && !b.pointer:
+				return 1
+			}
+			return 0
 		}
-		switch {
-		case !a.pointer && b.pointer:
-			return -1
-		case a.pointer && !b.pointer:
-			return 1
+
+		s := slices.SortedFunc(maps.Keys(missing), cmp2)
+		groups := make([][]tp, 0, len(missing))
+		for _, t := range s {
+			g := missing[t]
+			g = slices.Clone(g) // do not modify input during sort
+			slices.SortFunc(g, cmp1)
+			groups = append(groups, g)
 		}
-		return 0
+		slices.SortFunc(groups, func(g1, g2 []tp) int { return cmp1(g1[0], g2[0]) })
+		return groups
 	}
 
-	tpString := func(t tp) string {
-		if t.pointer {
-			return "*" + nameString(currentPkg, t)
+	// helper function that formats a single type.
+	formatType := func(tt tp) string {
+		var buf bytes.Buffer
+		if tt.pointer {
+			buf.WriteByte('*')
 		}
-		return nameString(currentPkg, t)
+		buf.WriteString(formatObject(currpkg, tt.typename))
+
+		switch s := tt.typename.Type().(type) {
+		case *types.Named:
+			// Generic defined types are not supported and
+			// should not have been produced earlier.
+		case *types.Alias:
+			// The alias type may be generic but the
+			// type arguments used to instantiate it
+			// should be inconsequential, since the
+			// defined type that the alias denotes
+			// will not be a generic type.
+			if s.TypeParams() != nil {
+				buf.WriteString("[…]")
+			}
+		default:
+			panic(fmt.Sprintf("internal error: unexpected type %T", tt))
+		}
+
+		return buf.String()
 	}
 
-	type group struct {
-		t     tp
-		names []tp
-	}
-	groups := make([]group, len(missing))
-	i := 0
-	for t, names := range missing {
-		names := slices.Clone(names) // do not modify input
-		slices.SortFunc(names, cmpfn)
-		groups[i] = group{t, names}
-		i++
-	}
-	slices.SortFunc(groups, func(a, b group) int { return cmpfn(a.t, b.t) })
+	groups := makeGroups(missing)
 
 	// format to string
 	var buf strings.Builder
@@ -628,11 +835,11 @@ func formatMissingTypes(currentPkg *types.Package, missing map[tp][]tp, missingN
 	}
 	for i, g := range groups {
 		wrote := false
-		for _, tt := range g.names {
+		for _, tt := range g {
 			if wrote {
 				buf.WriteString(" or ")
 			}
-			buf.WriteString(tpString(tt))
+			buf.WriteString(formatType(tt))
 			wrote = true
 		}
 		if i != len(groups)-1 {
@@ -700,7 +907,7 @@ func checkMapLit(pass *analysis.Pass, compLit *ast.CompositeLit, comments []*ast
 	}
 
 	enums := pass.ResultOf[enumerated.Analyzer].(enumerated.Result)
-	_, cs, ok := knownEnumeratedType(enums, mapType.Key())
+	_, cs, ok := isEnumeratedType(enums, mapType.Key())
 	if !ok {
 		skip("key type is not an enumerated type")
 		return
@@ -727,7 +934,7 @@ func checkMapLit(pass *analysis.Pass, compLit *ast.CompositeLit, comments []*ast
 		}
 	}
 	if len(need) != 0 {
-		pass.Reportf(compLit.Pos(), "missing keys in map literal: %s", formatMissingNames(pass.Pkg, need))
+		pass.Reportf(compLit.Pos(), "missing keys in map literal: %s", formatMissingConstants(pass.Pkg, need))
 	}
 }
 
@@ -742,12 +949,55 @@ func unpointer(t types.Type) types.Type {
 	}
 }
 
-func nameString(currentPkg *types.Package, obj types.Object) string {
-	if currentPkg != obj.Pkg() && obj.Pkg() != nil {
-		return obj.Pkg().Name() + "." + obj.Name()
-	} else {
+func formatObject(currpkg *types.Package, obj types.Object) string {
+	if obj.Pkg() == nil || currpkg == obj.Pkg() {
 		return obj.Name()
 	}
+	if !isPkgLevel(obj) {
+		panic("not a package-level object")
+	}
+	return obj.Pkg().Name() + "." + obj.Name()
+}
+
+// fullname returns the object name qualified with the package
+// path (always). The result is meaningful only for package-level
+// objects.
+func fullname(obj types.Object) string {
+	if !isPkgLevel(obj) {
+		panic("not a package-level object")
+	}
+	var b strings.Builder
+	b.WriteString(obj.Pkg().Path())
+	b.WriteString(".")
+	b.WriteString(obj.Name())
+	return b.String()
+}
+
+func canAccessObject(current *types.Package, obj types.Object) bool {
+	other := obj.Pkg()
+	if other == nil {
+		return true // object in universe scope
+	}
+	if other == current {
+		return true // same package
+	}
+	// Go spec section 'Exported identifiers': "An identifier
+	// may be exported to permit access to it from another
+	// package. An identifier is exported if both:
+	// * the first character of the identifier's name is a
+	// Unicode uppercase letter (Unicode character category
+	// Lu); and
+	// * the identifier is declared in the package block or
+	// it is a field name or method name."
+	//
+	// Note: The "field name or method name" part of
+	// the quoted spec is not handled here. However that part
+	// is not applicable to current callers.
+	return obj.Exported() && isPkgLevel(obj)
+}
+
+func isPkgLevel(obj types.Object) bool {
+	return obj.Pkg() != nil && obj.Pkg().Scope().Lookup(obj.Name()) == obj
 }
 
 func formatExpr(e ast.Expr) string {

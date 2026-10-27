@@ -174,7 +174,7 @@ func f4() {
 }
 
 func f5[P interface{ p() }]() {
-	// various extra case clauses that do not contribute towards
+	// various types in type switch case that do not contribute towards
 	// making the type switch exhaustive.
 
 	type e interface{ e() }
@@ -224,7 +224,7 @@ func f6() {
 }
 
 func f7() {
-	// ast variations at type assertion node
+	// ast variations at type switch guard node
 
 	type i interface{ m() }
 	var x interface{ m() }
@@ -263,7 +263,7 @@ func f7() {
 
 func f8() {
 	// type l is a local alias for a type declared at top level.
-	// the local alias type is included in a case clause.
+	// the local alias type is specified in a case.
 
 	type l = *u
 

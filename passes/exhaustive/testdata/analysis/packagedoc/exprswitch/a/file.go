@@ -1,5 +1,5 @@
 package a
-import "test/analysis/packagedoc/b"
+import "test/analysis/packagedoc/exprswitch/b"
 type A = b.B
 const X0 = b.X0
 const X1 = b.X1

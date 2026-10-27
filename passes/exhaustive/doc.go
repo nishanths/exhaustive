@@ -12,13 +12,15 @@ exhaustive.
 
 # Expression switches
 
-Expression switch statements in which the switch expression type
-is an [enumerated type] or an alias for an enumerated type are
-checked.
-
-An expression switch is considered exhaustive if each value of the
-enumerated type of the switch expression is included in the case
-clauses.
+Given an [expression switch] in which the switch expression type is
+an [enumerated type], the expression switch is considered
+exhaustive if every value in the [value set] of the enumerated
+type is specified in the cases.
+If the expression switch and the declaration of the enumerated
+type and its constants are in different packages, then it is
+sufficient that the values corresponding to exported constants
+are specified in the cases.
+The case expressions must be constant values.
 
 The following expression switch is not exhaustive.
 
@@ -43,33 +45,31 @@ The following expression switch is not exhaustive.
 		}
 	}
 
-The diagnostic is
+The analysis reports a diagnostic if an expression switch is not exhaustive.
+The diagnostic for the above expression switch is
 
 	missing cases in expression switch: darcs
 
-If the expression switch statement and the declarations
-of the enumerated type (and constants) are in different packages,
-then it is necessary to include only the values corresponding to
-exported constants.
-
-A case expression must be a constant to contribute towards making
-the expression switch exhaustive.
-
-The presence of a default case does not make a switch statement
-exhaustive. See flag -d to control this behavior.
+The presence of a default case does not make an expression switch exhaustive.
+See flag -d to control this behavior.
 
 # Type switches
 
-Every type switch statement is checked, except for the following
-special case exceptions: type switches in which the interface in
-the type assertion is the empty interface or the predeclared type
-error are not checked.
+Given a [type switch] in a package p, the "knowable type set" of
+the type switch is the set of types T or *T that implements the
+interface type I of the expression in the type switch guard,
+where T is a non-interface type declared at top level in package
+p or its (recursively) imported dependencies. If the type switch
+and the type declaration of T are in different packages, then the
+types T and *T are included in the knowable type set only if T is
+exported.
 
-A type switch is considered exhaustive if each type T or *T that
-implements the interface in the type assertion is included in the
-case clauses, where T is a non-interface type declared at top
-level in the current package or its (recursively) imported
-dependencies.
+A type switch is considered exhaustive if every type in its
+knowable type set is specified in the cases.
+
+If an interface type J, but not a type parameter, is specified as a
+type in a case, it is equivalent to specifying each non-interface
+type T or *T that implements J.
 
 The following type switch is not exhaustive.
 
@@ -95,28 +95,25 @@ The following type switch is not exhaustive.
 		}
 	}
 
-The diagnostic (as of go1.27) is
+The analysis reports a diagnostic if a type switch is not exhaustive.
+The diagnostic (as of go1.27) for the above type switch is
 
 	missing cases in type switch: *types.Basic, *types.TypeParam
 
-If the type switch statement and the type declaration of a type T
-are in different packages, then it is only necessary to include T
-or *T in the case clauses if T is an exported type.
+The presence of a default case does not make a type switch exhaustive.
+See flag -d to control this behavior.
+It is not necessary for a type switch to include a nil case (i.e.
+"case nil:") to be exhaustive, but this behavior can be adjusted
+via the flags.
 
-If an interface type or a type parameter (whose type constraint
-is an interface type) is specified as a type in a case clause, it
-is equivalent to specifying each type T or *T that implements
-that interface.
+As special case exceptions, the analysis does not check type
+switches in which the interface type of the expression in the
+type switch guard is the empty interface or the predeclared type
+error.
 
-Generic types that have methods and implement an interface are
-not supported by this analysis. These types will not be reported
-in diagnostics.
-
-It is not necessary to include a 'nil' case (i.e. "case nil: ")
-for a type switch to be exhaustive, but this behavior can be
-adjusted via the flags. The behavior regarding the default case,
-as described in the section on expression switches, also applies
-to type switches.
+The analysis does not support generic types that implement an
+interface. Diagnostics do not mention these types as missing in
+the cases of a type switch.
 
 # Flags
 
@@ -140,29 +137,30 @@ The default argument is "switch".
 If the -d flag is specified, then switch statements that
 include a default case are always considered exhaustive.
 
-The -casenil flag applies to type switches; it specifies whether
-type switches must include a 'nil' case (i.e. "case nil: ") to
-be exhaustive. The -e flag restricts checking to only those
-switch statements that have an '//exhaustive:enforce' comment
-directive. The -g flag enables checking of switch statements in
-generated files. The -defrequire flag requires that each checked
-expression switch includes a default case even if it is exhaustive.
+The -casenil flag specifies whether type switches must include a
+nil case (i.e. "case nil:") to be exhaustive.
+The -e flag restricts checking to only those switch statements
+that have an '//exhaustive:enforce' comment directive.
+The -g flag enables checking of switch statements in generated
+files.
+The -defrequire flag requires that each checked expression switch
+includes a default case even if it is exhaustive.
 
-The -impossible flag checks for impossible or
-unreachable cases in type switches. See the "Examples" section.
+The -impossible flag checks for impossible or unreachable cases
+in type switches. See the "Examples" section.
 
 The -constignore, -typeignore, and -typeonly flags accept a
 regular expression pattern in Go package regexp syntax. These
-flags may be repeated to specify multiple patterns. Constant
-names matched by a -constignore regexp do not have to be included
-in case clauses for an expression switch to be exhaustive.
+flags may be repeated to specify multiple patterns.
+Constant names matched by a -constignore regexp do not have to be
+specified in the cases of an expression switch to be exhaustive.
 If the switch expression type name[*] is matched by a -typeignore
-regexp then that switch statement will not be checked. If
--typeonly flags are specified then only those switch statements
-in which the switch expression type name is matched by a
--typeonly regexp will be checked. If a type name is matched by
-both a -typeonly regexp and a -typeignore regexp, the -typeonly
-match wins.
+regexp, then that switch statement will not be checked.
+If -typeonly flags are specified, then only those switch
+statements in which the switch expression type name is matched by
+a -typeonly regexp will be checked.
+If a type name is matched by both a -typeonly regexp and a
+-typeignore regexp, the -typeonly match wins.
 
 These regexp flags are applicable only when the type or constant
 declaration in question is declared at top level. The type
@@ -183,8 +181,9 @@ provides additional flags that control the discovery of
 enumerated types and enumerated constants. See its documentation
 for details.
 
-[*] In a type switch, this instead refers to the type name, if
-any, of the interface in the type assertion.
+[*] In a type switch, this instead refers to the type name (if it
+has one) of the interface type of the expression in the type
+switch guard.
 
 # Comment directives
 
@@ -228,38 +227,37 @@ work as expected.
 See the code snippets in the earlier sections for basic examples.
 
 The following example shows the functionality of the -impossible
-flag. The *loop type implements the stmt interface. The type
-switch has a case for stmt before the case for *loop.
+flag. The type *Loop implements the interface Statement. The type
+switch has a case for Statement before the case for *Loop.
 
-	type node interface{ node() }
-	type stmt interface{ node; stmt() }
+	type Node interface{ node() }
+	type Statement interface{ Node; statement() }
 
-	type loop struct{}
-	func (*loop) node() {}
-	func (*loop) stmt() {}
+	type Literal struct{}
+	func (*Literal) node() {}
 
-	type literal struct{}
-	func (*literal) node() {}
+	type Loop struct{}
+	func (*Loop) node() {}
+	func (*Loop) statement() {}
 
-	func f(v node) {
+	func f(v Node) {
 		switch v.(type) {
-		case stmt:
-		case *loop:
-		case *literal:
+		case Statement:
+		case *Literal:
+		case *Loop:
 		}
 	}
 
-The diagnostic is:
+The diagnostic is
 
-	unreachable type switch case *loop (matched by earlier case stmt)
+	unreachable type switch case *Loop (matched by earlier case Statement)
 
 The following examples illustrate handling of aliases.
 
-In the expression switch below, the enumerated type is
-effectively b.B, which is the type denoted by the alias type a.A
-of the switch expression. The switch is exhaustive because each
-value of the enumerated type b.B (i.e., 0 and 1, corresponding to
-b.X0 and b.X1, respectively) is included in the case clauses.
+In the following expression switch, the enumerated type is b.B,
+which is the type denoted by the alias a.A of the switch
+expression. The expression switch is exhaustive; every value in
+the value set of b.B is specified in the cases.
 
 	package a
 	import "b"
@@ -281,27 +279,33 @@ b.X0 and b.X1, respectively) is included in the case clauses.
 		}
 	}
 
-In a type switch, an alias type may be used in a case instead of
-the original type. The type switch below is exhaustive.
+In a type switch, an alias may be used in a case instead of the
+original type. The following type switch must specify types *T
+and *U in the cases to be exhaustive. The type *A, which is
+identical to *T, is specified in a case instead of *T. The type
+switch is exhaustive.
 
-	type I interface{ m() }
+	type m interface{ m() }
 
 	type T struct{}
 	func (*T) m() {}
 
+	type A = T
+
 	type U struct{}
 	func (*U) m() {}
 
-	type A = T
-
-	func f(v I) {
+	func f(v m) {
 		switch v.(type) {
-		case *A: // note that *A is identical to *T
+		case *A:
 		case *U:
 		}
 	}
 
+[expression switch]: https://golang.org/ref/spec#Expression_switches
+[type switch]: https://golang.org/ref/spec#Type_switches
 [package enumerated]: https://pkg.go.dev/github.com/nishanths/exhaustive/passes/enumerated
 [enumerated type]: https://pkg.go.dev/github.com/nishanths/exhaustive/passes/enumerated
+[value set]: https://pkg.go.dev/github.com/nishanths/exhaustive/passes/enumerated#hdr-Value_sets
 */
 package exhaustive

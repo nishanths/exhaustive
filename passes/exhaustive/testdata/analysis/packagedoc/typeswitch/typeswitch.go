@@ -22,20 +22,19 @@ func f3(t types.Type) bool {
 	}
 }
 
-
-type I interface{ m() }
+type m interface{ m() }
 
 type T struct{}
 func (*T) m() {}
 
+type A = T
+
 type U struct{}
 func (*U) m() {}
 
-type A = T
-
-func f4(v I) {
+func f4(v m) {
 	switch v.(type) {
-	case *A: // note that *A is identical to *T
+	case *A:
 	case *U:
 	}
 
@@ -43,20 +42,20 @@ func f4(v I) {
 	}
 }
 
-type node interface{ node() }
-type stmt interface{ node; stmt() }
+type Node interface{ node() }
+type Statement interface{ Node; statement() }
 
-type loop struct{}
-func (*loop) node() {}
-func (*loop) stmt() {}
+type Literal struct{}
+func (*Literal) node() {}
 
-type literal struct{}
-func (*literal) node() {}
+type Loop struct{}
+func (*Loop) node() {}
+func (*Loop) statement() {}
 
-func f5(v node) {
+func f5(v Node) {
 	switch v.(type) {
-	case stmt:
-	case *loop: // want "^unreachable type switch case \\*loop \\(matched by earlier case stmt\\)$"
-	case *literal:
+	case Statement:
+	case *Literal:
+	case *Loop: // want "^unreachable type switch case \\*Loop \\(matched by earlier case Statement\\)$"
 	}
 }

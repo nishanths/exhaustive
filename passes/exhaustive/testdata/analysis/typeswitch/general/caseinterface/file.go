@@ -1,22 +1,35 @@
 package caseinterface
 
-type mn interface{ m(); n() }
+type mn interface {
+	m()
+	n()
+}
 type m interface{ m() }
 type n interface{ n() }
 type o interface{ o() }
-type mno interface{ m(); n(); o }
-type mne interface{ m(); n(); e() }
+type mno interface {
+	m()
+	n()
+	o
+}
+type mne interface {
+	m()
+	n()
+	e()
+}
 
 type t struct{}
+
 func (t) m()
 func (t) n()
 
 type u struct{}
+
 func (*u) m()
 func (*u) n()
 func (*u) o()
 
-func f1() {
+func f0() {
 	var x mn
 
 	switch x.(type) { // want "^missing cases in type switch: t, \\*t, \\*u$"
@@ -46,7 +59,10 @@ func f1() {
 	}
 
 	switch x.(type) {
-	case interface{ m(); n() }:
+	case interface {
+		m()
+		n()
+	}:
 	}
 
 	switch x.(type) {
@@ -54,7 +70,10 @@ func f1() {
 	}
 
 	switch x.(type) {
-	case interface{ m; n }:
+	case interface {
+		m
+		n
+	}:
 	}
 
 	switch x.(type) {
@@ -89,17 +108,17 @@ func f1() {
 	}
 }
 
-func f2[P n, Q o, R mn, S any]() {
+func f1[P n, Q o, R mn, S any]() {
 	var x mn
 
 	switch x.(type) { // want "^missing cases in type switch: t, \\*t, \\*u$"
 	}
 
-	switch x.(type) {
+	switch x.(type) { // want "^missing cases in type switch: t, \\*t, \\*u$"
 	case P:
 	}
 
-	switch x.(type) {
+	switch x.(type) { // want "^missing cases in type switch: t, \\*t, \\*u$"
 	case R:
 	}
 
@@ -108,17 +127,22 @@ func f2[P n, Q o, R mn, S any]() {
 	case m:
 	}
 
-	switch x.(type) { // want "^missing cases in type switch: t, \\*t$"
+	switch x.(type) {
+	case P:
+	case mn:
+	}
+
+	switch x.(type) { // want "^missing cases in type switch: t, \\*t, \\*u$"
 	case Q:
 	}
 
-	switch x.(type) {
+	switch x.(type) { // want "^missing cases in type switch: \\*u$"
 	case t:
 	case *t:
 	case Q:
 	}
 
-	switch x.(type) {
+	switch x.(type) { // want "^missing cases in type switch: t, \\*t, \\*u$"
 	case S:
 	}
 
@@ -127,7 +151,7 @@ func f2[P n, Q o, R mn, S any]() {
 	switch y.(type) { // want "^missing cases in type switch: t, \\*t, \\*u$"
 	}
 
-	switch y.(type) {
+	switch y.(type) { // want "^missing cases in type switch: t, \\*t, \\*u$"
 	case R:
 	}
 }

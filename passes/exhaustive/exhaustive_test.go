@@ -89,8 +89,8 @@ func TestAnalyzer(t *testing.T) {
 			"test/analysis/typeswitch/general",
 			"test/analysis/typeswitch/general/embedded",
 			"test/analysis/typeswitch/general/alias",
-			"test/analysis/typeswitch/general/caseinterface",
 			"test/analysis/typeswitch/general/generic")
+		run(t, func() { fCheck = "typeswitch"; ; fCheckImpossible = true }, "test/analysis/typeswitch/general/caseinterface")
 		run(t, func() { fCheck = "typeswitch"; fRequireCaseNil = true }, "test/analysis/typeswitch/casenil")
 		run(t, func() { fCheck = "typeswitch"; fDefaultEx = true }, "test/analysis/typeswitch/def")
 		run(t, func() {
@@ -109,7 +109,7 @@ func TestAnalyzer(t *testing.T) {
 	})
 }
 
-// This test does not check that the analysis produces expected
+// This test does not check that the analysis reports expected
 // diagnostics, facts, results, etc. It only checks that the
 // analysis runs without errors and without panics on real
 // packages, such as those in the standard library.
@@ -142,14 +142,14 @@ func TestRealPackages(t *testing.T) {
 		}
 	}
 
-	run(t, func() { fCheck = "switch,mapliteral,typeswitch" }, "net")
+	run(t, func() { fCheck = "switch,mapliteral,typeswitch"; fCheckImpossible = true }, "net")
 
 	if !testing.Short() {
 		// Note: This could specify the name "std" instead of
 		// specifying individual package names, but in low memory
 		// environments where tests might run the analysis will
 		// commonly run out of memory for the former.
-		run(t, func() { fCheck = "switch,mapliteral,typeswitch" },
+		run(t, func() { fCheck = "switch,mapliteral,typeswitch"; fCheckImpossible = true },
 			"fmt",
 			"go/...",
 			"html/template",

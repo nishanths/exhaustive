@@ -79,7 +79,7 @@ func f(v vcs) {
 }
 ```
 
-the analysis produces the following diagnostic
+the analysis reports the following diagnostic
 
 	$ exhaustive
 	a.go:15:2: missing cases in expression switch: darcs

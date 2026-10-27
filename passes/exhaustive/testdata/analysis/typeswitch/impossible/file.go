@@ -9,10 +9,12 @@ type mn interface {
 type e interface{ e() }
 
 type t struct{}
+
 func (t) m()
 func (t) n()
 
 type u struct{}
+
 func (*u) m()
 
 func f1() {
@@ -33,21 +35,21 @@ func f1() {
 
 	switch x.(type) {
 	case m:
-	case *t: // want "^unreachable type switch case \\*t \\(matched by earlier case m\\)$"
+	case *t: // want "^ineffectual type \\*t due to case order: dynamic type that would be matched by type \\*t is matched in earlier case by type m$"
 	}
 
 	switch x.(type) {
 	case interface {
 		m()
 	}:
-	case *t: // want "^unreachable type switch case \\*t \\(matched by earlier case interface\\{m\\(\\)\\}\\)$"
+	case *t: // want "^ineffectual type \\*t due to case order: dynamic type that would be matched by type \\*t is matched in earlier case by type interface\\{m\\(\\)\\}$"
 	}
 
 	switch x.(type) {
 	case m:
-	case t: // want "^unreachable type switch case t \\(matched by earlier case m\\)$"
-	case *t: // want "^unreachable type switch case \\*t \\(matched by earlier case m\\)$"
-	case *u: // want "^unreachable type switch case \\*u \\(matched by earlier case m\\)$"
+	case t: // want "^ineffectual type t due to case order: dynamic type that would be matched by type t is matched in earlier case by type m$"
+	case *t: // want "^ineffectual type \\*t due to case order: dynamic type that would be matched by type \\*t is matched in earlier case by type m$"
+	case *u: // want "^ineffectual type \\*u due to case order: dynamic type that would be matched by type \\*u is matched in earlier case by type m$"
 	}
 
 	switch x.(type) {
@@ -69,19 +71,19 @@ func f1() {
 
 	switch x.(type) {
 	case n:
-	case t: // want "^unreachable type switch case t \\(matched by earlier case n\\)$"
-	case *t: // want "^unreachable type switch case \\*t \\(matched by earlier case n\\)$"
+	case t: // want "^ineffectual type t due to case order: dynamic type that would be matched by type t is matched in earlier case by type n$"
+	case *t: // want "^ineffectual type \\*t due to case order: dynamic type that would be matched by type \\*t is matched in earlier case by type n$"
 	case *u:
 	}
 
 	switch x.(type) { // want "^missing cases in type switch: \\*u$"
 	case mn:
-	case *t: // want "^unreachable type switch case \\*t \\(matched by earlier case mn\\)$"
+	case *t: // want "^ineffectual type \\*t due to case order: dynamic type that would be matched by type \\*t\\ is matched in earlier case by type mn$"
 	}
 
 	switch x.(type) {
 	case m:
-	case mn: // want "^unreachable type switch case mn \\(matched by earlier case m\\)$"
+	case mn: // want "^ineffectual type mn due to case order: dynamic type that would be matched by type mn\\ is matched in earlier case by type m$"
 	}
 
 	switch x.(type) {
@@ -92,7 +94,7 @@ func f1() {
 	switch x.(type) {
 	case t:
 	case n, m:
-	case *t, *u: // want "^unreachable type switch case \\*t \\(matched by earlier case n\\)$" "^unreachable type switch case \\*t \\(matched by earlier case m\\)$" "^unreachable type switch case \\*u \\(matched by earlier case m\\)$"
+	case *t, *u: // want "^ineffectual type \\*t due to case order: dynamic type that would be matched by type \\*t is matched in earlier case by type n$" "^ineffectual type \\*t due to case order: dynamic type that would be matched by type \\*t is matched in earlier case by type m$" "^ineffectual type \\*u due to case order: dynamic type that would be matched by type \\*u is matched in earlier case by type m$"
 	}
 
 	switch x.(type) {
@@ -107,75 +109,66 @@ func f1() {
 
 	switch x.(type) {
 	case any:
-	case *t: // want "^unreachable type switch case \\*t \\(matched by earlier case any\\)$"
+	case *t: // want "^ineffectual type \\*t due to case order: dynamic type that would be matched by type \\*t is matched in earlier case by type any$"
+	case mn: // want "^ineffectual type mn due to case order: dynamic type that would be matched by type mn is matched in earlier case by type any$"
 	}
 }
-
-// See Go spec section "Satisfying a type constraint".
 
 type o interface{ o() }
 
 type t1 struct{}
+
 func (t1) o()
 
-type t2 struct{ f []byte }
+type t2 struct{ f []byte } // note that type t2 is not comparable
+
 func (t2) o()
 
-func f2[P any](v o) {
-	switch v.(type) {
-	case P:
-	case t1: // want "^unreachable type switch case t1 \\(matched by earlier case P\\)$"
-	case t2: // want "^unreachable type switch case t2 \\(matched by earlier case P\\)$"
-	case o: // want "^unreachable type switch case o \\(matched by earlier case P\\)$"
-	case n: // want "^unreachable type switch case n \\(matched by earlier case P\\)$"
-	}
-}
-
-func f3[P o](v o) {
-	switch v.(type) {
-	case P:
-	case t1: // want "^unreachable type switch case t1 \\(matched by earlier case P\\)$"
-	case t2: // want "^unreachable type switch case t2 \\(matched by earlier case P\\)$"
-	case o: // want "^unreachable type switch case o \\(matched by earlier case P\\)$"
-	case n:
-	}
-}
-
-func f4[P comparable](v o) {
-	switch v.(type) {
-	case P:
-	case t1: // want "^unreachable type switch case t1 \\(matched by earlier case P\\)$"
-	case t2:
-	case o: // want "^unreachable type switch case o \\(matched by earlier case P\\)$"
-	case n: // want "^unreachable type switch case n \\(matched by earlier case P\\)$"
-	}
-
-	switch v.(type) {
-	case P:
-	case o: // want "^unreachable type switch case o \\(matched by earlier case P\\)$"
-	case n: // want "^unreachable type switch case n \\(matched by earlier case P\\)$"
-	case t1: // want "^unreachable type switch case t1 \\(matched by earlier case P\\)$" "^unreachable type switch case t1 \\(matched by earlier case o\\)$"
-	case t2: // want "^unreachable type switch case t2 \\(matched by earlier case o\\)$"
-	}
-}
-
-func f5[P interface {
+func f2[P any, Q o, R1 comparable, R2 interface {
 	comparable
-	o()
-}](v o) {
+	o
+}, R3 t1, R4 t2, R5 t1 | float64, R6 *t1, R7 interface {
+	comparable
+	t1
+}, R8 interface {
+	comparable
+	t2
+}]() {
+	// Note: checking for impossible/unreachable cases due to
+	// an earlier type constraint interface in a case is not
+	// supported by this analysis.
+	// See the comment in func checkImpossibleCases.
+
+	var v o
+
 	switch v.(type) {
 	case P:
-	case t1: // want "^unreachable type switch case t1 \\(matched by earlier case P\\)$"
-	case t2:
-	case o: // want "^unreachable type switch case o \\(matched by earlier case P\\)$"
-	case n:
+	case Q:
+	case R1:
+	case R2:
+	case R3:
+	case R4:
+	case R5:
+	case R6:
+	case R7:
+	case R8:
+	case o:
 	}
 
 	switch v.(type) {
 	case P:
-	case o: // want "^unreachable type switch case o \\(matched by earlier case P\\)$"
-	case n:
-	case t1: // want "^unreachable type switch case t1 \\(matched by earlier case P\\)$" "^unreachable type switch case t1 \\(matched by earlier case o\\)$"
-	case t2: // want "^unreachable type switch case t2 \\(matched by earlier case o\\)$"
+	case Q:
+	case R1:
+	case R2:
+	case R3:
+	case R4:
+	case R5:
+	case R6:
+	case R7:
+	case R8:
+	case t1:
+	case t2:
+	case *t1:
+	case *t2:
 	}
 }

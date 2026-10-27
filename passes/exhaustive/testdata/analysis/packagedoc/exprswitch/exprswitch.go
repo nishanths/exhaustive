@@ -1,7 +1,7 @@
 package foo
 
-import "test/analysis/packagedoc/a"
-import "test/analysis/packagedoc/b"
+import "test/analysis/packagedoc/exprswitch/a"
+import "test/analysis/packagedoc/exprswitch/b"
 
 type T int
 

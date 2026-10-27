@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"go/ast"
-	"go/types"
 	"regexp"
 	"slices"
 	"strings"
@@ -77,7 +76,7 @@ func init() {
 	Analyzer.Flags.BoolVar(&fCheckGenerated, "g", fCheckGenerated, "additionally analyze generated files")
 	Analyzer.Flags.Var(&fExcludeType, "typeignore", "switches in which the type name is matched by `regexp` are not checked")
 	Analyzer.Flags.Var(&fIncludeType, "typeonly", "only switches in which the type name is matched by `regexp` are checked")
-	Analyzer.Flags.Var(&fExcludeConst, "constignore", "constant names matched by `regexp` do not have to be included in the case clauses of an expression switch")
+	Analyzer.Flags.Var(&fExcludeConst, "constignore", "constant names matched by `regexp` do not have to be specified in the cases of an expression switch")
 	Analyzer.Flags.BoolVar(&fCheckImpossible, "impossible", fCheckImpossible, "check for impossible or unreachable cases in type switches")
 }
 
@@ -300,19 +299,6 @@ func parseDirectives(groups []*ast.CommentGroup) (map[directive]bool, error) {
 		return nil, errConflict
 	}
 	return result, nil
-}
-
-func isPkgLevel(obj types.Object) bool {
-	return obj.Pkg() != nil && obj.Pkg().Scope().Lookup(obj.Name()) == obj
-}
-
-// callers must ensure that obj is a package-level object.
-func fullname(obj types.Object) string {
-	var b strings.Builder
-	b.WriteString(obj.Pkg().Path())
-	b.WriteString(".")
-	b.WriteString(obj.Name())
-	return b.String()
 }
 
 func matchAny(rs []*regexp.Regexp, s string) bool {

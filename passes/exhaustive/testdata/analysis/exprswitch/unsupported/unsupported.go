@@ -9,6 +9,11 @@ func xxx(a os) {
 }
 
 func yyy[A osintf](a A) {
+	// Note: Go spec: "Converting a constant to a type
+	// parameter yields a non-constant value of that type,
+	// with the value represented as a value of the type
+	// argument that the type parameter is instantiated with."
+
 	switch a {
 	case A(osxtiger):
 	case A(osxleopard):
