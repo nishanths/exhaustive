@@ -212,7 +212,13 @@ func f9() {
 	case T1(0):
 	case T1((int(T1((1))))):
 	case X4:
-	case T1(3):
+	case 3:
+		// Go spec: "If a case expression is untyped, it is
+		// first implicitly converted to the type of the
+		// switch expression. For each (possibly
+		// converted) case expression x and the value t
+		// of the switch expression, x == t must be a
+		// valid comparison."
 	}
 
 	switch t {
@@ -236,7 +242,7 @@ func f9() {
 		T1(0):              true,
 		T1((int(T1((1))))): true,
 		X4:                 true,
-		T1(3):              true,
+		3:                  true,
 	}
 
 	_ = map[T1]bool{
