@@ -68,42 +68,42 @@ func Requires(check string) ([]*analysis.Analyzer, error) {
 }
 
 func init() {
-	Analyzer.Flags.BoolVar(&fCheckEnforceOnly, "e", fCheckEnforceOnly, "check a switch only if it has '//exhaustive:enforce' comment")
-	Analyzer.Flags.BoolVar(&fDefaultEx, "d", fDefaultEx, "switches that include a default case are always considered exhaustive")
-	Analyzer.Flags.BoolVar(&fRequireDefaultCase, "defrequire", fRequireDefaultCase, "always require a default case in checked expression switches")
 	Analyzer.Flags.BoolVar(&fRequireCaseNil, "casenil", fRequireCaseNil, "type switches must include a nil case to be exhaustive")
-	Analyzer.Flags.StringVar(&fCheck, "check", fCheck, "comma-separated list of syntax elements to check; available values: switch, typeswitch, mapliteral")
+	Analyzer.Flags.StringVar(&fCheck, "check", fCheck, "comma-separated list of elements to analyze; available values: switch, typeswitch, mapliteral")
+	Analyzer.Flags.Var(&fExcludeConst, "constignore", "constant names matched by `regexp` do not have to be listed in the cases of an expression switch")
+	Analyzer.Flags.BoolVar(&fDefaultEx, "d", fDefaultEx, "consider switch statements that include a default case to be exhaustive")
+	Analyzer.Flags.BoolVar(&fRequireDefaultCase, "defrequire", fRequireDefaultCase, "require that an analyzed expression switch always includes a default case")
+	Analyzer.Flags.BoolVar(&fCheckEnforceOnly, "e", fCheckEnforceOnly, "analyze a switch only if it has an '//exhaustive:enforce' comment directive")
 	Analyzer.Flags.BoolVar(&fCheckGenerated, "g", fCheckGenerated, "additionally analyze generated files")
-	Analyzer.Flags.Var(&fExcludeType, "typeignore", "switches in which the type name is matched by `regexp` are not checked")
-	Analyzer.Flags.Var(&fIncludeType, "typeonly", "only switches in which the type name is matched by `regexp` are checked")
-	Analyzer.Flags.Var(&fExcludeConst, "constignore", "constant names matched by `regexp` do not have to be specified in the cases of an expression switch")
-	Analyzer.Flags.BoolVar(&fCheckImpossible, "impossible", fCheckImpossible, "check for impossible or unreachable cases in type switches")
+	Analyzer.Flags.BoolVar(&fCheckImpossible, "impossible", fCheckImpossible, "check for impossible or ineffectual code in analyzed type switches")
+	Analyzer.Flags.Var(&fExcludeType, "typeignore", "do not analyze switch statements in which the type name is matched by `regexp`")
+	Analyzer.Flags.Var(&fIncludeType, "typeonly", "only analyze switch statements in which the type name is matched by `regexp`")
 }
 
 var (
-	fCheckEnforceOnly   = false
-	fDefaultEx          = false
-	fRequireDefaultCase = false
 	fRequireCaseNil     = false
 	fCheck              = string(exprswitch)
-	fCheckGenerated     = false
-	fIncludeType        = repeatFlag[*regexp.Regexp]{set: regexp.Compile}
-	fExcludeType        = repeatFlag[*regexp.Regexp]{set: regexp.Compile}
 	fExcludeConst       = repeatFlag[*regexp.Regexp]{set: regexp.Compile}
+	fDefaultEx          = false
+	fRequireDefaultCase = false
+	fCheckEnforceOnly   = false
+	fCheckGenerated     = false
 	fCheckImpossible    = false
+	fExcludeType        = repeatFlag[*regexp.Regexp]{set: regexp.Compile}
+	fIncludeType        = repeatFlag[*regexp.Regexp]{set: regexp.Compile}
 )
 
 func resetFlags() {
-	fCheckEnforceOnly = false
-	fDefaultEx = false
-	fRequireDefaultCase = false
 	fRequireCaseNil = false
 	fCheck = string(exprswitch)
-	fCheckGenerated = false
-	fIncludeType = repeatFlag[*regexp.Regexp]{set: regexp.Compile}
-	fExcludeType = repeatFlag[*regexp.Regexp]{set: regexp.Compile}
 	fExcludeConst = repeatFlag[*regexp.Regexp]{set: regexp.Compile}
+	fDefaultEx = false
+	fRequireDefaultCase = false
+	fCheckEnforceOnly = false
+	fCheckGenerated = false
 	fCheckImpossible = false
+	fExcludeType = repeatFlag[*regexp.Regexp]{set: regexp.Compile}
+	fIncludeType = repeatFlag[*regexp.Regexp]{set: regexp.Compile}
 }
 
 // repeatFlag defines a flag that may be repeated to specify

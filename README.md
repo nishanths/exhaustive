@@ -1,6 +1,6 @@
 The exhaustive static analysis checks that
 switch statements in Go source code are exhaustive. The analysis
-can check expression switches, in which the switch expression
+can check expression switches, if the switch expression
 type is an enumerated type, and type switches.
 
 The complete analysis is implemented in multiple passes; see the
@@ -39,16 +39,13 @@ The synopsis of the command is:
 exhaustive [-B] [-casenil] [-d] [-defrequire] [-e] [-g] [-i]
            [-impossible] [-p] [-check string] [-constignore regexp]
            [-typeignore regexp] [-typeonly regexp] [packages]
+exhaustive -h | -help
 ```
 
-The flags are documented in Go package comments. See the
-"Documentation" section in this README file for more details.
-
-The packages in this module can be imported and used from external
-analysis driver programs. See <https://golang.org/x/tools/go/analysis>
-for details. The analysis driver program may want to make
-available to users the flag sets defined by both the
-enumerated analyzer and the exhaustive analyzer.
+The packages in this module can be imported and used from external analysis
+driver programs. See <https://golang.org/x/tools/go/analysis> for details. The
+analysis driver program may want to make available to users the flag sets
+defined by both the enumerated analyzer and the exhaustive analyzer.
 
 # Examples
 

@@ -189,13 +189,13 @@ func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*as
 			return
 		}
 		// Special case: Type switches of the empty
-		// interface are not checked. Note that all
-		// types implement the empty interface.
+		// interface are not checked to be exhaustive.
+		// Note that all types implement the empty interface.
 		if swInterface.Empty() {
 			return
 		}
 		// Special case: Type switches of the error
-		// built-in interface are not checked.
+		// built-in interface are not checked to be exhaustive.
 		if ok && tn == universeError {
 			return
 		}
@@ -280,15 +280,8 @@ func checkImpossibleCode(pass *analysis.Pass, sw *ast.TypeSwitchStmt) {
 	// This function does not check for issues that are
 	// already reported as errors by "go build". As such, the
 	// following categories of issues are not checked:
-	// identical types in type switch cases;
-	// impossible type in type switch case.
-
-	// Go spec: "A type parameter or a generic type may be
-	// used as a type in a case. If upon instantiation that
-	// type turns out to duplicate another entry in the
-	// switch, the first matching case is chosen."
-	// Go spec: "The 'fallthrough' statement is not permitted
-	// in a type switch."
+	// identical types in type switch cases; impossible type
+	// in type switch case.
 
 	type intfcase struct {
 		intf      *types.Interface
@@ -296,13 +289,21 @@ func checkImpossibleCode(pass *analysis.Pass, sw *ast.TypeSwitchStmt) {
 		expr      ast.Expr
 	}
 
+	// Go spec: "A type parameter or a generic type may be
+	// used as a type in a case. If upon instantiation that
+	// type turns out to duplicate another entry in the
+	// switch, the first matching case is chosen."
+	//
+	// Go spec: "The 'fallthrough' statement is not permitted
+	// in a type switch."
+	//
 	// If the interface type C is a type constraint for a type parameter,
 	// the actual type of C depends upon the type argument
 	// used upon instantiation.
 	// In this scenario, a true return value from types.Implements(T, C),
 	// where T is the type in the current case, is insufficient to
-	// say that the current case is always ineffective (it
-	// may only be ineffective for certain instantiations).
+	// say that the type T is ineffectual (it may
+	// only be so for certain instantiations).
 	//
 	// For instance, given this code
 	//
@@ -324,21 +325,21 @@ func checkImpossibleCode(pass *analysis.Pass, sw *ast.TypeSwitchStmt) {
 	//		f[t1]()
 	//	}
 	//
-	// note that for the "f[t1]()" call the type
-	// switch cases "case t2" and "case interface{o()}" are not
-	// rendered ineffective by the earlier "case P".
+	// note that for the "f[t1]()" call, the types
+	// in "case t2" and "case interface{o()}" are not
+	// rendered ineffectual by the earlier type in "case P".
 	ineffectualOrder := func(e intfcase, currentCaseType types.Type) bool {
 		if e.typeParam {
 			// This scenario is not currently supported. But a more
-			// rigorous analysis could report ineffective cases in
-			// this scenario.
+			// rigorous analysis could report ineffectual types
+			// in this scenario.
 			//
 			// For instance, given a type constraint interface C for
 			// a type parameter P specified as the type in an
 			// earlier case, if the type set of C consists only of
-			// the current case type T, then the case for T is
-			// ineffective (note that the type parameter P can only
-			// be instantiated with type argument T).
+			// the current case type T, then T is ineffectual
+			// (note that the type parameter P can only be
+			// instantiated with type argument T).
 			return false
 		}
 		// Note: if the type in a case is generic, it
@@ -438,7 +439,7 @@ func aliasDenotesDefinedType(a *types.Alias, maxpointer int) (success bool, defi
 // computeImplements currently does not support generic types.
 //
 // The interface type must be the type of either a type assertion
-// expression or a type switch guard expression. As of
+// expression or a type switch expression. As of
 // go1.27, this means that the interface type must not be a
 // general interface, i.e., an interface that cannot be
 // used outside a type constraint.

@@ -28,20 +28,20 @@ var Analyzer = &analysis.Analyzer{
 }
 
 func init() {
-	Analyzer.Flags.BoolVar(&fIota, "i", fIota, "only consider constants declared using iota")
-	Analyzer.Flags.BoolVar(&fNoBitwise, "B", fNoBitwise, "ignore constants declared using bitwise operators")
-	Analyzer.Flags.BoolVar(&fPkgLevel, "p", fPkgLevel, "only consider types and constants that are declared at top level")
+	Analyzer.Flags.BoolVar(&fNoBitwise, "B", fNoBitwise, "disregard enumerated constants declared using bitwise operators")
+	Analyzer.Flags.BoolVar(&fIota, "i", fIota, "only consider enumerated constants declared using iota")
+	Analyzer.Flags.BoolVar(&fPkgLevel, "p", fPkgLevel, "only consider enumerated types and constants declared at top level")
 }
 
 var (
-	fIota      = false
 	fNoBitwise = false
+	fIota      = false
 	fPkgLevel  = false
 )
 
 func resetFlags() {
-	fIota = false
 	fNoBitwise = false
+	fIota = false
 	fPkgLevel = false
 }
 

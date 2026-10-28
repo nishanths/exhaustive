@@ -3,24 +3,24 @@ package foo
 import "test/analysis/packagedoc/exprswitch/a"
 import "test/analysis/packagedoc/exprswitch/b"
 
-type T int
+type vcs int
 
 const (
-	X0 T = iota
-	X1
-	X2
+	bazaar vcs = iota
+	fossil
+	git
+	mercurial
+	subversion
+	darcs
 )
 
-func f1(v T) {
-	switch v {
-	case X0:
-	case X1:
-	case X2:
-	}
-
-	switch v { // want "^missing cases in expression switch: X2$"
-	case X0:
-	case X1:
+func f1(v vcs) {
+	switch v { // want "^missing cases in expression switch: darcs$"
+	case bazaar:
+	case fossil:
+	case git:
+	case mercurial:
+	case subversion:
 	}
 }
 

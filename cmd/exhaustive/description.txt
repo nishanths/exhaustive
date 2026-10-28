@@ -1,0 +1,64 @@
+The exhaustive command runs the exhaustive static analysis on the
+specified packages of Go source code.
+
+The flags are:
+
+     -B      Disregard enumerated constants that are declared using
+             bitwise operators (& | ^ &^ << >>) in their values.
+
+     -casenil
+             Type switches must include a nil case to be exhaustive.
+
+     -check string
+             Analyze the specified elements. The analysis checks
+             that the specified elements are exhaustive.  The
+             argument is a comma-separated list of one or more of
+             the following element names: switch, typeswitch,
+             mapliteral.  The default argument is "switch".
+
+                 switch        analyze expression switch statements
+                 typeswitch    analyze type switch statements
+                 mapliteral    analyze composite literals of underlying
+                               type map (or pointer to)
+
+     -constignore regexp
+             Constant names matched by the regexp pattern do not
+             have to be listed in the cases of an expression switch.
+             The flag may be repeated to specify multiple regexp
+             patterns.
+
+     -d      Consider switch statements that include a default
+             case to be exhaustive.
+
+     -defrequire
+             Require that an analyzed expression switch always
+             includes a default case.
+
+     -e      Analyze a switch statement only if it has an
+             '//exhaustive:enforce' comment directive.
+
+     -g      Analyze switch statements in generated files.
+
+     -i      Only consider enumerated constants that are declared
+             using iota in their values.
+
+     -impossible
+             Check for impossible or ineffectual code in analyzed
+             type switches.
+
+     -p      Only consider enumerated types and enumerated constants
+             that are declared at top level.
+
+     -typeignore regexp
+             Do not analyze switch statements in which the type name
+             (if there is one) of the switch expression is matched
+             by the regexp pattern.  The flag may be repeated to
+             specify multiple regexp patterns.
+
+     -typeonly regexp
+             Only analyze switch statements in which the type name
+             (if there is one) of the switch expression is matched
+             by the regexp pattern.  The flag may be repeated to
+             specify multiple regexp patterns.  If a type name is
+             matched by both a -typeonly regexp and a -typeignore
+             regexp, the -typeonly match wins.

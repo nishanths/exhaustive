@@ -1,5 +1,6 @@
 package foo
 
+import "go/ast"
 import "go/types"
 
 func f3(t types.Type) bool {
@@ -22,40 +23,36 @@ func f3(t types.Type) bool {
 	}
 }
 
-type m interface{ m() }
+func count(file *ast.File) {
+	var decls, fields, funcs int
 
+	for n := range ast.Preorder(file) {
+		switch n.(type) { // want "^missing cases in type switch: \\*ast\\..+$"
+		case ast.Decl:
+			decls += 1
+		case *ast.Field:
+			fields += 1
+		case *ast.FuncDecl: // want "^ineffectual type \\*ast.FuncDecl due to case order: dynamic type that would be matched by type \\*ast.FuncDecl is matched in earlier case by type ast.Decl$"
+			funcs += 1
+		}
+	}
+
+	/* ... */
+}
+
+type I interface{ f6example() }
 type T struct{}
-func (*T) m() {}
+
+func (*T) f6example() {}
 
 type A = T
 
-type U struct{}
-func (*U) m() {}
+func f6(x I) {
+	switch x.(type) {
+	case *T:
+	}
 
-func f4(v m) {
-	switch v.(type) {
+	switch x.(type) {
 	case *A:
-	case *U:
-	}
-
-	switch v.(type) { // want "^missing cases in type switch: \\*T or \\*A, \\*U$"
-	}
-}
-
-type Node interface{ node() }
-type Statement interface{ Node; statement() }
-
-type Literal struct{}
-func (*Literal) node() {}
-
-type Loop struct{}
-func (*Loop) node() {}
-func (*Loop) statement() {}
-
-func f5(v Node) {
-	switch v.(type) {
-	case Statement:
-	case *Literal:
-	case *Loop: // want "^unreachable type switch case \\*Loop \\(matched by earlier case Statement\\)$"
 	}
 }

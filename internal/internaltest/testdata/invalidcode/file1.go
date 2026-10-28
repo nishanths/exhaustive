@@ -2,6 +2,8 @@
 // code for reference purposes.
 package invalidcode
 
+import "cmp"
+
 func f1() {
 	var e error
 	var x interface{}
@@ -32,18 +34,17 @@ func f2() {
 func f3[P any](p P) {
 	switch p.(type) { // error: cannot use type switch on type parameter value p (variable of type P constrained by any)
 	}
+
 }
 
 func f4() {
-	type i interface {
-		comparable
-	}
-	var x i // error: cannot use type i outside a type constraint: interface is (or embeds) comparable
-	_ = x
+	type i interface{ comparable }
+	type j interface{ int }
+	var z any
 
-	type j interface {
-		int
+	switch z.(type) {
+	case cmp.Ordered: // error: cannot use type cmp.Ordered outside a type constraint: interface contains type constraints
+	case i: // error: cannot use type i outside a type constraint: interface is (or embeds) comparable
+	case j: // error: cannot use type j outside a type constraint: interface contains type constraints
 	}
-	var y j // error: cannot use type j outside a type constraint: interface contains type constraints
-	_ = y
 }

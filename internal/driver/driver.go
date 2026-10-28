@@ -1,12 +1,11 @@
 package driver
 
 import (
-	"cmp"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
-	"slices"
 	"strings"
 
 	"golang.org/x/tools/go/analysis"
@@ -19,9 +18,14 @@ const (
 	contextLines = -1
 )
 
-func ParseFlags(progname string, as ...*analysis.Analyzer) *flag.FlagSet {
+func ParseFlags(progname, synopsis string, desc []byte, as ...*analysis.Analyzer) *flag.FlagSet {
 	fs := flag.NewFlagSet(progname, flag.ContinueOnError)
 
+	var help bool
+	fs.BoolVar(&help, "h", help, "print help information")
+	fs.BoolVar(&help, "help", help, "print help information")
+
+	// add flags from analyzers
 	for _, a := range as {
 		a.Flags.VisitAll(func(f *flag.Flag) {
 			if fs.Lookup(f.Name) != nil {
@@ -32,21 +36,22 @@ func ParseFlags(progname string, as ...*analysis.Analyzer) *flag.FlagSet {
 	}
 
 	fs.Usage = func() {
-		printFlagUsage(progname, fs)
+		printFlagUsage(os.Stderr, synopsis)
 	}
 
 	err := fs.Parse(os.Args[1:])
-	if err == flag.ErrHelp {
-		// Note: The usage message would have already been printed by
-		// package flag.
-		os.Exit(0)
-	}
 	if err != nil {
 		// Note: The usage message would have already been printed by
 		// package flag.
 		os.Exit(2)
 	}
-
+	if help {
+		printFlagUsage(os.Stdout, synopsis)
+		_, _ = fmt.Fprintln(os.Stdout)
+		_, _ = fmt.Fprintf(os.Stdout, "%s", desc)
+		_, _ = fmt.Fprintln(os.Stdout)
+		os.Exit(0)
+	}
 	return fs
 }
 
@@ -113,84 +118,20 @@ func Run(args []string, loadMode packages.LoadMode, as ...*analysis.Analyzer) (e
 	return
 }
 
-func flagSynopsis(progname string, prefixlen int, includeHelpInvoc bool, fs *flag.FlagSet) string {
-	// sort flags by name, boolean flags first.
-	var flags []*flag.Flag
-	fs.VisitAll(func(f *flag.Flag) {
-		flags = append(flags, f)
-	})
-	slices.SortStableFunc(flags, func(a, b *flag.Flag) int {
-		type boolflag interface{ IsBoolFlag() bool }
-		_, aa := a.Value.(boolflag)
-		_, bb := b.Value.(boolflag)
+func printFlagUsage(w io.Writer, synopsis string) {
+	indent := strings.Repeat(" ", len("usage: "))
+	first := true
+
+	for line := range strings.Lines(synopsis) {
 		switch {
-		case aa && !bb:
-			return -1
-		case !aa && bb:
-			return 1
+		case first:
+			_, _ = fmt.Fprint(w, "usage: ")
+			_, _ = fmt.Fprint(w, line)
+			first = false
+		case line == "\n":
+			_, _ = fmt.Fprint(w, line)
 		default:
-			return cmp.Compare(a.Name, b.Name)
-		}
-	})
-
-	const maxwidth = 80
-	argindent := 8
-	if includeHelpInvoc {
-		// multiple invocations need to be printed. the
-		// lines must align with program name.
-		argindent = prefixlen + len(progname) + 1
-	}
-	lastarg := "[packages]" // last argument must never be alone on its own line
-	var width int
-	var b strings.Builder
-
-	newinvoc := func(first bool) {
-		if !first {
-			fmt.Fprintf(&b, "\n")
-			fmt.Fprintf(&b, "%s", strings.Repeat(" ", prefixlen))
-		}
-		width = 0
-		width += prefixlen
-		fmt.Fprintf(&b, "%s", progname)
-		width += len(progname)
-	}
-
-	printarg := func(arg string, prelast bool) {
-		need := 1 + len(arg)
-		if prelast {
-			need = 1 + len(arg) + 1 + len(lastarg)
-		}
-		if width+need <= maxwidth {
-			fmt.Fprintf(&b, " %s", arg)
-			width += 1 + len(arg)
-			return
-		}
-		fmt.Fprintf(&b, "\n")
-		fmt.Fprintf(&b, "%s%s", strings.Repeat(" ", argindent), arg)
-		width = argindent + len(arg)
-	}
-
-	// regular invocation.
-	newinvoc(true)
-	for i, f := range flags {
-		if v, _ := flag.UnquoteUsage(f); len(v) != 0 {
-			printarg(fmt.Sprintf("[-%s %v]", f.Name, v), i == len(flags)-1)
-		} else {
-			printarg(fmt.Sprintf("[-%s]", f.Name), i == len(flags)-1)
+			_, _ = fmt.Fprint(w, indent+line)
 		}
 	}
-	printarg(lastarg, false)
-
-	// help invocation.
-	if includeHelpInvoc {
-		newinvoc(false)
-		printarg("-h | -help", false)
-	}
-
-	return b.String()
-}
-
-func printFlagUsage(progname string, fs *flag.FlagSet) {
-	s := flagSynopsis(progname, len("usage: "), false, fs)
-	fmt.Fprintf(os.Stderr, "usage: %s\n", s)
 }
