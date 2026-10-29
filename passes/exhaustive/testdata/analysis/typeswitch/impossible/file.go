@@ -17,7 +17,7 @@ type u struct{}
 
 func (*u) m()
 
-func f1() {
+func f0() {
 	var x m
 
 	switch x.(type) { // want "^missing cases in type switch: t, \\*t, \\*u$"
@@ -111,6 +111,28 @@ func f1() {
 	case any:
 	case *t: // want "^ineffectual type \\*t due to case order: dynamic type that would be matched by type \\*t is matched in earlier case by type any$"
 	case mn: // want "^ineffectual type mn due to case order: dynamic type that would be matched by type mn is matched in earlier case by type any$"
+	}
+}
+
+func f1() {
+	var x interface{}
+
+	switch x.(type) {
+	}
+
+	switch x.(type) {
+	case t:
+	case *t:
+	case *u:
+	}
+
+	switch x.(type) {
+	case m:
+	}
+
+	switch x.(type) {
+	case m:
+	case *t: // want "^ineffectual type \\*t due to case order: dynamic type that would be matched by type \\*t is matched in earlier case by type m$"
 	}
 }
 

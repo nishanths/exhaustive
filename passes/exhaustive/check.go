@@ -188,19 +188,36 @@ func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*as
 		if ok && !proceedInclExclPatterns(tn, opts) {
 			return
 		}
-		// Special case: Type switches of the empty
-		// interface are not checked to be exhaustive.
-		// Note that all types implement the empty interface.
-		if swInterface.Empty() {
-			return
-		}
-		// Special case: Type switches of the error
-		// built-in interface are not checked to be exhaustive.
-		if ok && tn == universeError {
-			return
-		}
 	}
 
+	checkExhaustive := func() bool {
+		if !directives[dirEnforce] {
+			// Special case: Type switches of the empty
+			// interface are not checked to be exhaustive.
+			// Note that all types implement the empty interface.
+			if swInterface.Empty() {
+				return false
+			}
+			// Special case: Type switches of the error
+			// built-in interface are not checked to be exhaustive.
+			tn, ok := hasTypeName(pass.TypesInfo.TypeOf(swExpr))
+			if ok && tn == universeError {
+				return false
+			}
+		}
+		return true
+	}()
+
+	if checkExhaustive {
+		checkTypeSwitchExhaustive(pass, sw, swInterface, ch, opts)
+	}
+
+	if opts.checkImpossible {
+		checkImpossibleCode(pass, sw)
+	}
+}
+
+func checkTypeSwitchExhaustive(pass *analysis.Pass, sw *ast.TypeSwitchStmt, swInterface *types.Interface, ch *typeSwitchState, opts *options) {
 	r := pass.ResultOf[finder.Analyzer].(*finder.Result)
 	computeImplements(ch, r, swInterface)
 	computeTypeRelations(ch, r)
@@ -269,10 +286,6 @@ func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*as
 			}
 		}
 		pass.Reportf(sw.Pos(), "missing cases in type switch: %s", formatMissingTypes(pass.Pkg, m, reportMissingNil))
-	}
-
-	if opts.checkImpossible {
-		checkImpossibleCode(pass, sw)
 	}
 }
 
