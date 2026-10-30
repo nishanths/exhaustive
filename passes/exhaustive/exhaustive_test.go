@@ -40,13 +40,13 @@ func TestAnalyzer(t *testing.T) {
 		run(t, func() { fCheck = "switch,mapliteral"; fCheckGenerated = true }, "test/analysis/exprswitch/generated")
 		run(t, func() {
 			fCheck = "switch,mapliteral"
-			fExcludeType = repeatFlag[*regexp.Regexp]{vals: []*regexp.Regexp{
+			fExcludeType = repeatFlag[*regexp.Regexp]{values: []*regexp.Regexp{
 				regexp.MustCompile("t1"),
 				regexp.MustCompile("^test/analysis/exprswitch/pattern\\.P3$"), // no effect: not package-level declaration
 				regexp.MustCompile("^test/analysis/exprswitch/typ\\.M1$"),
 				regexp.MustCompile("^test/analysis/exprswitch/pattern\\.a2$"),
 			}}
-			fExcludeConst = repeatFlag[*regexp.Regexp]{vals: []*regexp.Regexp{
+			fExcludeConst = repeatFlag[*regexp.Regexp]{values: []*regexp.Regexp{
 				regexp.MustCompile("^test/analysis/exprswitch/pattern\\.x2+$"),
 				regexp.MustCompile("^test/analysis/exprswitch/pattern\\.Y0$"), // no effect: not package-level declaration
 				regexp.MustCompile("^test/analysis/exprswitch/typnew\\.Z3$"),
@@ -54,13 +54,13 @@ func TestAnalyzer(t *testing.T) {
 		}, "test/analysis/exprswitch/pattern")
 		run(t, func() {
 			fCheck = "switch,mapliteral"
-			fIncludeType = repeatFlag[*regexp.Regexp]{vals: []*regexp.Regexp{
+			fIncludeType = repeatFlag[*regexp.Regexp]{values: []*regexp.Regexp{
 				regexp.MustCompile("t1"),
 				regexp.MustCompile("^test/analysis/exprswitch/pattern/includetype\\.P3$"), // no effect: not package-level declaration
 				regexp.MustCompile("^test/analysis/exprswitch/typ\\.M1$"),
 				regexp.MustCompile("^test/analysis/exprswitch/pattern/includetype\\.a2$"),
 			}}
-			fExcludeConst = repeatFlag[*regexp.Regexp]{vals: []*regexp.Regexp{
+			fExcludeConst = repeatFlag[*regexp.Regexp]{values: []*regexp.Regexp{
 				// Note: Exclusion of constants is by
 				// name, not by value.
 				// Therefore, though V0 == VV0 by value, the value
@@ -103,7 +103,7 @@ func TestAnalyzer(t *testing.T) {
 		run(t, func() { fCheck = "typeswitch"; fDefaultEx = true }, "test/analysis/typeswitch/def")
 		run(t, func() {
 			fCheck = "typeswitch"
-			fExcludeType = repeatFlag[*regexp.Regexp]{vals: []*regexp.Regexp{
+			fExcludeType = repeatFlag[*regexp.Regexp]{values: []*regexp.Regexp{
 				regexp.MustCompile("^test/analysis/typeswitch/pattern\\.i$"),
 				regexp.MustCompile("^test/analysis/typeswitch/pattern\\.j$"), // no effect: not package-level declaration
 				regexp.MustCompile("^test/analysis/typeswitch/pattern\\.a2$"),

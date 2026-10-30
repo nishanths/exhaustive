@@ -10,11 +10,11 @@ The flags are:
              Type switches must include a nil case to be exhaustive.
 
      -check string
-             Analyze the specified elements. The analysis checks
-             that the specified elements are exhaustive.  The
-             argument is a comma-separated list of one or more of
-             the following element names: switch, typeswitch,
-             mapliteral.  The default argument is "switch".
+             Analyze the specified elements.  The argument is a
+             comma-separated list of one or more of the following
+             element names: switch, typeswitch, mapliteral.  The
+             default argument is "switch".  The analysis checks
+             that the specified elements are exhaustive.
 
                  switch        analyze expression switch statements
                  typeswitch    analyze type switch statements
@@ -27,12 +27,12 @@ The flags are:
              The flag may be repeated to specify multiple regexp
              patterns.
 
-     -d      Consider switch statements that include a default
-             case to be exhaustive.
+     -d      Including a default case in a switch statement satisfies
+             all missing cases.
 
      -defrequire
-             Require that an analyzed expression switch always
-             includes a default case.
+             Check that analyzed expression switches always include
+             a default case.
 
      -e      Analyze a switch statement only if it has an
              '//exhaustive:enforce' comment directive.
@@ -46,15 +46,15 @@ The flags are:
              that are declared at top level.
 
      -typeignore regexp
-             Do not analyze switch statements in which the type name
-             (if there is one) of the switch expression is matched
-             by the regexp pattern.  The flag may be repeated to
-             specify multiple regexp patterns.
+             Do not analyze a switch statement if the type name (if
+             there is one) of the switch expression is matched by
+             the regexp pattern.  The flag may be repeated to specify
+             multiple regexp patterns.
 
      -typeonly regexp
-             Only analyze switch statements in which the type name
-             (if there is one) of the switch expression is matched
-             by the regexp pattern.  The flag may be repeated to
-             specify multiple regexp patterns.  If a type name is
-             matched by both a -typeonly regexp and a -typeignore
-             regexp, the -typeonly match wins.
+             Analyze a switch statement only if the type name (if
+             there is one) of the switch expression is matched by
+             the regexp pattern.  The flag may be repeated to specify
+             multiple regexp patterns.  If a type name is matched
+             by both a -typeonly regexp and a -typeignore regexp,
+             the -typeonly match wins.

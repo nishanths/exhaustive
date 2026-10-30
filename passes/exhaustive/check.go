@@ -398,7 +398,7 @@ func checkTypeSwitchIneff(pass *analysis.Pass, sw *ast.TypeSwitchStmt) {
 					if testingDiagnosticShort {
 						message = "ineffectual: %s -> %s"
 					} else {
-						message = "order of cases makes it impossible to match type %s (due to type %s in earlier case)"
+						message = "order of cases makes it impossible to match type %s in the case (due to type %s in earlier case)"
 					}
 					pass.Reportf(caseExpr.Pos(), message, formatExpr(caseExpr), formatExpr(e.expr))
 					reported[caseExpr] = true
@@ -690,7 +690,7 @@ func isEnumeratedType(enums enumerated.Result, t types.Type) (*types.Named, []*t
 }
 
 // The result is the set of constant values that must be
-// satisfied for an expression switch to be exhaustive.
+// satisfied in an expression switch.
 // The result is prepared additionally in the context of the
 // current package and the given options.
 //
@@ -712,8 +712,8 @@ func needValues(currpkg *types.Package, cs []*types.Const, opts *options) map[st
 	return ret
 }
 
-// The result is the set of types that must be satisfied for a
-// type switch to be exhaustive. The result corresponds to the
+// The result is the set of types that must be satisfied in a
+// type switch. The result corresponds to the
 // term "knowable type set" in the package comment.
 func needTypes(currpkg *types.Package, swInterface *types.Interface, ch *typeSwitchState) map[implementer]struct{} {
 	ret := make(map[implementer]struct{})

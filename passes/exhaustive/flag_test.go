@@ -52,8 +52,8 @@ func TestRepeatFlag(t *testing.T) {
 				t.Errorf("got error %q, want nil", err)
 			case err != nil && !strings.HasSuffix(err.Error(), tt.err):
 				t.Errorf("got error %q, want error suffix %q", err, tt.err)
-			case !slices.Equal(f.vals, tt.want):
-				t.Errorf("got: %v, want: %v", f.vals, tt.want)
+			case !slices.Equal(f.values, tt.want):
+				t.Errorf("got: %v, want: %v", f.values, tt.want)
 			}
 		})
 	}

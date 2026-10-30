@@ -16,18 +16,19 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
-// controls whether reported diagnostics use short messages,
-// for use by tests only.
+// controls whether reported diagnostics use short messages
+// to simplify regexp matching in tests;
+// must be set in tests only.
 var testingDiagnosticShort = false
 
-// Analyzer implements the exhaustive analysis.
+// Analyzer implements the exhaustive static analysis.
 //
 // The set of analyzers specified in the Requires field may not
 // all be actually required.
 // The set of analyzers that are actually required depends on the
 // runtime value of the -check flag.
 // Programs that want to be efficient should edit the Requires
-// field before the analysis begins. See func [Requires].
+// field before the analysis begins. See also: func [Requires].
 var Analyzer = &analysis.Analyzer{
 	Name: "exhaustive",
 	Doc:  "check that expression switches and type switches are exhaustive",
@@ -75,12 +76,12 @@ func init() {
 	Analyzer.Flags.BoolVar(&fRequireNilCase, "casenil", fRequireNilCase, "type switches must include a nil case to be exhaustive")
 	Analyzer.Flags.StringVar(&fCheck, "check", fCheck, "comma-separated list of elements to analyze; available values: switch, typeswitch, mapliteral")
 	Analyzer.Flags.Var(&fExcludeConst, "constignore", "constant names matched by `regexp` do not have to be listed in the cases of an expression switch")
-	Analyzer.Flags.BoolVar(&fDefaultEx, "d", fDefaultEx, "consider switch statements that include a default case to be exhaustive")
-	Analyzer.Flags.BoolVar(&fRequireDefaultCase, "defrequire", fRequireDefaultCase, "require that an analyzed expression switch always includes a default case")
-	Analyzer.Flags.BoolVar(&fCheckEnforceOnly, "e", fCheckEnforceOnly, "analyze a switch only if it has an '//exhaustive:enforce' comment directive")
+	Analyzer.Flags.BoolVar(&fDefaultEx, "d", fDefaultEx, "default case in a switch statement satisifies all missing cases")
+	Analyzer.Flags.BoolVar(&fRequireDefaultCase, "defrequire", fRequireDefaultCase, "check that analyzed expression switches always include a default case")
+	Analyzer.Flags.BoolVar(&fCheckEnforceOnly, "e", fCheckEnforceOnly, "analyze a switch statement only if it has an '//exhaustive:enforce' comment directive")
 	Analyzer.Flags.BoolVar(&fCheckGenerated, "g", fCheckGenerated, "additionally analyze generated files")
-	Analyzer.Flags.Var(&fExcludeType, "typeignore", "do not analyze switch statements in which the type name is matched by `regexp`")
-	Analyzer.Flags.Var(&fIncludeType, "typeonly", "only analyze switch statements in which the type name is matched by `regexp`")
+	Analyzer.Flags.Var(&fExcludeType, "typeignore", "do not analyze a switch statement if the switch expression type name is matched by `regexp`")
+	Analyzer.Flags.Var(&fIncludeType, "typeonly", "analyze a switch statement only if the switch expression type name is matched by `regexp`")
 }
 
 var (
@@ -112,9 +113,9 @@ func resetFlags() {
 // Note: The default behavior of package flag when a flag is
 // repeated is to use the last value.
 type repeatFlag[T any] struct {
-	raw  []string
-	vals []T
-	set  func(string) (T, error)
+	raw    []string
+	values []T
+	set    func(string) (T, error)
 }
 
 func (r *repeatFlag[T]) String() string {
@@ -130,7 +131,7 @@ func (r *repeatFlag[T]) Set(arg string) error {
 		return err
 	}
 	r.raw = append(r.raw, arg)
-	r.vals = append(r.vals, v)
+	r.values = append(r.values, v)
 	return nil
 }
 
@@ -183,9 +184,9 @@ func run(pass *analysis.Pass) (any, error) {
 		requireNilCase:        fRequireNilCase,
 		checkEnforceOnly:      fCheckEnforceOnly,
 		checkGenerated:        fCheckGenerated,
-		includeTypePatterns:   fIncludeType.vals,
-		excludeTypePatterns:   fExcludeType.vals,
-		excludeConstPatterns:  fExcludeConst.vals,
+		includeTypePatterns:   fIncludeType.values,
+		excludeTypePatterns:   fExcludeType.values,
+		excludeConstPatterns:  fExcludeConst.values,
 	}
 
 	var nodes []ast.Node

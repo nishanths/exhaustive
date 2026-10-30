@@ -6,7 +6,7 @@ stdout -count=1 '^                  .*\[-typeonly regexp\] \[packages\]\r?\n'
 stdout -count=1 '^       exhaustive -h \| -help\r?\n'
 stdout -count=1 '^The exhaustive command .+'
 stdout -count=1 '^[[:space:]]+-B[[:space:]]+Disregard enumerated constants that are .+'
-stdout -count=1 '^[[:space:]]+-d[[:space:]]+Consider switch statements that include a default'
+stdout -count=1 '^[[:space:]]+-d[[:space:]]+Including a default case in a switch statement .+'
 stderr ^$
 
 exhaustive -help # same as -h above
@@ -16,7 +16,7 @@ stdout -count=1 '^                  .*\[-typeonly regexp\] \[packages\]\r?\n'
 stdout -count=1 '^       exhaustive -h \| -help\r?\n'
 stdout -count=1 '^The exhaustive command .+'
 stdout -count=1 '^[[:space:]]+-B[[:space:]]+Disregard enumerated constants that are .+'
-stdout -count=1 '^[[:space:]]+-d[[:space:]]+Consider switch statements that include a default'
+stdout -count=1 '^[[:space:]]+-d[[:space:]]+Including a default case in a switch statement .+'
 stderr ^$
 
 # undefined flag

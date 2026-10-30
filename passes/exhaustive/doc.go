@@ -4,23 +4,23 @@
 // type is an enumerated type, and type switches.
 //
 // The complete analysis is implemented in multiple passes; see the
-// packages under the 'passes' directory.
-// This package scans the syntax tree of Go packages for eligible
-// switch statements and checks that the switch statements are
-// exhaustive.
+// packages under the 'passes' directory of the module.
+// This package scans the syntax tree of Go packages for switch
+// statements and checks that the switch statements are exhaustive.
 //
 // # Expression switches
 //
 // Given an [expression switch] in which the type of the switch
-// expression is an [enumerated type], the analysis considers the
-// expression switch to be exhaustive if every value in the
-// [value set] of the enumerated type is listed in the cases.
-// If the expression switch and the declaration of the enumerated
-// type (and its constants) are in different packages, then it is
-// sufficient that the values corresponding to exported constants
-// are listed in the cases.
-// The case expression must be a constant to contribute towards
-// making the switch exhaustive.
+// expression is an [enumerated type] T, the analysis considers
+// the expression switch to be exhaustive if every value in the
+// [value set] of T is listed in the cases.
+// If the expression switch and the declaration of T (and its
+// constants) are in different packages, then it is sufficient
+// that the values corresponding to exported constants are listed
+// in the cases.
+//
+// A given case expression must be a constant to satisfy a
+// corresponding value in the value set of T.
 //
 // The following expression switch is not exhaustive.
 //
@@ -51,7 +51,7 @@
 //
 //	missing cases in expression switch: darcs
 //
-// The presence of a default case does not make an expression switch exhaustive.
+// The presence of a default case will not satisfy missing cases.
 // See flag -d to control this behavior.
 //
 // # Type switches
@@ -69,10 +69,11 @@
 //
 //   - every type in its knowable type set is listed in the cases; and
 //
-//   - no listed type is ineffectual. (See the "Ineffectual cases" section.)
+//   - none of the types listed in the cases are ineffectual.
+//     (See the "Ineffectual cases" section for details.)
 //
-// If an interface type S, but not a type parameter, is listed as a
-// type in a case, it is equivalent to listing in the cases each
+// If an interface type S, but not a type parameter, is listed in
+// a case, it is equivalent to listing in the cases each
 // (non-interface) type in the knowable type set that implements S.
 //
 // The following type switch is not exhaustive.
@@ -105,20 +106,20 @@
 //
 //	missing cases in type switch: *types.Basic, *types.TypeParam
 //
-// The presence of a default case does not make a type switch exhaustive.
-// See flag -d to control this behavior.
-// It is not necessary for a type switch to include a nil case
-// ("case nil:") to be exhaustive, but this behavior can be
-// adjusted via the flags.
+// The analysis does not support generic types that implement an
+// interface. Diagnostics do not mention these types as missing in
+// the cases of a type switch.
 //
 // As special cases, if the interface type of the switch
 // expression is either the empty interface or the predeclared
 // type error, the analysis does not check for missing cases
-// in these types switches.
+// in these type switches.
 //
-// The analysis does not support generic types that implement an
-// interface. Diagnostics do not mention these types as missing in
-// the cases of a type switch.
+// The presence of a default case will not satisfy missing cases.
+// See flag -d to control this behavior.
+// It is not necessary for a type switch to include a nil case
+// ("case nil:") to be exhaustive, but this behavior can be
+// adjusted via the flags.
 //
 // # Ineffectual cases
 //
@@ -151,15 +152,15 @@
 //
 // If the interface variable n of the switch expression has
 // dynamic type *ast.FuncDecl, then the ast.Decl case matches
-// and control flow does not reach the *ast.FuncDecl case. If n
-// does not have dynamic type *ast.FuncDecl (including when n is
-// a nil interface value), then control flow may reach the
-// *ast.FuncDecl case but the dynamic type of n will not be
-// matched by type *ast.FuncDecl in the case.
+// and control does not reach the *ast.FuncDecl case. If n does
+// not have dynamic type *ast.FuncDecl (including when n is a nil
+// interface value), then control may reach the *ast.FuncDecl
+// case but the dynamic type of n is not matched by the
+// *ast.FuncDecl type in the case.
 //
-// The diagnostic is
+// The diagnostic for the above type switch is
 //
-//	order of cases makes it impossible to match type *ast.FuncDecl (due to type ast.Decl in earlier case)
+//	order of cases makes it impossible to match type *ast.FuncDecl in the case (due to type ast.Decl in earlier case)
 //
 // The analysis detects ineffectual cases in limited scenarios.
 // The analysis does not handle scenarios where the type listed
@@ -177,60 +178,63 @@
 //
 // The flags are described below.
 //
-//	-casenil
-//	        Type switches must include a nil case to be exhaustive.
+// -casenil:
+// Type switches must include a nil case to be exhaustive.
 //
-//	-check string
-//	        Analyze the specified elements. The analysis checks
-//	        that the specified elements are exhaustive.  The
-//	        argument is a comma-separated list of one or more of
-//	        the following element names: switch, typeswitch,
-//	        mapliteral.  The default argument is "switch".
+// -check string:
+// Analyze the specified elements.  The argument is a
+// comma-separated list of one or more of the following
+// element names: switch, typeswitch, mapliteral.  The
+// default argument is "switch".  The analysis checks
+// that the specified elements are exhaustive.
 //
-//	            switch        analyze expression switch statements
-//	            typeswitch    analyze type switch statements
-//	            mapliteral    analyze composite literals of underlying
-//	                          type map (or pointer to)
+//	switch        analyze expression switch statements
+//	typeswitch    analyze type switch statements
+//	mapliteral    analyze composite literals of underlying type map (or pointer to)
 //
-//	-constignore regexp
-//	        Constant names matched by the regexp pattern do not
-//	        have to be listed in the cases of an expression switch.
-//	        The flag may be repeated to specify multiple regexp
-//	        patterns.
+// -constignore regexp:
+// Constant names matched by the regexp pattern do not
+// have to be listed in the cases of an expression switch.
+// The flag may be repeated to specify multiple regexp
+// patterns.
 //
-//	-d      Consider switch statements that include a default
-//	        case to be exhaustive.
+// -d:
+// Including a default case in a switch statement satisfies
+// all missing cases.
 //
-//	-defrequire
-//	        Require that an analyzed expression switch always
-//	        includes a default case.
+// -defrequire:
+// Check that analyzed expression switches always include
+// a default case.
 //
-//	-e      Analyze a switch statement only if it has an
-//	        '//exhaustive:enforce' comment directive.
+// -e:
+// Analyze a switch statement only if it has an
+// '//exhaustive:enforce' comment directive.
 //
-//	-g      Analyze switch statements in generated files.
+// -g:
+// Analyze switch statements in generated files.
 //
-//	-typeignore regexp
-//	        Do not analyze switch statements in which the type name
-//	        (if there is one) of the switch expression is matched
-//	        by the regexp pattern.  The flag may be repeated to
-//	        specify multiple regexp patterns.
+// -typeignore regexp:
+// Do not analyze a switch statement if the type name (if
+// there is one) of the switch expression is matched by
+// the regexp pattern.  The flag may be repeated to specify
+// multiple regexp patterns.
 //
-//	-typeonly regexp
-//	        Only analyze switch statements in which the type name
-//	        (if there is one) of the switch expression is matched
-//	        by the regexp pattern.  The flag may be repeated to
-//	        specify multiple regexp patterns.  If a type name is
-//	        matched by both a -typeonly regexp and a -typeignore
-//	        regexp, the -typeonly match wins.
+// -typeonly regexp:
+// Analyze a switch statement only if the type name (if
+// there is one) of the switch expression is matched by
+// the regexp pattern.  The flag may be repeated to specify
+// multiple regexp patterns.  If a type name is matched
+// by both a -typeonly regexp and a -typeignore regexp,
+// the -typeonly match wins.
 //
 // The regexp arguments to the flags must be in Go package regexp syntax.
 //
-// The -constignore, -typeonly, and -typeignore flags are
-// applicable only when the type or constant declaration in
-// question is declared at top level. The type name or constant
-// name that the analysis provides to the regular expression
-// match routine is always fully qualified by the import path.
+// The -constignore, -typeignore, and -typeonly flags are
+// applicable only when the type or constant in question is
+// declared at top level.
+// The type name or constant name that the analysis provides to
+// the regular expression match routine is always fully qualified
+// by the import path.
 // For example, given the declarations
 //
 //	package bar // import "example.org/foo/bar"
@@ -271,9 +275,9 @@
 // In general, the following comment directive placements should
 // work as expected.
 //
-//	func f() {
+//	func f(v V) {
 //		//exhaustive:ignore
-//		switch t {
+//		switch v {
 //		case X0:
 //		case X1:
 //		}
@@ -283,48 +287,6 @@
 //	var m = map[T]bool{
 //		X0: true,
 //		X1: true,
-//	}
-//
-// # Handling of aliases
-//
-// The following example illustrates how the analysis handles
-// aliases in an expression switch.
-//
-// Given the enumerated type b.B
-//
-//	package b
-//
-//	type B int
-//
-//	const X0 B = 0
-//	const X1 B = 1
-//
-// and the alias a.A for the enumerated type b.B
-//
-//	package a
-//
-//	import "b"
-//
-//	type A = b.B
-//
-//	const X0 = b.X0
-//	const X1 = b.X1
-//
-// the following expression switch is exhaustive. Every value in
-// the value set of b.B is listed in the cases. Note that the
-// type of the switch expression is b.B, which is the type
-// denoted by the alias a.A, and that the constants a.X0 and a.X1
-// in the cases are of type b.B.
-//
-//	package foo
-//
-//	import "a"
-//
-//	func f(v a.A) {
-//		switch v {
-//		case a.X0:
-//		case a.X1:
-//		}
 //	}
 //
 // [package enumerated]: https://pkg.go.dev/github.com/nishanths/exhaustive/passes/enumerated

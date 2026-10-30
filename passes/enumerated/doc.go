@@ -19,7 +19,7 @@
 //	type T5 T4          // T5: allowed
 //
 //	type Q0 []int       // Q0: disallowed: underlying type []int is not a numeric or string type
-//	type S0[E any] int  // S0: disallowed: parameterized
+//	type S0[E any] int  // S0: disallowed: type definition specifies type parameters
 //	int32               // int32: disallowed: predeclared type
 //	rune                // rune: disallowed: predeclared type
 //
@@ -46,26 +46,21 @@
 //	)
 //
 // The enumerated constants of a given enumerated type may be
-// declared across multiple [ConstDecl] productions. The constant
-// value of an enumerated constant can be any value allowed by the
-// language (e.g. iota, constant literals, other constant
-// identifiers). The analysis permits multiple enumerated constants
-// of a given enumerated type to have the same value.
+// declared across multiple [ConstDecl] productions. The value in
+// the constant declaration may be any expression permitted by
+// the language. Multiple enumerated constants of a given
+// enumerated type may have the same value.
 //
 // # Value sets
 //
 // The "value set" of an enumerated type T consists of the values of
-// each enumerated constant of the type T. The type of each value in
-// the set will be T.
+// each enumerated constant of the type T.
 //
 // For example, the value set of the enumerated type T0 in the above
 // code snippet consists of the values 0, 1, and 2, corresponding to
-// the constants X0, X1, and X2. The values have type T0.
+// the constants X0, X1, and X2.
 //
 // # Flags
-//
-// The analysis flags can control the discovery of enumerated types
-// and enumerated constants.
 //
 // The synopsis of the flags is:
 //
@@ -73,14 +68,17 @@
 //
 // The flags are described below.
 //
-//	-B      Disregard enumerated constants that are declared using
-//	        bitwise operators (& | ^ &^ << >>) in their values.
+// -B:
+// Disregard enumerated constants that are declared using
+// bitwise operators (& | ^ &^ << >>) in their values.
 //
-//	-i      Only consider enumerated constants that are declared
-//	        using iota in their values.
+// -i:
+// Only consider enumerated constants that are declared
+// using iota in their values.
 //
-//	-p      Only consider enumerated types and enumerated constants
-//	        that are declared at top level.
+// -p:
+// Only consider enumerated types and enumerated constants
+// that are declared at top level.
 //
 // [block]: https://golang.org/ref/spec#Blocks
 // [ConstDecl]: https://golang.org/ref/spec#Constant_declarations

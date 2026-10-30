@@ -4,12 +4,11 @@ can check expression switches, if the switch expression
 type is an enumerated type, and type switches.
 
 The complete analysis is implemented in multiple passes; see the
-packages under the 'passes' directory.
+packages under the 'passes' directory of the module.
 Package enumerated finds declarations of enumerated types and
 enumerated constants.
-Package exhaustive scans the syntax tree of Go packages for eligible
-switch statements and checks that the switch statements are
-exhaustive.
+Package exhaustive scans the syntax tree of Go packages for switch
+statements and checks that the switch statements are exhaustive.
 
 # Documentation
 
@@ -42,7 +41,7 @@ exhaustive [-B] [-casenil] [-d] [-defrequire] [-e] [-g] [-i] [-p]
 exhaustive -h | -help
 ```
 
-The packages in this module can be imported and used from external analysis
+The packages in the module can also be imported and used from external analysis
 driver programs. See <https://golang.org/x/tools/go/analysis> for details. The
 analysis driver program may want to make available to users the flag sets
 defined by both the enumerated analyzer and the exhaustive analyzer.
@@ -82,7 +81,7 @@ the analysis reports the following diagnostic
 	a.go:15:2: missing cases in expression switch: darcs
 	$
 
-Though it is not so in the example above, in general the
+Though it is not so in the above example, in general the
 enumerated type declarations and the switch statement can be in
 different packages.
 
