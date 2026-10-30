@@ -14,7 +14,7 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
-// control whether additional facts are exported,
+// controls whether additional facts are exported,
 // for use by tests only.
 var testingExtraFacts = false
 

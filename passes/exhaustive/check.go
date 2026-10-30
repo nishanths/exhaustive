@@ -16,6 +16,7 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
+// the main function that checks an expression switch.
 func checkExprSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, comments []*ast.CommentGroup, opts *options) {
 	directives, proceed, err := proceedCommentDirectives(comments, opts)
 	if err != nil {
@@ -81,19 +82,19 @@ func checkExprSwitch(pass *analysis.Pass, sw *ast.SwitchStmt, comments []*ast.Co
 		pass.Reportf(sw.Pos(), "missing cases in expression switch: %s", formatMissingConstants(pass.Pkg, need))
 	}
 
-	if shouldCheckDefaultCase(directives, opts) {
-		checkDefaultCase(pass, sw)
+	checkDefault := func() bool {
+		if v, ok := directives[dirDefrequire]; ok {
+			return v
+		}
+		return opts.requireDefaultCase
+	}()
+	if checkDefault {
+		checkHasDefaultCase(pass, sw)
 	}
 }
 
-func shouldCheckDefaultCase(directives map[directive]bool, opts *options) bool {
-	if v, ok := directives[dirDefrequire]; ok {
-		return v
-	}
-	return opts.requireDefaultCase
-}
-
-func checkDefaultCase(pass *analysis.Pass, sw *ast.SwitchStmt) {
+// checks whether the given expression switch includes a default case
+func checkHasDefaultCase(pass *analysis.Pass, sw *ast.SwitchStmt) {
 	foundDefault := false
 	for _, cc := range sw.Body.List {
 		if cc.(*ast.CaseClause).List == nil {
@@ -139,6 +140,7 @@ func (t *implementer) Type() types.Type {
 
 var universeError = types.Universe.Lookup("error")
 
+// the main function that checks a type switch.
 func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*ast.CommentGroup, ch *typeSwitchState, opts *options) {
 	directives, proceed, err := proceedCommentDirectives(comments, opts)
 	if err != nil {
@@ -190,7 +192,7 @@ func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*as
 		}
 	}
 
-	checkExhaustive := func() bool {
+	checkMissingCases := func() bool {
 		if !directives[dirEnforce] {
 			// Special case: Type switches of the empty
 			// interface are not checked to be exhaustive.
@@ -208,22 +210,21 @@ func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*as
 		return true
 	}()
 
-	if checkExhaustive {
-		checkTypeSwitchExhaustive(pass, sw, swInterface, ch, opts)
+	if checkMissingCases {
+		checkTypeSwitchCases(pass, sw, swInterface, ch, opts)
 	}
 
-	if opts.checkImpossible {
-		checkImpossibleCode(pass, sw)
-	}
+	checkTypeSwitchIneff(pass, sw)
 }
 
-func checkTypeSwitchExhaustive(pass *analysis.Pass, sw *ast.TypeSwitchStmt, swInterface *types.Interface, ch *typeSwitchState, opts *options) {
+// checks that necessary types are listed in the cases of a type switch
+func checkTypeSwitchCases(pass *analysis.Pass, sw *ast.TypeSwitchStmt, swInterface *types.Interface, ch *typeSwitchState, opts *options) {
 	r := pass.ResultOf[finder.Analyzer].(*finder.Result)
 	computeImplements(ch, r, swInterface)
 	computeTypeRelations(ch, r)
 	need := needTypes(pass.Pkg, swInterface, ch)
 
-	reportMissingNil := opts.requireCaseNil
+	reportMissingNil := opts.requireNilCase
 
 	for _, cc := range sw.Body.List {
 		cc := cc.(*ast.CaseClause)
@@ -289,7 +290,8 @@ func checkTypeSwitchExhaustive(pass *analysis.Pass, sw *ast.TypeSwitchStmt, swIn
 	}
 }
 
-func checkImpossibleCode(pass *analysis.Pass, sw *ast.TypeSwitchStmt) {
+// checks that types listed in the cases of a type switch are not ineffectual
+func checkTypeSwitchIneff(pass *analysis.Pass, sw *ast.TypeSwitchStmt) {
 	// This function does not check for issues that are
 	// already reported as errors by "go build". As such, the
 	// following categories of issues are not checked:
@@ -301,6 +303,8 @@ func checkImpossibleCode(pass *analysis.Pass, sw *ast.TypeSwitchStmt) {
 		typeParam bool
 		expr      ast.Expr
 	}
+
+	reported := make(map[ast.Expr]bool) // case expressions of types reported as ineffectual
 
 	// Go spec: "A type parameter or a generic type may be
 	// used as a type in a case. If upon instantiation that
@@ -350,9 +354,10 @@ func checkImpossibleCode(pass *analysis.Pass, sw *ast.TypeSwitchStmt) {
 			// For instance, given a type constraint interface C for
 			// a type parameter P specified as the type in an
 			// earlier case, if the type set of C consists only of
-			// the current case type T, then T is ineffectual
-			// (note that the type parameter P can only be
-			// instantiated with type argument T).
+			// the current case type T (for simplicity, assume T is
+			// not a type constraint interface for a type parameter),
+			// then T is ineffectual. (The type parameter P can
+			// be instantiated only with type argument T.)
 			return false
 		}
 		// Note: if the type in a case is generic, it
@@ -376,9 +381,27 @@ func checkImpossibleCode(pass *analysis.Pass, sw *ast.TypeSwitchStmt) {
 				currentIntfs = append(currentIntfs, intfcase{i, typeParam, caseExpr})
 			}
 			for _, e := range earlierIntfs {
-				if ineffectualOrder(e, caseType) {
-					const message = "ineffectual type %[1]s due to case order: dynamic type that would be matched by type %[1]s is matched in earlier case by type %[2]s"
+				// Assuming that the notation "Y -> X" means that type Y
+				// in a case is ineffectual due to type X in an earlier case,
+				// note that the !reported[e.expr] check below
+				// prevents reporting a diagnostic for "C -> B"
+				// in the following scenario.
+				//
+				//    B -> A; and
+				//    C -> A; and
+				//    C -> B
+				//
+				// The aim is to avoid confusing diagnostic messages
+				// that refer to types that are already ineffectual.
+				if ineffectualOrder(e, caseType) && !reported[e.expr] {
+					var message string
+					if testingDiagnosticShort {
+						message = "ineffectual: %s -> %s"
+					} else {
+						message = "order of cases makes it impossible to match type %s (due to type %s in earlier case)"
+					}
 					pass.Reportf(caseExpr.Pos(), message, formatExpr(caseExpr), formatExpr(e.expr))
+					reported[caseExpr] = true
 				}
 			}
 		}
@@ -899,6 +922,7 @@ func proceedInclExclPatterns(obj types.Object, opts *options) bool {
 	return true // default is to include
 }
 
+// the main function that checks a map literal.
 func checkMapLit(pass *analysis.Pass, compLit *ast.CompositeLit, comments []*ast.CommentGroup, opts *options) {
 	mapType, ok := unpointer(pass.TypesInfo.Types[compLit].Type.Underlying()).(*types.Map)
 	if !ok {

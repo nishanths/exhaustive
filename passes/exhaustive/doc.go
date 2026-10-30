@@ -12,9 +12,9 @@
 // # Expression switches
 //
 // Given an [expression switch] in which the type of the switch
-// expression is an [enumerated type], the expression switch is
-// considered exhaustive if every value in the [value set] of the
-// enumerated type is listed in the cases.
+// expression is an [enumerated type], the analysis considers the
+// expression switch to be exhaustive if every value in the
+// [value set] of the enumerated type is listed in the cases.
 // If the expression switch and the declaration of the enumerated
 // type (and its constants) are in different packages, then it is
 // sufficient that the values corresponding to exported constants
@@ -65,8 +65,11 @@
 // types T and *T are included in the knowable type set only if T
 // is exported.
 //
-// A type switch is considered exhaustive if every type in its
-// knowable type set is listed in the cases.
+// The analysis considers a type switch to be exhaustive if
+//
+//   - every type in its knowable type set is listed in the cases; and
+//
+//   - no listed type is ineffectual. (See the "Ineffectual cases" section.)
 //
 // If an interface type S, but not a type parameter, is listed as a
 // type in a case, it is equivalent to listing in the cases each
@@ -110,27 +113,23 @@
 //
 // As special cases, if the interface type of the switch
 // expression is either the empty interface or the predeclared
-// type error, the analysis does not check that these type
-// switches are exhaustive.
+// type error, the analysis does not check for missing cases
+// in these types switches.
 //
 // The analysis does not support generic types that implement an
 // interface. Diagnostics do not mention these types as missing in
 // the cases of a type switch.
 //
-// # Impossible or ineffectual cases
+// # Ineffectual cases
 //
-// If flag -impossible is specified, the analysis checks for
-// impossible or ineffectual code in analyzed type switches. To
-// illustrate, consider the following type switch.
-// Note that the case that contains *ast.FuncDecl is present
-// after the case that contains ast.Decl. Also note that
-// *ast.FuncDecl implements the ast.Decl interface.
+// The type switch analysis requires that none of the types
+// listed in the cases are ineffectual. To illustrate, consider
+// the following type switch.
 //
 //	import "go/ast"
 //
 //	func count(file *ast.File) {
 //		var decls, fields, funcs int
-//
 //		for n := range ast.Preorder(file) {
 //			switch n.(type) {
 //			case ast.Decl:
@@ -139,33 +138,41 @@
 //				fields += 1
 //			case *ast.FuncDecl:
 //				funcs += 1
+//			default:
+//				// do not care about other types
 //			}
 //		}
-//
 //		/* ... */
 //	}
 //
+// Note that the case that contains *ast.FuncDecl is present
+// after the case that contains ast.Decl. Also note that
+// *ast.FuncDecl implements the ast.Decl interface.
+//
 // If the interface variable n of the switch expression has
-// dynamic type *ast.FuncDecl, then the dynamic type of n
-// (*ast.FuncDecl) will be matched by type ast.Decl in the first
-// case and the *ast.FuncDecl case is not reached. If n does not
-// have dynamic type *ast.FuncDecl (including when n is a nil
-// interface value), then the *ast.FuncDecl case may be reached
-// but the dynamic type of n will not be matched by type
-// *ast.FuncDecl.
+// dynamic type *ast.FuncDecl, then the ast.Decl case matches
+// and control flow does not reach the *ast.FuncDecl case. If n
+// does not have dynamic type *ast.FuncDecl (including when n is
+// a nil interface value), then control flow may reach the
+// *ast.FuncDecl case but the dynamic type of n will not be
+// matched by type *ast.FuncDecl in the case.
 //
 // The diagnostic is
 //
-//	ineffectual type *ast.FuncDecl due to case order (dynamic type that would be matched by type *ast.FuncDecl is matched in earlier case by type ast.Decl)
+//	order of cases makes it impossible to match type *ast.FuncDecl (due to type ast.Decl in earlier case)
 //
-// Note that this analysis does not check for issues that are
-// already reported as errors by 'go build'.
+// The analysis detects ineffectual cases in limited scenarios.
+// The analysis does not handle scenarios where the type listed
+// in a case is the type constraint interface for a type
+// parameter.
+// The analysis does not check for issues that are already
+// reported as errors by 'go build'.
 //
 // # Flags
 //
 // The exhaustive analysis supports the following flags.
 //
-//	[-casenil] [-d] [-defrequire] [-e] [-g] [-impossible] [-check string]
+//	[-casenil] [-d] [-defrequire] [-e] [-g] [-check string]
 //	[-constignore regexp] [-typeignore regexp] [-typeonly regexp]
 //
 // The flags are described below.
@@ -202,10 +209,6 @@
 //	        '//exhaustive:enforce' comment directive.
 //
 //	-g      Analyze switch statements in generated files.
-//
-//	-impossible
-//	      Check for impossible or ineffectual code in analyzed
-//	      type switches.
 //
 //	-typeignore regexp
 //	        Do not analyze switch statements in which the type name
@@ -285,7 +288,7 @@
 // # Handling of aliases
 //
 // The following example illustrates how the analysis handles
-// aliases.
+// aliases in an expression switch.
 //
 // Given the enumerated type b.B
 //

@@ -54,7 +54,7 @@ func f01[P t1 | t2]() []string {
 }
 
 func TestT0(t *testing.T) {
-	// comment in function in checkImpossibleCases
+	// comment in function in checkTypeSwitchIneff
 	// in file exhaustive/check.go.
 
 	got := f00[t1]()

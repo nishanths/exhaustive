@@ -36,9 +36,9 @@ packages of Go source code. The command can be installed using
 The synopsis of the command is:
 
 ```
-exhaustive [-B] [-casenil] [-d] [-defrequire] [-e] [-g] [-i]
-           [-impossible] [-p] [-check string] [-constignore regexp]
-           [-typeignore regexp] [-typeonly regexp] [packages]
+exhaustive [-B] [-casenil] [-d] [-defrequire] [-e] [-g] [-i] [-p]
+           [-check string] [-constignore regexp] [-typeignore regexp]
+           [-typeonly regexp] [packages]
 exhaustive -h | -help
 ```
 

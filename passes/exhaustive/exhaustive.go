@@ -16,6 +16,10 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
+// controls whether reported diagnostics use short messages,
+// for use by tests only.
+var testingDiagnosticShort = false
+
 // Analyzer implements the exhaustive analysis.
 //
 // The set of analyzers specified in the Requires field may not
@@ -68,40 +72,37 @@ func Requires(check string) ([]*analysis.Analyzer, error) {
 }
 
 func init() {
-	Analyzer.Flags.BoolVar(&fRequireCaseNil, "casenil", fRequireCaseNil, "type switches must include a nil case to be exhaustive")
+	Analyzer.Flags.BoolVar(&fRequireNilCase, "casenil", fRequireNilCase, "type switches must include a nil case to be exhaustive")
 	Analyzer.Flags.StringVar(&fCheck, "check", fCheck, "comma-separated list of elements to analyze; available values: switch, typeswitch, mapliteral")
 	Analyzer.Flags.Var(&fExcludeConst, "constignore", "constant names matched by `regexp` do not have to be listed in the cases of an expression switch")
 	Analyzer.Flags.BoolVar(&fDefaultEx, "d", fDefaultEx, "consider switch statements that include a default case to be exhaustive")
 	Analyzer.Flags.BoolVar(&fRequireDefaultCase, "defrequire", fRequireDefaultCase, "require that an analyzed expression switch always includes a default case")
 	Analyzer.Flags.BoolVar(&fCheckEnforceOnly, "e", fCheckEnforceOnly, "analyze a switch only if it has an '//exhaustive:enforce' comment directive")
 	Analyzer.Flags.BoolVar(&fCheckGenerated, "g", fCheckGenerated, "additionally analyze generated files")
-	Analyzer.Flags.BoolVar(&fCheckImpossible, "impossible", fCheckImpossible, "check for impossible or ineffectual code in analyzed type switches")
 	Analyzer.Flags.Var(&fExcludeType, "typeignore", "do not analyze switch statements in which the type name is matched by `regexp`")
 	Analyzer.Flags.Var(&fIncludeType, "typeonly", "only analyze switch statements in which the type name is matched by `regexp`")
 }
 
 var (
-	fRequireCaseNil     = false
+	fRequireNilCase     = false
 	fCheck              = string(exprswitch)
 	fExcludeConst       = repeatFlag[*regexp.Regexp]{set: regexp.Compile}
 	fDefaultEx          = false
 	fRequireDefaultCase = false
 	fCheckEnforceOnly   = false
 	fCheckGenerated     = false
-	fCheckImpossible    = false
 	fExcludeType        = repeatFlag[*regexp.Regexp]{set: regexp.Compile}
 	fIncludeType        = repeatFlag[*regexp.Regexp]{set: regexp.Compile}
 )
 
 func resetFlags() {
-	fRequireCaseNil = false
+	fRequireNilCase = false
 	fCheck = string(exprswitch)
 	fExcludeConst = repeatFlag[*regexp.Regexp]{set: regexp.Compile}
 	fDefaultEx = false
 	fRequireDefaultCase = false
 	fCheckEnforceOnly = false
 	fCheckGenerated = false
-	fCheckImpossible = false
 	fExcludeType = repeatFlag[*regexp.Regexp]{set: regexp.Compile}
 	fIncludeType = repeatFlag[*regexp.Regexp]{set: regexp.Compile}
 }
@@ -162,13 +163,12 @@ func parseSyntaxElements(arg string) ([]syntaxElement, error) {
 type options struct {
 	defaultCaseExhaustive bool
 	requireDefaultCase    bool
-	requireCaseNil        bool
+	requireNilCase        bool
 	checkEnforceOnly      bool
 	checkGenerated        bool
 	includeTypePatterns   []*regexp.Regexp
 	excludeTypePatterns   []*regexp.Regexp
 	excludeConstPatterns  []*regexp.Regexp
-	checkImpossible       bool
 }
 
 func run(pass *analysis.Pass) (any, error) {
@@ -180,13 +180,12 @@ func run(pass *analysis.Pass) (any, error) {
 	opts := &options{
 		defaultCaseExhaustive: fDefaultEx,
 		requireDefaultCase:    fRequireDefaultCase,
-		requireCaseNil:        fRequireCaseNil,
+		requireNilCase:        fRequireNilCase,
 		checkEnforceOnly:      fCheckEnforceOnly,
 		checkGenerated:        fCheckGenerated,
 		includeTypePatterns:   fIncludeType.vals,
 		excludeTypePatterns:   fExcludeType.vals,
 		excludeConstPatterns:  fExcludeConst.vals,
-		checkImpossible:       fCheckImpossible,
 	}
 
 	var nodes []ast.Node

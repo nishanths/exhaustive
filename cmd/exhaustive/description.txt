@@ -42,10 +42,6 @@ The flags are:
      -i      Only consider enumerated constants that are declared
              using iota in their values.
 
-     -impossible
-             Check for impossible or ineffectual code in analyzed
-             type switches.
-
      -p      Only consider enumerated types and enumerated constants
              that are declared at top level.
 

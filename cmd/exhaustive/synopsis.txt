@@ -1,4 +1,4 @@
-exhaustive [-B] [-casenil] [-d] [-defrequire] [-e] [-g] [-i]
-           [-impossible] [-p] [-check string] [-constignore regexp]
-           [-typeignore regexp] [-typeonly regexp] [packages]
+exhaustive [-B] [-casenil] [-d] [-defrequire] [-e] [-g] [-i] [-p]
+           [-check string] [-constignore regexp] [-typeignore regexp]
+           [-typeonly regexp] [packages]
 exhaustive -h | -help

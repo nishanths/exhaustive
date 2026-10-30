@@ -189,7 +189,7 @@ func f5[P interface{ p() }]() {
 	case error:
 	case *t:
 	case e:
-	case interface{ e() }:
+	case interface{ e() }: // want "^ineffectual: interface\\{e\\(\\)\\} -> e$"
 	case nil:
 	}
 }

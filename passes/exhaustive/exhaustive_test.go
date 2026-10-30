@@ -12,6 +12,11 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
+func TestMain(m *testing.M) {
+	testingDiagnosticShort = true
+	m.Run()
+}
+
 func TestAnalyzer(t *testing.T) {
 	testdata := analysistest.TestData()
 	run := func(t *testing.T, setup func(), patterns ...string) []*analysistest.Result {
@@ -79,7 +84,9 @@ func TestAnalyzer(t *testing.T) {
 
 	t.Run("doc", func(t *testing.T) {
 		if !testing.Short() {
-			run(t, func() { fCheck = "switch,typeswitch"; fCheckImpossible = true }, "test/analysis/packagedoc/...")
+			run(t, func() { fCheck = "switch" }, "test/analysis/packagedoc/exprswitch/...")
+			run(t, func() { fCheck = "typeswitch" }, "test/analysis/packagedoc/typeswitch")
+			run(t, func() { fCheck = "typeswitch"; fDefaultEx = true }, "test/analysis/packagedoc/typeswitch/ineffectual")
 			run(t, func() { fCheck = "switch,typeswitch" }, "test/analysis/readmedoc/...")
 		}
 	})
@@ -89,9 +96,10 @@ func TestAnalyzer(t *testing.T) {
 			"test/analysis/typeswitch/general",
 			"test/analysis/typeswitch/general/embedded",
 			"test/analysis/typeswitch/general/alias",
+			"test/analysis/typeswitch/general/impossible",
 			"test/analysis/typeswitch/general/generic")
-		run(t, func() { fCheck = "typeswitch"; ; fCheckImpossible = true }, "test/analysis/typeswitch/general/caseinterface")
-		run(t, func() { fCheck = "typeswitch"; fRequireCaseNil = true }, "test/analysis/typeswitch/casenil")
+		run(t, func() { fCheck = "typeswitch" }, "test/analysis/typeswitch/general/caseinterface")
+		run(t, func() { fCheck = "typeswitch"; fRequireNilCase = true }, "test/analysis/typeswitch/casenil")
 		run(t, func() { fCheck = "typeswitch"; fDefaultEx = true }, "test/analysis/typeswitch/def")
 		run(t, func() {
 			fCheck = "typeswitch"
@@ -101,7 +109,6 @@ func TestAnalyzer(t *testing.T) {
 				regexp.MustCompile("^test/analysis/typeswitch/pattern\\.a2$"),
 			}}
 		}, "test/analysis/typeswitch/pattern")
-		run(t, func() { fCheck = "typeswitch"; fCheckImpossible = true }, "test/analysis/typeswitch/impossible")
 
 		if !testing.Short() {
 			run(t, func() { fCheck = "typeswitch" }, "test/analysis/typeswitch/gostd")
@@ -142,14 +149,14 @@ func TestRealPackages(t *testing.T) {
 		}
 	}
 
-	run(t, func() { fCheck = "switch,mapliteral,typeswitch"; fCheckImpossible = true }, "net")
+	run(t, func() { fCheck = "switch,mapliteral,typeswitch" }, "net")
 
 	if !testing.Short() {
 		// Note: This could specify the name "std" instead of
 		// specifying individual package names, but in low memory
 		// environments where tests might run the analysis will
 		// commonly run out of memory for the former.
-		run(t, func() { fCheck = "switch,mapliteral,typeswitch"; fCheckImpossible = true },
+		run(t, func() { fCheck = "switch,mapliteral,typeswitch" },
 			"fmt",
 			"go/...",
 			"html/template",
