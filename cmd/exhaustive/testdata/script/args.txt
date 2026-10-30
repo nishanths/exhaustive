@@ -1,31 +1,33 @@
 # help flags
 exhaustive -h
 stdout -count=1 '^usage: exhaustive \[-B\] \[-casenil\] \[-d\] .+'
-stdout -count=1 '^                  \[-check string\] .+'
-stdout -count=1 '^[[:space:]]+ .+ \[-typeonly regexp\] \[packages\]$'
-stdout -count=1 '^       exhaustive -h \| -help$'
+stdout -count=1 '^                  .*\[-check string\] .+'
+stdout -count=1 '^                  .*\[-typeonly regexp\] \[packages\]\r?\n'
+stdout -count=1 '^       exhaustive -h \| -help\r?\n'
 stdout -count=1 '^The exhaustive command .+'
 stdout -count=1 '^[[:space:]]+-B[[:space:]]+Disregard enumerated constants that are .+'
+stdout -count=1 '^[[:space:]]+-d[[:space:]]+Consider switch statements that include a default'
 stderr ^$
 
 exhaustive -help # same as -h above
 stdout -count=1 '^usage: exhaustive \[-B\] \[-casenil\] \[-d\] .+'
-stdout -count=1 '^                  \[-check string\] .+'
-stdout -count=1 '^[[:space:]]+ .+ \[-typeonly regexp\] \[packages\]$'
-stdout -count=1 '^       exhaustive -h \| -help$'
+stdout -count=1 '^                  .*\[-check string\] .+'
+stdout -count=1 '^                  .*\[-typeonly regexp\] \[packages\]\r?\n'
+stdout -count=1 '^       exhaustive -h \| -help\r?\n'
 stdout -count=1 '^The exhaustive command .+'
 stdout -count=1 '^[[:space:]]+-B[[:space:]]+Disregard enumerated constants that are .+'
+stdout -count=1 '^[[:space:]]+-d[[:space:]]+Consider switch statements that include a default'
 stderr ^$
 
 # undefined flag
 ! exhaustive -xx
 stdout ^$
 stderr -count=5 ^.
-stderr -count=1 '^flag provided but not defined: -xx$'
+stderr -count=1 '^flag provided but not defined: -xx\r?\n'
 stderr -count=1 '^usage: exhaustive \[-B\] \[-casenil\] \[-d\] .+'
-stderr -count=1 '^                  \[-check string\] .+'
-stderr -count=1 '^[[:space:]]+ .+ \[-typeonly regexp\] \[packages\]$'
-stderr -count=1 '^       exhaustive -h \| -help$'
+stderr -count=1 '^                  .*\[-check string\] .+'
+stderr -count=1 '^                  .*\[-typeonly regexp\] \[packages\]\r?\n'
+stderr -count=1 '^       exhaustive -h \| -help\r?\n'
 
 # -check flag
 cd $WORK/example.com
