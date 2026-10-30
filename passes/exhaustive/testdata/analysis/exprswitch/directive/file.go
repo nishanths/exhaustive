@@ -25,6 +25,10 @@ func f1() {
 	switch int(0) { // want "^enforce directive present and expression switch not checked: switch expression type is not an enumerated type$"
 	}
 
+	switch t1(0) { // want "^missing cases in expression switch: x1$"
+	case x0:
+	}
+
 	//exhaustive:ignore
 	switch t1(0) {
 	case x0:
@@ -76,6 +80,10 @@ func g1() {
 
 	//exhaustive:enforce
 	_ = map[int]bool{0: true} // want "^enforce directive present and map literal not checked: key type is not an enumerated type$"
+
+	_ = map[t1]bool{ // want "^missing keys in map literal: x1$"
+		x0: true,
+	}
 
 	//exhaustive:ignore
 	_ = map[t1]bool{

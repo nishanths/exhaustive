@@ -82,15 +82,6 @@ func TestAnalyzer(t *testing.T) {
 		run(t, func() { fCheck = "mapliteral"; fCheckEnforceOnly = true }, "test/analysis/mapliteral/commentassoc")
 	})
 
-	t.Run("doc", func(t *testing.T) {
-		if !testing.Short() {
-			run(t, func() { fCheck = "switch" }, "test/analysis/packagedoc/exprswitch/...")
-			run(t, func() { fCheck = "typeswitch" }, "test/analysis/packagedoc/typeswitch")
-			run(t, func() { fCheck = "typeswitch"; fDefaultEx = true }, "test/analysis/packagedoc/typeswitch/ineffectual")
-			run(t, func() { fCheck = "switch,typeswitch" }, "test/analysis/readmedoc/...")
-		}
-	})
-
 	t.Run("typeswitch", func(t *testing.T) {
 		run(t, func() { fCheck = "typeswitch" },
 			"test/analysis/typeswitch/general",
@@ -99,6 +90,8 @@ func TestAnalyzer(t *testing.T) {
 			"test/analysis/typeswitch/general/impossible",
 			"test/analysis/typeswitch/general/generic")
 		run(t, func() { fCheck = "typeswitch" }, "test/analysis/typeswitch/general/caseinterface")
+		run(t, func() { fCheck = "typeswitch" }, "test/analysis/typeswitch/directive")
+		run(t, func() { fCheck = "typeswitch"; fCheckEnforceOnly = true }, "test/analysis/typeswitch/directive/enforce")
 		run(t, func() { fCheck = "typeswitch"; fRequireNilCase = true }, "test/analysis/typeswitch/casenil")
 		run(t, func() { fCheck = "typeswitch"; fDefaultEx = true }, "test/analysis/typeswitch/def")
 		run(t, func() {
@@ -112,6 +105,15 @@ func TestAnalyzer(t *testing.T) {
 
 		if !testing.Short() {
 			run(t, func() { fCheck = "typeswitch" }, "test/analysis/typeswitch/gostd")
+		}
+	})
+
+	t.Run("doc", func(t *testing.T) {
+		if !testing.Short() {
+			run(t, func() { fCheck = "switch" }, "test/analysis/packagedoc/exprswitch/...")
+			run(t, func() { fCheck = "typeswitch" }, "test/analysis/packagedoc/typeswitch")
+			run(t, func() { fCheck = "typeswitch"; fDefaultEx = true }, "test/analysis/packagedoc/typeswitch/ineffectual")
+			run(t, func() { fCheck = "switch,typeswitch" }, "test/analysis/readmedoc/...")
 		}
 	})
 }

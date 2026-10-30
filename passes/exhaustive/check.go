@@ -193,16 +193,17 @@ func checkTypeSwitch(pass *analysis.Pass, sw *ast.TypeSwitchStmt, comments []*as
 	}
 
 	checkMissingCases := func() bool {
+		// Special case: Type switches of the empty
+		// interface are not checked for missing cases.
+		// Note that all types implement the empty interface.
+		if swInterface.Empty() {
+			skip("unsupported: interface type of switch expression is the empty interface")
+			return false
+		}
+		// Special case: Type switches of the error built-in interface
+		// are not checked for missing cases.
 		if !directives[dirEnforce] {
-			// Special case: Type switches of the empty
-			// interface are not checked to be exhaustive.
-			// Note that all types implement the empty interface.
-			if swInterface.Empty() {
-				return false
-			}
-			// Special case: Type switches of the error
-			// built-in interface are not checked to be exhaustive.
-			tn, ok := hasTypeName(pass.TypesInfo.TypeOf(swExpr))
+			tn, ok := hasTypeName(types.Unalias(pass.TypesInfo.TypeOf(swExpr)))
 			if ok && tn == universeError {
 				return false
 			}

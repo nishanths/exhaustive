@@ -111,9 +111,9 @@
 // the cases of a type switch.
 //
 // As special cases, if the interface type of the switch
-// expression is either the empty interface or the predeclared
-// type error, the analysis does not check for missing cases
-// in these type switches.
+// expression is either the empty interface or
+// the error built-in interface, the analysis does not evaluate
+// missing cases in these type switches.
 //
 // The presence of a default case will not satisfy missing cases.
 // See flag -d to control this behavior.

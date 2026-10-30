@@ -324,23 +324,27 @@ func e1() {
 	}
 }
 
-func e2() {
-	// predeclared error interface
+type myError struct{}
 
-	type myerror error
+func (*myError) Error() string { return "" }
+
+func e2() {
+	// error interfaces
+
+	type namederror error
 	type aliaserror = error
 
 	var err1 error
 	err2 := errors.New("")
-	var err3 myerror
-	var err4 myerror
+	var err3 namederror
+	var err4 aliaserror
 
 	switch err1.(type) {
 	}
 	switch err2.(type) {
 	}
-	switch err3.(type) { // want "^missing cases in type switch: .+, strconv.Error, \\*strconv.Error, .+$"
+	switch err3.(type) { // want "^missing cases in type switch: \\*myError,.* strconv.Error, \\*strconv.Error, .+$"
 	}
-	switch err4.(type) { // want "^missing cases in type switch: .+, strconv.Error, \\*strconv.Error, .+$"
+	switch err4.(type) {
 	}
 }
